@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
+
 ############################################################
 # Unify generated plots in a single PDF file for each type #
 # Matheus J. Castro                                        #
-# v1.1                                                     #
-# Last Modification: 03/19/2022                            #
+# v2.0                                                     #
+# Last Modification: 07/01/2022                            #
 # Contact: matheusdejesuscastro@gmail.com                  #
 ############################################################
 
@@ -11,8 +13,13 @@
 # It uses pdflatex to generate it. You can install it following the steps for your OS distribution here:
 # https://www.latex-project.org/get/
 
+# For this code work, it must be in the same folder as the abundance_fit.py file
+
 import os
 import sys
+
+# Import the main script
+import abundance_fit as ab_fit
 
 
 def write(fl_name, data):
@@ -21,17 +28,23 @@ def write(fl_name, data):
         file.write(data)
 
 
-def run_pdflatex(fl_name):
+def run_pdflatex(fl_name, folder):
     # Run pdflatex command
-    os.system("cd Unique_Plot && pdflatex -interaction=nonstopmode {}".format(fl_name))
+    os.system("cd {}Unique_Plot && pdflatex -interaction=nonstopmode {}".format(folder, fl_name))
 
 
-def main():
+def main(args):
+    # Arguments Menu Call
+    config_name = ab_fit.args_menu(args)
+
+    # Read Configuration File
+    list_name, refer_name, type_synth, config_fl, conv_name, folder, observed_name = ab_fit.read_config(config_name)
+
     # Create necessary folder
-    if not os.path.exists("Unique_Plot"):
-        os.mkdir("Unique_Plot")
+    if not os.path.exists(folder+"Unique_Plot"):
+        os.mkdir(folder+"Unique_Plot")
 
-    dirs = ["Plots/", "Abundance_Analysis/Abundance_Hist/", 
+    dirs = ["On_time_Plots/", "Abundance_Analysis/Abundance_Hist/",
             "Abundance_Analysis/Difference_Hist/", "Abundance_Analysis/Lines_Plot/"]
 
     # Create latex structure
@@ -45,7 +58,7 @@ def main():
 
     # Create the plots for each analyze type
     for diru in dirs:
-        fls = os.listdir(diru)
+        fls = os.listdir(folder+diru)
 
         figs = ""
         for fl in fls:
@@ -65,15 +78,18 @@ def main():
         if fl_name == ".tex":
             fl_name = "{}.tex".format(diru.split("/")[0])
 
-        write("Unique_Plot/{}".format(fl_name), final)
+        write(folder+"Unique_Plot/{}".format(fl_name), final)
 
-        run_pdflatex(fl_name)
+        run_pdflatex(fl_name, folder)
 
         # Remove temporary files
-        os.remove("Unique_Plot/{}".format(fl_name))
-        os.remove("Unique_Plot/{}.aux".format(fl_name[:-4]))
-        os.remove("Unique_Plot/{}.log".format(fl_name[:-4]))
+        os.remove(folder+"Unique_Plot/{}".format(fl_name))
+        os.remove(folder+"Unique_Plot/{}.aux".format(fl_name[:-4]))
+        os.remove(folder+"Unique_Plot/{}.log".format(fl_name[:-4]))
+
+        os.system("cp {}Abundance_Analysis/Abundance_box.pdf {}Unique_Plot/".format(folder, folder))
 
 
 if __name__ == '__main__':
-    main()
+    arg = sys.argv[1:]
+    main(arg)

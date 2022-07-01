@@ -1,0 +1,34 @@
+# Configuration File for MEAFS Code
+# txt or csv files needs specification of the type of separator at next line
+# Possible values are: tab, comma
+
+# Linelist with the lines to analyze
+Heavylist.txt
+tab
+
+# Does linelist have emission order after element?
+1
+# 0
+
+# Elements Reference list
+refer_values.csv
+comma
+
+# Synthetic Spectrum Software
+Turbospectrum
+# PFANT
+
+# Configuration file for Synthetic Spectrum Software
+Turbospectrum2019/COM-v19.1/CS31.com
+
+# Synthetic Spectrum Output
+Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec
+
+# Folder name to save results
+Results
+
+# Observed Spectra (one or more)
+cs340n.dat
+tab
+cs437n.dat
+tab

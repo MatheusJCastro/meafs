@@ -1,12 +1,12 @@
+#!/usr/bin/env python3
+
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v2.4                                              #
-# Last Modification: 03/18/2022                     #
+# v3.0                                              #
+# Last Modification: 07/01/2022                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
-
-# For this code work with Turbospectrum2019, the Turbospectrum2019 folder must be in the same folder as this code
 
 from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.optimize import minimize
@@ -15,18 +15,21 @@ import pandas as pd
 import numpy as np
 import subprocess
 import ctypes
+import time
 import sys
 import os
 
 
 def open_files(list_name, observed_name, refer_name):
     # Function to open the needed files using PANDAS
-    linelist = pd.read_csv(list_name, header=None, delimiter="\s+")
-    spec_obs_1 = pd.read_csv(observed_name[0], header=None, delimiter="\s+")
-    spec_obs_2 = pd.read_csv(observed_name[1], header=None, delimiter="\s+")
-    refer_fl = pd.read_csv(refer_name, header=None, delimiter=",", index_col=0)
+    linelist = pd.read_csv(list_name[0], header=None, delimiter=list_name[1])
+    refer_fl = pd.read_csv(refer_name[0], header=None, delimiter=refer_name[1], index_col=0)
 
-    return linelist, [spec_obs_1, spec_obs_2], refer_fl
+    spec_obs = []
+    for i in range(0, len(observed_name), 2):
+        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=observed_name[i+1]))
+
+    return linelist, refer_fl, spec_obs
 
 
 def open_previous(linelist, fl_name="found_values.csv"):
@@ -37,7 +40,7 @@ def open_previous(linelist, fl_name="found_values.csv"):
     except (FileNotFoundError, pd.errors.EmptyDataError):
         # If file not found or empty database, create a new one and return
         return linelist, pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                      "Refer Abundance", "Fit Abundance", "Differ"])
+                                      "Refer Abundance", "Fit Abundance", "Differ", "Chi"])
 
     # Reads the existing data
     new_linelist = pd.DataFrame(columns=[0, 1])
@@ -56,21 +59,20 @@ def open_previous(linelist, fl_name="found_values.csv"):
 
 def c_init(c_name):
     # Funtion to initialize the C shared library
-    global c_lib
-    c_lib = ctypes.CDLL("./{}".format(c_name))
+    c_library = ctypes.CDLL("./{}".format(c_name))
 
     # Defining functions argument types
-    c_lib.bisec.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_float]
-    c_lib.bisec.restype = ctypes.c_int
+    c_library.bisec.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_float]
+    c_library.bisec.restype = ctypes.c_int
 
-    c_lib.chi2.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_int,
+    c_library.chi2.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_int,
                            ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_int]
-    c_lib.chi2.restype = ctypes.c_float
+    c_library.chi2.restype = ctypes.c_float
 
-    return c_lib
+    return c_library
 
 
-def plot_spec(spec1, spec2, spec3, lamb, elem, show=False, save=True):
+def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
     # Plot the spectra
     plt.figure(figsize=(16, 9))
 
@@ -86,7 +88,7 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, show=False, save=True):
     if show:
         plt.show()
     if save:
-        plt.savefig("Plots/fit_{}_{}_ang.pdf".format(elem, lamb))
+        plt.savefig(folder+"On_time_Plots/fit_{}_{}_ang.pdf".format(elem, lamb))
     plt.close()
 
 
@@ -95,7 +97,7 @@ def check_elem_configfl(fl_name, elem):
     with open(fl_name, 'r') as file:
         fl = file.read()
 
-    elem = "foreach " + elem[:-1] + "_ab"
+    elem = "foreach " + elem + "_ab"
     pos = fl.find(elem)
 
     if pos == -1:
@@ -108,6 +110,7 @@ def bisec(spec, lamb):
     # Function to apply the bisection script to find a number position in an array
 
     # Uncomment the script bellow to use the C library (slower)
+    # global c_lib
     # arr = spec[0].tolist()
     # arr_c = (ctypes.c_float * len(arr))(*arr)
     #
@@ -168,7 +171,7 @@ def change_abund_configfl(fl_name, elem, abund=None, find=True):
     with open(fl_name, 'r') as file:
         fl = file.read()
 
-    elem = "foreach " + elem[:-1] + "_ab"
+    elem = "foreach " + elem + "_ab"
     pos = fl.find(elem)
     pos += fl[pos:].find("(") + 1
     pos_end = pos + fl[pos:].find(")")
@@ -184,13 +187,18 @@ def change_abund_configfl(fl_name, elem, abund=None, find=True):
     return abund
 
 
-def run_configfl():
+def run_configfl(config_fl):
     # Run Turbospectrum2019
-    subprocess.check_output("cd Turbospectrum2019/COM-v19.1 && ./CS31.com", shell=True)
+    run = config_fl.split("/")[-1]
+    config_fodler = config_fl.removesuffix(run)
+
+    subprocess.check_output("cd {} && ./{}".format(config_fodler, run), shell=True)
 
 
 def chi2(spec1, spec2):
     # Function to find the chi square of two arrays
+
+    global c_lib
 
     # Using C library
     spec1x = spec1[0].tolist()
@@ -243,11 +251,11 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
     return spec
 
 
-def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val):
+def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, convol_init=3.85):
     # Function to optimize the spectrum
 
     # First, apply a convolution of 3.85
-    sp_convoluted = spec_operations(spec_conv.copy(), convol=3.85)
+    sp_convoluted = spec_operations(spec_conv.copy(), convol=convol_init)
 
     # Find the best parameters for lambda shift and continuum
     def opt_desloc_continuum(guess):
@@ -270,21 +278,21 @@ def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val):
     return pars
 
 
-def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, cut_val=None, abund_lim_df=1., restart=False,
-                     save_name="found_values.csv"):
+def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder, type_synth, order_sep, cut_val=None,
+                     abund_lim_df=1., restart=False, save_name="found_values.csv"):
     # Function to analyse the spectrum and find the fit values for it
 
     # For each fit parameter, a spectrum range can be selected
     # a value of 5, will select a total of 10 Angstroms with the element line wavelength in the middle
     if cut_val is None:
-        cut_val = [10/2, 3/2, .2/2, 1/2]
         # spec range vals for [continuum, convolution, abundance, plot]
+        cut_val = [10/2, 3/2, .2/2, 1/2]
 
     if not restart:
-        linelist, found_val = open_previous(linelist, fl_name=save_name)
+        linelist, found_val = open_previous(linelist, fl_name=folder+save_name)
     else:
         found_val = pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                          "Refer Abundance", "Fit Abundance", "Differ"])
+                                          "Refer Abundance", "Fit Abundance", "Differ", "Chi"])
 
     # For each line in the linelist file
     for i in range(len(linelist)):
@@ -292,6 +300,11 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, cut_val
         lamb = linelist.iloc[i][1]
 
         print("Analysing the element {} for lambda {}. Line {} of {}.".format(elem, lamb, i+1, len(linelist)))
+
+        order = ""
+        if order_sep == "1":
+            order = elem[-1]
+            elem = elem[:-1]
 
         abund_val_refer = float(refer_fl.loc[elem]) if not refer_fl.loc[elem].isnull().item() else 0
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
@@ -302,79 +315,167 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, cut_val
             spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[0])
             change_spec_range_configfl(config_fl, lamb, cut_val[0])
 
-            run_configfl()
+            run_configfl(config_fl)
             spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
 
             opt_pars = optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val)
             # opt_pars = [0,0,0]
 
-            print("\tLamb Shift:\t\t{:.4f}\n\tContinuum:\t\t{:.4f}\n\tConvolution:\t{:.4f}".format(opt_pars[0],
-                                                                                                   opt_pars[1],
-                                                                                                   opt_pars[2]))
+            print("\tLamb Shift:\t\t{:.4f}\n\tContinuum:\t\t{:.4f}\n\tConvolution:\t\t{:.4f}".format(opt_pars[0],
+                                                                                                     opt_pars[1],
+                                                                                                     opt_pars[2]))
 
             # Fit of abundance
             change_spec_range_configfl(config_fl, lamb, cut_val[3])
             spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[2])
 
+            chi = 0
+
             def mini_func(abund):
+                nonlocal chi
                 change_abund_configfl(config_fl, elem, find=False, abund=abund[0])
-                run_configfl()
+                run_configfl(config_fl)
                 spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
                 spec = spec_operations(spec.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
                                        convol=opt_pars[2])
 
-                return chi2(spec_obs_cut, spec)
+                chi = chi2(spec_obs_cut, spec)
+                return chi
 
             par = minimize(mini_func, np.array([abund_val_refer]), method='Nelder-Mead', options={"maxiter": 10},
                            bounds=[[abund_val_refer-abund_lim, abund_val_refer+abund_lim]]).x
 
             print("\tAbundance:\t\t{:.4f}".format(par[0]))
-            found_val.loc[index_append] = [elem, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer, par[0],
-                                           np.abs(par[0]-abund_val_refer)]
+            found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
+                                           par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi)]
 
             # Plot of data
             spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[3])
 
             change_spec_range_configfl(config_fl, lamb, cut_val[3])
-            run_configfl()
+            run_configfl(config_fl)
 
             spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
             spec_fit = spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
                                        convol=opt_pars[2])
 
-            plot_spec(spec_obs_cut, spec_conv, spec_fit, lamb, elem)
+            plot_spec(spec_obs_cut, spec_conv, spec_fit, lamb, elem+order, folder)
 
             # Return the Turbospectrum2019 configuration file to original abundance value
             change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
         else:
-            found_val.loc[index_append] = [elem, lamb, np.nan, np.nan, np.nan, abund_val_refer, np.nan, np.nan]
+            found_val.loc[index_append] = [elem+order, lamb, np.nan, np.nan, np.nan, abund_val_refer, np.nan,
+                                           np.nan, np.nan]
             print("\tValue not found.")
 
         # Write the line result to the csv file
-        found_val.to_csv(save_name, index=False, float_format="%.4f")
+        found_val.to_csv(folder+save_name, index=False, float_format="%.4f")
 
 
-def main():
+def read_config(config_name):
+    # Function to read the configuration file
+    def separator(sep):
+        # Define the type of separator
+        if sep == "comma":
+            return ","
+        elif sep == "tab":
+            return "\s+"
+        else:
+            return ","
+
+    # Read file
+    config_data = pd.read_csv(config_name, comment="#", header=None)
+
+    # Enable long strings
+    pd.options.display.max_colwidth = 150
+
+    # Attribution of the variables
+    list_name = [config_data.loc[0].to_string(index=False),
+                 config_data.loc[1].to_string(index=False),
+                 config_data.loc[2].to_string(index=False)]
+    refer_name = [config_data.loc[3].to_string(index=False),
+                  config_data.loc[4].to_string(index=False)]
+    type_synth = config_data.loc[5].to_string(index=False)
+    config_fl = config_data.loc[6].to_string(index=False)
+    conv_name = config_data.loc[7].to_string(index=False)
+    folder = config_data.loc[8].to_string(index=False) + "/"
+
+    # Attribution of the spectra names
+    observed_name = []
+    for i in range(9, len(config_data)):
+        observed_name.append(config_data.iloc[i].to_string(index=False))
+
+    # Define the separator type in the file
+    list_name[1] = separator(list_name[1])
+    refer_name[1] = separator(refer_name[1])
+    for i in range(1, len(observed_name), 2):
+        observed_name[i] = separator(observed_name[i])
+
+    return list_name, refer_name, type_synth, config_fl, conv_name, folder, observed_name
+
+
+def main(args):
     # Main subroutine to call the functions
-    if not os.path.exists("Plots"):
-        os.mkdir("Plots")
 
-    # Required path files for the script work
-    list_name = "Heavylist.txt"  # File with the lines to analyze
-    observed_name = ["cs340n.dat", "cs437n.dat"]  # observed spectra
-    conv_name = "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec"  # simulated spectrum
-    config_fl = "Turbospectrum2019/COM-v19.1/CS31.com"  # Turbospectrum2019 configuration file
-    refer_name = "refer_values.csv"  # values of reference for each element (0 for no reference)
+    # Time Counter
+    init = time.time()
+
+    # Arguments Menu Call
+    config_name = args_menu(args)
+
+    # Read Configuration File
+    list_name, refer_name, type_synth, config_fl, conv_name, folder, observed_name = read_config(config_name)
+
+    # Create necessary folders
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+    if not os.path.exists(folder+"On_time_Plots"):
+        os.mkdir(folder+"On_time_Plots")
 
     # Open some files
-    linelist, spec_obs, refer_fl = open_files(list_name, observed_name, refer_name)
+    linelist, refer_fl, spec_obs = open_files(list_name, observed_name, refer_name)
 
     # Adjust parameters for each spectra declared
     # Caution: be aware of data overlay on the final csv file
     for spec in spec_obs:
-        adjust_abundance(linelist, spec, conv_name, config_fl, refer_fl, restart=False)
+        adjust_abundance(linelist, spec, conv_name, config_fl, refer_fl, folder, type_synth, list_name[2],
+                         restart=False)
+
+    # Time Counter
+    end = time.time()
+    dif = end - init
+    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s)".format(dif // 3600, (dif // 60) % 60, dif % 60, dif)
+
+    # noinspection PyTypeChecker
+    np.savetxt(folder+"log.txt", [time_spent], fmt="%s")
+    print(time_spent)
+
+
+def args_menu(args):
+
+    if len(args) <= 1 and not any((i == "-h" or i == "--h" or i == "-help" or i == "--help") for i in args):
+        if len(args) != 0:
+            config_name = args[0]
+        else:
+            config_name = "meafs_config.txt"
+
+        if not os.path.exists(config_name):
+            sys.exit("\033[1;31mError: file {} not found.\033[m".format(config_name))
+
+        return config_name
+    else:
+        help_msg = "\n\t\t\033[1;31mHelp Section\033[m\nabundance_fit.py v3.0\n" \
+                   "Usage: python3 abundance_fit.py [options] argument\n\n" \
+                   "Written by Matheus J. Castro <matheusj_castro@usp.br>\nUnder MIT License.\n\n" \
+                   "This program find elements abundances of a given spectrum.\n\n" \
+                   "Argument needs to be a \".txt\" file with the MEAFS configuration.\n" \
+                   "If no argument is given, the default name is \"meafs_config.txt\".\n\n" \
+                   "Options are:\n -h,  -help\t|\tShow this help;\n--h, --help\t|\tShow this help;\n" \
+                   "\n\nExample:\n./abundance_fit.py meafs_config.txt\n"
+        print(help_msg)
 
 
 if __name__ == '__main__':
     c_lib = c_init("bisec_interpol.so")  # initialize the C library
-    main()  # call main subroutine
+    arg = sys.argv[1:]
+    main(arg)  # call main subroutine
