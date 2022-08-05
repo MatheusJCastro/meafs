@@ -3,7 +3,7 @@
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v3.0                                              #
+# v3.1                                              #
 # Last Modification: 07/01/2022                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
@@ -251,17 +251,21 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
     return spec
 
 
-def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, convol_init=3.85):
+def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, init=None):
     # Function to optimize the spectrum
 
+    # Define initial values if not given
+    if init is None:
+        init = [0, 1, 3.85]
+
     # First, apply a convolution of 3.85
-    sp_convoluted = spec_operations(spec_conv.copy(), convol=convol_init)
+    sp_convoluted = spec_operations(spec_conv.copy(), convol=init[2])
 
     # Find the best parameters for lambda shift and continuum
     def opt_desloc_continuum(guess):
         sp_fit = spec_operations(sp_convoluted.copy(), lamb_desloc=guess[0], continuum=guess[1], convol=0)
         return chi2(spec_obs_cut, sp_fit)
-    pars = minimize(opt_desloc_continuum, np.array([0, 1]), method='Nelder-Mead').x
+    pars = minimize(opt_desloc_continuum, np.array([init[0], init[1]]), method='Nelder-Mead').x
 
     spec_obs_cut = cut_spec(spec_obs_cut, lamb, cut_val=cut_val[1])
     spec_conv = cut_spec(spec_conv, lamb, cut_val=cut_val[1])
@@ -270,7 +274,7 @@ def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, convol_init=3.85):
     def opt_convolution(guess):
         sp_fit = spec_operations(spec_conv.copy(), lamb_desloc=pars[0], continuum=pars[1], convol=guess[0])
         return chi2(spec_obs_cut, sp_fit)
-    par = minimize(opt_convolution, np.array([3.85]), method='Nelder-Mead', bounds=[[3.5, 4.2]]).x
+    par = minimize(opt_convolution, np.array([init[2]]), method='Nelder-Mead', bounds=[[3.5, 4.2]]).x
 
     pars = np.append(pars, par, axis=0)
     # pars = [0, 1, 1]
@@ -306,48 +310,56 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
             order = elem[-1]
             elem = elem[:-1]
 
-        abund_val_refer = float(refer_fl.loc[elem]) if not refer_fl.loc[elem].isnull().item() else 0
+        # Try to find element abundance reference. If not found, 0 is used.
+        try:
+            abund_val_refer = float(refer_fl.loc[elem]) if not refer_fl.loc[elem].isnull().item() else 0
+        except KeyError:
+            abund_val_refer = 0
+
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
         index_append = linelist.index.tolist()[i]
 
         if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0]:
-            # Fit of lambda shift, continuum and convolution
-            spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[0])
-            change_spec_range_configfl(config_fl, lamb, cut_val[0])
+            opt_pars = None
+            par = abund_val_refer
+            for repeat in range(2):
+                # Fit of lambda shift, continuum and convolution
+                spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[0])
+                change_spec_range_configfl(config_fl, lamb, cut_val[0])
 
-            run_configfl(config_fl)
-            spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
-
-            opt_pars = optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val)
-            # opt_pars = [0,0,0]
-
-            print("\tLamb Shift:\t\t{:.4f}\n\tContinuum:\t\t{:.4f}\n\tConvolution:\t\t{:.4f}".format(opt_pars[0],
-                                                                                                     opt_pars[1],
-                                                                                                     opt_pars[2]))
-
-            # Fit of abundance
-            change_spec_range_configfl(config_fl, lamb, cut_val[3])
-            spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[2])
-
-            chi = 0
-
-            def mini_func(abund):
-                nonlocal chi
-                change_abund_configfl(config_fl, elem, find=False, abund=abund[0])
                 run_configfl(config_fl)
-                spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
-                spec = spec_operations(spec.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
-                                       convol=opt_pars[2])
+                spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
 
-                chi = chi2(spec_obs_cut, spec)
-                return chi
+                opt_pars = optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, init=opt_pars)
+                # opt_pars = [0,0,0]
 
-            par = minimize(mini_func, np.array([abund_val_refer]), method='Nelder-Mead', options={"maxiter": 10},
-                           bounds=[[abund_val_refer-abund_lim, abund_val_refer+abund_lim]]).x
+                print("\tLamb Shift:\t\t{:.4f}\n\tContinuum:\t\t{:.4f}\n\tConvolution:\t\t{:.4f}".format(opt_pars[0],
+                                                                                                         opt_pars[1],
+                                                                                                         opt_pars[2]))
 
-            print("\tAbundance:\t\t{:.4f}".format(par[0]))
-            found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
-                                           par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi)]
+                # Fit of abundance
+                change_spec_range_configfl(config_fl, lamb, cut_val[3])
+                spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[2])
+
+                chi = 0
+
+                def mini_func(abund):
+                    nonlocal chi
+                    change_abund_configfl(config_fl, elem, find=False, abund=abund[0])
+                    run_configfl(config_fl)
+                    spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
+                    spec = spec_operations(spec.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
+                                           convol=opt_pars[2])
+
+                    chi = chi2(spec_obs_cut, spec)
+                    return chi
+
+                par = minimize(mini_func, np.array([par]), method='Nelder-Mead', options={"maxiter": 10},
+                               bounds=[[par-abund_lim, par+abund_lim]]).x
+
+                print("\tAbundance:\t\t{:.4f}".format(par[0]))
+                found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
+                                               par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi)]
 
             # Plot of data
             spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[3])
@@ -444,7 +456,8 @@ def main(args):
     # Time Counter
     end = time.time()
     dif = end - init
-    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s)".format(dif // 3600, (dif // 60) % 60, dif % 60, dif)
+    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s)".format(dif // 3600, (dif // 60) % 60, dif % 60,
+                                                                            dif)
 
     # noinspection PyTypeChecker
     np.savetxt(folder+"log.txt", [time_spent], fmt="%s")

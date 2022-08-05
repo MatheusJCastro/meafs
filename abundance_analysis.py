@@ -23,15 +23,6 @@ import os
 import abundance_fit as ab_fit
 
 
-def open_files(observed_name):
-    # Function to open the observed spectra
-    spec_obs = []
-    for i in range(0, len(observed_name), 2):
-        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=observed_name[i+1]))
-
-    return spec_obs
-
-
 def erase_emission_order(abund):
     # Function to erase the emission order in the database
     new_elem = []
@@ -197,7 +188,8 @@ def get_diff(spec1, spec2):
         return [lambs, sp2_interpol-sp1_interpol]
 
 
-def plot_lines(obs_specs, abund, conv_name, config_fl, folder, order_sep, cut_val=.5, abundance_shift=.1, drop=0):
+def plot_lines(obs_specs, abund, refer_fl, conv_name, config_fl, folder, order_sep, cut_val=.5, abundance_shift=.1,
+               drop=0):
     # Plot the spectrum fit and the observed one
     abund.drop(range(drop), inplace=True)
 
@@ -221,6 +213,10 @@ def plot_lines(obs_specs, abund, conv_name, config_fl, folder, order_sep, cut_va
         spec_fit_under = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=+abundance_shift)
         spec_fit_above = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=-abundance_shift)
         spec_no = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=-99999)
+
+        # Write the refer value back
+        abund_val_refer = float(refer_fl.loc[elem]) if not refer_fl.loc[elem].isnull().item() else 0
+        ab_fit.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
         res_fit = get_diff(spec_obs, spec_fit)
         res_fit_under = get_diff(spec_obs, spec_fit_under)
@@ -315,7 +311,7 @@ def main(args):
 
     fl_name = folder+"found_values.csv"  # result file
 
-    obs_specs = open_files(observed_name)
+    linelist, refer_fl, spec_obs = ab_fit.open_files(list_name, observed_name, refer_name)
 
     # Create necessary folders
     folders_creation(folder)
@@ -325,7 +321,7 @@ def main(args):
     abund = erase_null_abund(abund)
 
     # Plot spectra graphics
-    plot_lines(obs_specs, abund, conv_name, config_fl, folder, order_sep)
+    plot_lines(spec_obs, abund, refer_fl, conv_name, config_fl, folder, order_sep)
 
     # Erase emission order and create an array with elements
     if order_sep == "1":
