@@ -362,6 +362,7 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
 
                 print("\tAbundance:\t\t{:.4f}".format(par[0]))
 
+                # Fit of Equivalent Width
                 spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
                                     flux=np.asarray(spec_obs_cut[1]) * u.Jy)
                 equiv_width = equivalent_width(spec1d)
