@@ -1,10 +1,9 @@
 # Multiple Element Abundance Fit Software - MEAFS
-<hr/>
-<hr/>
 
 *Written by: Matheus J. Castro*  
 *Under MIT License*  
 
+<hr/>
 <hr/>
 
 ## Aims
@@ -73,6 +72,7 @@ The python files receive one execution parameter and it is to indicate the path 
 - unify_plots.py: `./unify_plots.py path/to/meafs_config.txt`
 
 <hr/>
+
 ## Analysis Process
 
 ### Configuration File
