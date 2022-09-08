@@ -1,7 +1,3 @@
-<style>
-    code {color: #cc992c;}
-</style>
-
 # Multiple Element Abundance Fit Software - MEAFS
 <hr/>
 <hr/>
@@ -10,12 +6,14 @@
 *Under MIT License*  
 
 <hr/>
+
 ## Aims
 
 The MEAFS is a fitting tool software for spectra abundance analysis. The aims is to provide a medium to high analysis for each individual absorption line in a given spectrum.  
 The software also fits the wavelength shift, continuum and convolution of the spectrum.
 
 <hr/>
+
 ## Usage
 
 The configuration is based on a single file, there is no need for installation of the software and the execution can be done in a terminal.
