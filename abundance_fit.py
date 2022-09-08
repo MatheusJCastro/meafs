@@ -3,14 +3,17 @@
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v3.1                                              #
-# Last Modification: 07/01/2022                     #
+# v3.2                                              #
+# Last Modification: 09/08/2022                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
 from astropy.convolution import Gaussian1DKernel, convolve
+from specutils.analysis import equivalent_width
 from scipy.optimize import minimize
+from specutils import Spectrum1D
 import matplotlib.pyplot as plt
+import astropy.units as u
 import pandas as pd
 import numpy as np
 import subprocess
@@ -40,7 +43,7 @@ def open_previous(linelist, fl_name="found_values.csv"):
     except (FileNotFoundError, pd.errors.EmptyDataError):
         # If file not found or empty database, create a new one and return
         return linelist, pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                      "Refer Abundance", "Fit Abundance", "Differ", "Chi"])
+                                      "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"])
 
     # Reads the existing data
     new_linelist = pd.DataFrame(columns=[0, 1])
@@ -141,7 +144,7 @@ def bisec(spec, lamb):
 def cut_spec(spc, lamb, cut_val=1.):
     # Function to restrict the array in the desired range
     val0 = bisec(spc, lamb - cut_val)
-    val1 = bisec(spc, lamb + cut_val)
+    val1 = bisec(spc, lamb + cut_val)+1
 
     return spc.iloc[val0:val1]
 
@@ -290,13 +293,13 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
     # a value of 5, will select a total of 10 Angstroms with the element line wavelength in the middle
     if cut_val is None:
         # spec range vals for [continuum, convolution, abundance, plot]
-        cut_val = [10/2, 3/2, .2/2, 1/2]
+        cut_val = [10/2, 3/2, .4/2, 1/2]
 
     if not restart:
         linelist, found_val = open_previous(linelist, fl_name=folder+save_name)
     else:
         found_val = pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                          "Refer Abundance", "Fit Abundance", "Differ", "Chi"])
+                                          "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"])
 
     # For each line in the linelist file
     for i in range(len(linelist)):
@@ -321,7 +324,7 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
 
         if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0]:
             opt_pars = None
-            par = abund_val_refer
+            par = [abund_val_refer]
             for repeat in range(2):
                 # Fit of lambda shift, continuum and convolution
                 spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[0])
@@ -354,12 +357,19 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
                     chi = chi2(spec_obs_cut, spec)
                     return chi
 
-                par = minimize(mini_func, np.array([par]), method='Nelder-Mead', options={"maxiter": 10},
-                               bounds=[[par-abund_lim, par+abund_lim]]).x
+                par = minimize(mini_func, np.array(par), method='Nelder-Mead', options={"maxiter": 10},
+                               bounds=[[par[0]-abund_lim, par[0]+abund_lim]]).x
 
                 print("\tAbundance:\t\t{:.4f}".format(par[0]))
+
+                spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
+                                    flux=np.asarray(spec_obs_cut[1]) * u.Jy)
+                equiv_width = equivalent_width(spec1d)
+                equiv_width = np.float128(equiv_width / u.AA)
+
                 found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
-                                               par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi)]
+                                               par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi),
+                                               "{:.4e}".format(equiv_width)]
 
             # Plot of data
             spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[3])
@@ -368,6 +378,7 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
             run_configfl(config_fl)
 
             spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+            # noinspection PyUnresolvedReferences
             spec_fit = spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
                                        convol=opt_pars[2])
 
@@ -377,7 +388,7 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
             change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
         else:
             found_val.loc[index_append] = [elem+order, lamb, np.nan, np.nan, np.nan, abund_val_refer, np.nan,
-                                           np.nan, np.nan]
+                                           np.nan, np.nan, np.nan]
             print("\tValue not found.")
 
         # Write the line result to the csv file
