@@ -3,7 +3,7 @@
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v3.2                                              #
+# v3.3                                              #
 # Last Modification: 09/08/2022                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
@@ -35,15 +35,14 @@ def open_files(list_name, observed_name, refer_name):
     return linelist, refer_fl, spec_obs
 
 
-def open_previous(linelist, fl_name="found_values.csv"):
+def open_previous(linelist, columns_names, fl_name="found_values.csv"):
     # Function to open the previous results and analyze it
     try:
         # Try to open
         prev = pd.read_csv(fl_name, delimiter=",")
     except (FileNotFoundError, pd.errors.EmptyDataError):
         # If file not found or empty database, create a new one and return
-        return linelist, pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                      "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"])
+        return linelist, pd.DataFrame(columns=columns_names)
 
     # Reads the existing data
     new_linelist = pd.DataFrame(columns=[0, 1])
@@ -270,6 +269,7 @@ def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, init=None):
         return chi2(spec_obs_cut, sp_fit)
     pars = minimize(opt_desloc_continuum, np.array([init[0], init[1]]), method='Nelder-Mead').x
 
+
     spec_obs_cut = cut_spec(spec_obs_cut, lamb, cut_val=cut_val[1])
     spec_conv = cut_spec(spec_conv, lamb, cut_val=cut_val[1])
 
@@ -295,11 +295,13 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
         # spec range vals for [continuum, convolution, abundance, plot]
         cut_val = [10/2, 3/2, .4/2, 1/2]
 
+    columns_names = ["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
+                     "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"]
+
     if not restart:
-        linelist, found_val = open_previous(linelist, fl_name=folder+save_name)
+        linelist, found_val = open_previous(linelist, columns_names, fl_name=folder+save_name)
     else:
-        found_val = pd.DataFrame(columns=["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                                          "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"])
+        found_val = pd.DataFrame(columns=columns_names)
 
     # For each line in the linelist file
     for i in range(len(linelist)):
@@ -322,7 +324,9 @@ def adjust_abundance(linelist, spec_obs, conv_name, config_fl, refer_fl, folder,
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
         index_append = linelist.index.tolist()[i]
 
-        if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0]:
+        if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0] and \
+           len(cut_spec(spec_obs, lamb, cut_val=cut_val[0])) > 0:
+
             opt_pars = None
             par = [abund_val_refer]
             for repeat in range(2):
