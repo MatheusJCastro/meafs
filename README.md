@@ -1,3 +1,5 @@
+![Meafs Logo](Meafs Logo.png)
+
 # Multiple Element Abundance Fit Software - MEAFS
 
 *Written by: Matheus J. Castro*  
