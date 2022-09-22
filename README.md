@@ -1,4 +1,4 @@
-![Meafs Logo](Meafs Logo.png)
+![Meafs Logo](Meafs_Logo.png)
 
 # Multiple Element Abundance Fit Software - MEAFS
 
