@@ -19,7 +19,10 @@ import os
 import sys
 
 # Import the main script
-import abundance_fit as ab_fit
+try:
+    import abundance_fit as ab_fit
+except ModuleNotFoundError:
+    from . import abundance_fit as ab_fit
 
 
 def write(fl_name, data):

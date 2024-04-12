@@ -20,7 +20,10 @@ import sys
 import os
 
 # Import the main script
-import abundance_fit as ab_fit
+try:
+    import abundance_fit as ab_fit
+except ModuleNotFoundError:
+    from . import abundance_fit as ab_fit
 
 
 def erase_emission_order(abund):

@@ -1,0 +1,40 @@
+[project]
+name = "meafs"
+version = "3.3"
+authors = [
+    { name="Matheus J. Castro", email="matheusdejesuscastro@gmail.com" }
+]
+description="Multiple Element Abundance Fit Software"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers=[
+ "Programming Language :: Python :: 3",
+ "License :: MIT License",
+ "Operating System :: OS Independent",
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "astropy",
+    "specutils",
+    "scipy",
+    "matplotlib",
+    "pandas",
+    "numpy",
+#    "subprocess",
+#    "ctypes",
+#    "time",
+#    "sys",
+#    "os",
+    "desktop_file",
+    "pathlib",
+    "PyQt6"
+]
+
+[project.scripts]
+meafs = "meafs_code.gui:main"
+meafs-desktop-create = "meafs_code.desktop_entry:create"
+meafs-desktop-remove = "meafs_code.desktop_entry:remove"
+
+[project.urls]
+"Homepage" = "https://github.com/MatheusJCastro/meafs"
+
