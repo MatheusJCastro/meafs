@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v4.0                                              #
-# Last Modification: 04/12/2024                     #
+# v4.2                                              #
+# Last Modification: 04/17/2024                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
 from astropy.convolution import Gaussian1DKernel, convolve
 from specutils.analysis import equivalent_width
-from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6 import QtWidgets, QtCore
 from scipy.optimize import minimize
 from specutils import Spectrum1D
 import matplotlib.pyplot as plt
@@ -23,6 +22,8 @@ import ctypes
 import time
 import sys
 import os
+
+version = 4.2
 
 
 def open_linelist_refer_fl(list_name):
@@ -41,7 +42,7 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
     return spec_obs
 
 
-def open_previous(linelist, columns_names, fl_name="found_values.csv"):
+def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
     # Function to open the previous results and analyze it
     try:
         # Try to open
@@ -53,13 +54,10 @@ def open_previous(linelist, columns_names, fl_name="found_values.csv"):
     # Reads the existing data
     new_linelist = pd.DataFrame(columns=[0, 1])
     for i in range(len(linelist)):
-        try:
-            if linelist.iloc[i][0] == prev.iloc[i].Element and linelist.iloc[i][1] == prev.iloc[i]["Lambda (A)"]:
-                if prev["Fit Abundance"].isnull().iloc[i] or prev.Differ.iloc[i] == 0:
-                    new_linelist.loc[i] = linelist.iloc[i]
-            else:
-                new_linelist.loc[i] = linelist.iloc[i]
-        except IndexError:
+        elem = linelist.iloc[i][0]
+        lamb = linelist.iloc[i][1]
+        ind = prev[(prev["Element"] == elem) & (prev["Lambda (A)"] == float(lamb))].index
+        if ind.tolist() == []:
             new_linelist.loc[i] = linelist.iloc[i]
 
     return new_linelist, prev
@@ -67,7 +65,7 @@ def open_previous(linelist, columns_names, fl_name="found_values.csv"):
 
 def c_init(c_name):
     # Funtion to initialize the C shared library
-    c_library = ctypes.CDLL("./{}".format(c_name))
+    c_library = ctypes.CDLL("{}".format(c_name))
 
     # Defining functions argument types
     c_library.bisec.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_float]
@@ -80,11 +78,7 @@ def c_init(c_name):
     return c_library
 
 
-def plot_spec_gui(specs, canvas, ax):
-    canvas.figure.delaxes(ax)
-    ax = canvas.figure.add_subplot(111)
-    ax.grid()
-
+def plot_spec_gui(specs, canvas, ax, plot_line_refer):
     if specs != []:
         min_all_old = min(specs[0].iloc[:, 0])
         max_all_old = max(specs[0].iloc[:, 0])
@@ -92,8 +86,14 @@ def plot_spec_gui(specs, canvas, ax):
         min_all_old = 0
         max_all_old = 1
 
+    same_line_plots = plot_line_refer[plot_line_refer["elem"] == "spec"]
+    for line in range(len(same_line_plots)):
+        same_line_plots.iloc[line]["refer"].remove()
+        ind = plot_line_refer[plot_line_refer["refer"] == same_line_plots.iloc[line]["refer"]].index
+        plot_line_refer = plot_line_refer.drop(ind)
+
     for spec in specs:
-        ax.plot(spec.iloc[:, 0], spec.iloc[:, 1])
+        lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1])
         min_all = min(spec.iloc[:, 0])
         max_all = max(spec.iloc[:, 0])
         if min_all < min_all_old:
@@ -101,11 +101,12 @@ def plot_spec_gui(specs, canvas, ax):
         if max_all > max_all_old:
             max_all_old = max_all
 
-    ax.set_xlim(min_all_old, max_all_old)
+        plot_line_refer.loc[len(plot_line_refer)] = {"elem": "spec", "wave": "all", "refer": lineplot[0]}
 
+    ax.set_xlim(min_all_old, max_all_old)
     canvas.draw()
 
-    return ax
+    return plot_line_refer
 
 
 def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
@@ -240,13 +241,17 @@ def chi2(spec1, spec2):
     spec1x = spec1[0].tolist()
     spec1y = spec1[1].tolist()
 
+    # noinspection PyCallingNonCallable,PyTypeChecker
     spec1x = (ctypes.c_float * len(spec1x))(*spec1x)
+    # noinspection PyCallingNonCallable,PyTypeChecker
     spec1y = (ctypes.c_float * len(spec1y))(*spec1y)
 
     spec2x = spec2[0].tolist()
     spec2y = spec2[1].tolist()
 
+    # noinspection PyCallingNonCallable,PyTypeChecker
     spec2x = (ctypes.c_float * len(spec2x))(*spec2x)
+    # noinspection PyCallingNonCallable,PyTypeChecker
     spec2y = (ctypes.c_float * len(spec2y))(*spec2y)
 
     return c_lib.chi2(spec1x, spec1y, len(spec1x), spec2x, spec2y, len(spec2x))
@@ -329,7 +334,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         max_all_old = 1
 
     for j, sp in enumerate(spec_fit_arr):
-        same_elem_plots = plot_line_refer[plot_line_refer["elem"] == elem]
+        same_elem_plots = plot_line_refer[plot_line_refer["elem"] == elem+order]
         same_line_plots = same_elem_plots[same_elem_plots["wave"] == lamb]
         for line in range(len(same_line_plots)):
             same_line_plots.iloc[line]["refer"].remove()
@@ -337,7 +342,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
             plot_line_refer = plot_line_refer.drop(ind)
 
         lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
-        ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
+        axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
         min_all = min(sp.iloc[:, 0])
         max_all = max(sp.iloc[:, 0])
         if min_all < min_all_old:
@@ -346,6 +351,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
             max_all_old = max_all
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": lineplot[0]}
+        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": axvlineplot}
 
         sp.to_csv(Path(folder).joinpath("On_time_Plots",
                                         "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, j + 1)),
@@ -431,7 +437,32 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
                      "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"]
 
     if not restart:
-        linelist, found_val = open_previous(linelist, columns_names, fl_name=folder+save_name)
+        linelist, found_val = open_previous(linelist, columns_names, fl_name=Path(folder).joinpath(save_name))
+
+        if ui is not None:
+            rowpos = ui.abundancetable.rowCount()
+            for i in range(len(found_val)):
+                elem = found_val.iloc[i, 0]
+                lamb = found_val.iloc[i, 1]
+
+                ui.abundancetable.insertRow(rowpos+i)
+                ui.abundancetable.setItem(rowpos+i, 0, QtWidgets.QTableWidgetItem(str(elem)))
+                ui.abundancetable.setItem(rowpos+i, 1, QtWidgets.QTableWidgetItem(str(lamb)))
+                path = Path(folder).joinpath("On_time_Plots")
+                count = 0
+                while True:
+                    file = path.joinpath("fit_{}_{}_ang_{}.csv".format(elem, lamb, count + 1))
+
+                    if os.path.isfile(file):
+                        data = pd.read_csv(file)
+                        count += 1
+                        lineplot = ax.plot(data.iloc[:, 0], data.iloc[:, 1], "--", linewidth=1.5)
+                        axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
+                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": lineplot[0]}
+                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": axvlineplot}
+                    else:
+                        break
+                canvas.draw()
     else:
         found_val = pd.DataFrame(columns=columns_names)
 
@@ -462,7 +493,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
             abund_val_refer = 0
 
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
-        index_append = linelist.index.tolist()[i]
+        index_append = len(found_val) #  linelist.index.tolist()[i]
 
         if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0] and \
            len(cut_spec(spec_obs, lamb, cut_val=cut_val[0])) > 0:
@@ -524,9 +555,11 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
                         return found_val, ax, plot_line_refer
 
                 # Fit of Equivalent Width
+                # noinspection PyUnresolvedReferences
                 spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
                                     flux=np.asarray(spec_obs_cut[1]) * u.Jy)
                 equiv_width = equivalent_width(spec1d)
+                # noinspection PyUnresolvedReferences
                 equiv_width = np.float128(equiv_width / u.AA)
 
             found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
@@ -564,11 +597,11 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
         if ui is not None:
             rowpos = ui.abundancetable.rowCount()
             ui.abundancetable.insertRow(rowpos)
-            ui.abundancetable.setItem(i, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
-            ui.abundancetable.setItem(i, 1, QtWidgets.QTableWidgetItem(str(lamb)))
+            ui.abundancetable.setItem(rowpos, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
+            ui.abundancetable.setItem(rowpos, 1, QtWidgets.QTableWidgetItem(str(lamb)))
 
-            linescurrent = ui.progressvalue.text().split("/")
-            ui.progressvalue.setText("{}/{}".format(i+1, linescurrent[1]))
+            # linescurrent = ui.progressvalue.text().split("/")
+            ui.progressvalue.setText("{}/{}".format(i+1, len(linelist)))
 
     return found_val, ax, plot_line_refer
 
@@ -637,6 +670,11 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     ui.run.setText("Running")
     ui.run.setStyleSheet("background-color: red")
 
+    if ui.restart.checkState() == QtCore.Qt.CheckState.Checked:
+        restart = True
+    else:
+        restart = False
+
     folder = ui.outputname.text()
 
     # Create necessary folders
@@ -677,7 +715,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     if abundplot is None:
         for spec in spec_obs:
             results_array, ax, plot_line_refer = fit_abundance(linelist, spec, refer_fl, folder, methodconfig,
-                                                               order_sep=1, restart=False, ui=ui, canvas=canvas, ax=ax,
+                                                               order_sep=1, restart=restart, ui=ui, canvas=canvas, ax=ax,
                                                                cut_val=cut_val, plot_line_refer=plot_line_refer,
                                                                opt_pars=opt_pars, repfit=repfit)
     else:
@@ -745,7 +783,7 @@ def main(args):
     # Adjust parameters for each spectra declared
     # Caution: be aware of data overlay on the final csv file
     for spec in spec_obs:
-        fit_abundance(linelist, spec, refer_fl, folder, type_synth, list_name[2],
+        fit_abundance(linelist, spec, refer_fl, folder, type_synth, order_sep=int(list_name[2]),
                       restart=False)
 
     # Time Counter
@@ -772,19 +810,19 @@ def args_menu(args):
 
         return config_name
     else:
-        help_msg = "\n\t\t\033[1;31mHelp Section\033[m\nabundance_fit.py v3.0\n" \
+        help_msg = "\n\t\t\033[1;31mHelp Section\033[m\nabundance_fit.py v{}\n" \
                    "Usage: python3 abundance_fit.py [options] argument\n\n" \
-                   "Written by Matheus J. Castro <matheusj_castro@usp.br>\nUnder MIT License.\n\n" \
+                   "Written by Matheus J. Castro <https://github.com/MatheusJCastro/meafs>\nUnder MIT License.\n\n" \
                    "This program find elements abundances of a given spectrum.\n\n" \
                    "Argument needs to be a \".txt\" file with the MEAFS configuration.\n" \
                    "If no argument is given, the default name is \"meafs_config.txt\".\n\n" \
                    "Options are:\n -h,  -help\t|\tShow this help;\n--h, --help\t|\tShow this help;\n" \
-                   "\n\nExample:\n./abundance_fit.py meafs_config.txt\n"
+                   "\n\nExample:\n./abundance_fit.py meafs_config.txt\n".format(version)
         print(help_msg)
 
 
+if 'abundance_fit' in __name__:
+    c_lib = c_init(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so"))  # initialize the C library
 if __name__ == '__main__':
     arg = sys.argv[1:]
     main(arg)  # call main subroutine
-if __name__ == 'scripts.abundance_fit':
-    c_lib = c_init("scripts/bisec_interpol.so")  # initialize the C library
