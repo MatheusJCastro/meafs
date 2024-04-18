@@ -16,7 +16,7 @@
     1. [Creating Anaconda Environment (recommended)](<#creating-anaconda-environment-recommended>)
     2. [Getting the pip version (recommended)](<#getting-the-pip-version-recommended-not-yet-working>)
     3. [Cloning from GitHub](<#cloning-from-github>)
-    4. [Adding the PATH (for non Anaconda installations)](<#adding-the-path-for-non-anaconda-installations)>)
+    4. [Adding the PATH (for non Anaconda installations)](<#adding-the-path-for-non-anaconda-installations>)
     5. [Step-by-Step for Windows (Python + GCC)](<#step-by-step-for-windows-python--gcc>)
     6. [Compilation](<#compilation>)
 4. [Usage](#Usage)
