@@ -2,7 +2,7 @@
 name = "meafs"
 version = "4.0"
 authors = [
-    { name="Matheus J. Castro", email="----" }
+    { name="Matheus J. Castro" }
 ]
 description="Multiple Element Abundance Fit Software"
 readme = "README.md"
