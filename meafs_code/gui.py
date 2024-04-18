@@ -176,6 +176,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.openabundances.setIcon(QtGui.QIcon.fromTheme('document-open'))
         self.save.setIcon(QtGui.QIcon.fromTheme('document-save'))
         self.saveas.setIcon(QtGui.QIcon.fromTheme('document-save-as'))
+        self.autosave.setIcon(QtGui.QIcon.fromTheme('chronometer'))
         self.quit.setIcon(QtGui.QIcon.fromTheme('application-exit'))
 
         self.filepath = None

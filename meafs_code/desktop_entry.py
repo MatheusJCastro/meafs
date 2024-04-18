@@ -62,7 +62,7 @@ def create():
         shortcut.save()
 
     conda, dir = get_curr_dir()
-    icon_path = str(Path(dir).joinpath("Meafs_Icon.ico"))
+    icon_path = str(Path(dir).joinpath("images", "Meafs_Icon.ico"))
 
     # Get the actual Python version
     vers = str(sys.version_info.major) + "." + str(sys.version_info.minor)

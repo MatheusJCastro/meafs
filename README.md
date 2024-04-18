@@ -1,4 +1,4 @@
-![Meafs Logo](Meafs_Logo.png)
+![Meafs Logo](meafs_code/images/Meafs_Logo.png)
 
 # Multiple Element Abundance Fit Software - MEAFS
 
@@ -8,166 +8,198 @@
 <hr/>
 <hr/>
 
+## Table of Contents
+
+1. [Aims](#Aims)
+2. [Prerequisites](#Prerequisites)
+3. [Instalation](#Instalation)
+    1. [Creating Anaconda Environment (recommended)](<### Creating Anaconda Environment (recommended)>)
+    2. [Getting the pip version (recommended)](<### Getting the pip version (recommended) (not yet working)>)
+    3. [Cloning from GitHub](<### Cloning from GitHub>)
+    4. [Adding the PATH (for non Anaconda installations)](<### Adding the PATH (for non Anaconda installations)>)
+    5. [Step-by-Step for Windows (Python + GCC)](<### Step-by-Step for Windows (Python + GCC)>)
+    6. [Compilation](<### Compilation>)
+4. [Usage](#Usage)
+    1. [With Installation](<### With Installation>)
+    2. [Without Installation](<### Without Installation>)
+    3. [Flags and Arguments](<### Flags and Arguments>)
+    4. [Auto Save](<### Auto Save>)
+5. [Uninstall](#Uninstall)
+
 ## Aims
 
 The MEAFS is a fitting tool software for spectra abundance analysis. The aims is to provide a medium to high analysis for each individual absorption line in a given spectrum.  
 The software also fits the wavelength shift, continuum and convolution of the spectrum.
 
-<hr/>
+![Meafs GUI](meafs_code/images/Meafs_Gui.png)
 
-## Usage
+## Prerequisites
 
-The configuration is based on a single file, there is no need for installation of the software and the execution can be done in a terminal.
+- Python3 and GCC needs to be previously installed in the system (step-by-step to install for Windows users [bellow](<### Step-by-Step for Windows (Python + GCC)>));
 
-To download the MEAFS, go to a terminal and type (git package must be installed):
+- A software for creating a synthetic spectrum also needs to be previously installed. This version of MEAFS is compatible with the following softwares:
+    - Turbospectrum2019: [https://github.com/bertrandplez/Turbospectrum2019](https://github.com/bertrandplez/Turbospectrum2019)
+
+- Optionally: to execute the `unify_plots.py`, a LaTeX installation must be present on the system.
+
+- Optionally: [Anaconda](<### Creating Anaconda Environment (recommended)>).
+
+## Instalation
+
+There are many options to run MEAFS. We strongly recommend the use of Anaconda environment, but it is not mandatory.  
+You can install it from pip or run directly the source code from the repository.  
+
+All the methods listed below work in Linux, Windows or MacOS **if you have python and gcc installed** (step-by-step to install for Windows users [bellow](<### Step-by-Step for Windows (Python + GCC)>)).
+
+### Creating Anaconda Environment (recommended)
+- First, download anaconda [here](https://www.anaconda.com/products/individual#download-section) and execute the script.
+
+    - For Linux users, if needed, export anaconda to your path by adding the line `export PATH="/home/USERNAME/anaconda3/bin:$PATH"` (changing the `USERNAME` to your user) to the `~/.bashrc` file. Close and open a new terminal to update the path.
+
+    - If desirable, disable autoactivation of anaconda with `conda config --set auto_activate_base false`.
+
+- Create MEAFS enviroment with `conda create -n meafs`;
+
+- Then, to activate the environment, type `conda activate meafs`;
+
+### Getting the pip version (recommended) (not yet working)
+
+<s>
+You can easily get the pip version by typing in the terminal:
+
+#```bash
+#pip install meafs
+#```
+
+</s>
+
+### Cloning from GitHub
+
+Or you can directly clone from the GitHub page with:
 
 ```bash
 git clone https://github.com/MatheusJCastro/meafs.git
 ```
 
-### Prerequisites
+After cloning, you can install it with pip or run without any installation at all (see the [Usage](<### Without Installation>)  section).  
 
-- Python3 need to be previously installed in the system;
+To build the package and install it with pip from the source, first install the `build` package:  
 
-- A software for creating a synthetic spectrum also need to be previously installed. This version of MEAFS is compatible with the following softwares:
-    - Turbospectrum2019: [https://github.com/bertrandplez/Turbospectrum2019](https://github.com/bertrandplez/Turbospectrum2019)
+```bash
+pip install build
+```
 
-- Optionally: to execute the `unify_plots.py`, a LaTeX installation must be present on the system.
+Then go to the MEAFS source code directory and type:
+
+```bash
+python3 -m build
+pip install .
+```
+
+### Adding the PATH (for non Anaconda installations)
+If you do not use Anaconda, you need to add the path of the pip scripts into the system path variable if you have not already done so.  
+**This step is not necessary if you are running without installation.**
+
+#### Linux
+For Linux users, you can add the following line in the end of the file `~/.bashrc`, changing `USER` to your own user.
+
+```bash
+export PATH="${PATH}:/home/USER/.local/bin/"
+```
+
+For some Linux distributions and Python installations, the locale of the executables can slightly change. If this does not work out, you can try differents paths such as `/usr/local/bin` and others.
+
+#### Windows
+
+For Windows users, you need to open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add a new line with one of the followings (check the python location first):
+
+```bash
+C:\Users\Windows\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts
+```
+
+Or:
+
+```bash
+C:\Users\USERNAME\AppData\Local\Programs\Python\Python311\Scripts
+```
+
+**Be aware of different Python versions, the path will change also. Always verify if the current path exists.**
+
+### Step-by-Step for Windows (Python + GCC)
+Obs: this step-by-step guide was made using a fresh new install of Windows 10.
+
+#### Python
+
+Go to [Python Windows Releases](https://www.python.org/downloads/windows/) and download an stable release by clicking on it and downloading the *Windows installer (64-bit) Recommended*. After downloading, exectue the files and follow the installation process.
+
+- Add the Python folder to the path.
+    - Open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add two new lines:
+        - `C:\Users\USERNAME\AppData\Local\Programs\Python\Python311`
+        - `C:\Users\USERNAME\AppData\Local\Programs\Python\Python311\Scripts`
+        - Change `USERNAME` with your username and `Python311` to the actual version that you installed.
+- Go to the python folder (ex: `C:\Users\USERNAME\AppData\Local\Programs\Python\Python311`) and create a copy of the `python.exe` file in the same location with the name `python3.11.exe`
+
+#### GCC
+
+Download the *x64* version of [Winlibs](https://winlibs.com).
+    
+- Choose the x64 MCF **with** all the libraries;
+- After downloading, decompress the file and move the `mingw64` folder to `C:\Program Files\`;
+- Now add the folder `bin` of the `mingw64` folder to the path:
+        - Use the sames steps as before but now add the line: `C:\Program Files\mingw64\bin`.
 
 ### Compilation
 
-There is one file written in C Language (`bisec_interpol.c`), the compilation directives can be found in the `comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
+There is one file written in C Language (`meafs/meafs_code/scripts/bisec_interpol.c`), the compilation directives can be found in the `meafs/meafs_code/scripts/comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
 
-For Linux users just add execution privileges at the `comp.sh` file and execute it in a terminal to create the binary. For that, open a terminal in the MEAFS folder and type:
+For Linux users just add execution privileges at the `comp.sh` file and execute it in a terminal to create the binary. For that, open a terminal in the `meafs/meafs_code/scripts/` folder and type:
 
 ```bash
 chmod +x comp.sh
 ./comp.sh
 ```
 
-### Execution
+## Usage
 
-The three python files need to be adjusted for the execution of the MEAFS. The first line of each file is used to select the local of the Python3 environment, this may vary from each operating system or type of python installation. The first line of the python files using the default paths for python of each OS are:
-
-| OS      | First line at python files                             |
-|---------|--------------------------------------------------------|
-| Linux   | #!/usr/bin/env python3                                 |
-| macOS   | #!/usr/bin/env python3                                 |
-| Windows | Erase the line and configure it to execute with python |
-
-#### Python Files
-
-For Linux users, add execution privileges for the files with:
+### With Installation
+You can create menu entries for MEAFS by typing in the terminal or cmd:  
 
 ```bash
-chmod +x abundance_fit.py
-chmod +x abundance_analysis.py
-chmod +x unify_plots.py
+meafs-desktop-create
 ```
 
-The python files receive one execution parameter and it is to indicate the path to the configuration file (default name is `meafs_config.txt`, more about it later in this document). For Linux users, the execution can be achieved with:
+Then, search in the menu for *MEAFS*, and in Windows, a Desktop link will also be created.  
+But, if you do not want to create menu entries, just type `meafs` or `python -m meafs` in the terminal or cmd to launch it.
 
-- abundance_fit.py: `./abundance_fit.py path/to/meafs_config.txt`
+### Without Installation
+Simply execute the file `gui.py` and it will power the GUI.
 
-- abundance_analysis.py: `./abundance_analysis.py path/to/meafs_config.txt`
+### Flags and Arguments
 
-- unify_plots.py: `./unify_plots.py path/to/meafs_config.txt`
+There are some flags that can be passed with the command-line.
 
-<hr/>
+- `-h` or `--help`: Show the help section;
+- `-v` or `--version`: Show version number;
+- `-l` or `--last`: Load the last closed session. Default location is `meafs_code/auto_save_last.pkl`
+- `-s` or `--load-auto-save`: Load the auto saved session. Default location is: `meafs_code/auto_save.pkl`
 
-## Analysis Process
+Also, any saved section can be passed as an argument. It will power the GUI with it. If no argument is given, the GUI will power with a new empty session.
 
-### Configuration File
+### Auto Save
+In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 5 seconds in a file named `auto_save.pkl`.  
+Also, if auto save is enabled, when MEAFS is closed, it will save the session in the `auto_save_last.pkl` file.  
+These files are located under the MEAFS directory and the `-h` [flag](<### Flags and Arguments>) will show the location.  
+To load any of these files, simply use the [flags](<### Flags and Arguments>) or load them in the *File* - *Open...* menu
 
-The `meafs_config.txt` file contains directives for the MEAFS execution process. All files indicated in this configuration file can be passed using relative or absolute paths.
+## Uninstall
 
-Comments in this file are ignored and they start with `#`.
+If you did not install with pip (both directly or by cloning), you can just erase the *meafs* folder.  
 
-For the files that a *type* is required, there are two possible values: *tab* or *comma*. This indicates the type of column separation of the file.
+Otherwise, first remove the menu entries (if you have added it) and then uninstall:
 
-The parameters are:
-
-1. Linelist path to file;
-2. Linelist type;
-3. Boolean chooses (0 or 1) about the emission order presence in linelist file;
-4. Abundance reference file path for elements;
-5. Abundance reference file type;
-6. Synthetic Spectrum Softeare to use;
-7. Configuration file path for the synthetic spectrum software;
-8. Synthetic Spectrum Software output file path;
-9. Folder name path to save the results (if not present, the folder will be created);
-10. Observed spectrum data file path (ASCII file with two columns);
-11. Observed spectrum data file type.
-
-An important observation: you can add as many spectrum data files as you want, just adding more lines at the end of the configuration file indicating the path to spectrum and the type of it. 
-
-Example of a configuration file:
-
-```txt
-# Configuration File for MEAFS Code
-# txt or csv files need specification of the type of separator at the next line
-# Possible values are: tab, comma
-
-# Linelist with the lines to analyze
-Heavylist.txt
-tab
-
-# Does linelist have emission order after element?
-1
-# 0
-
-# Elements Reference list
-refer_values.csv
-comma
-
-# Synthetic Spectrum Software
-Turbospectrum
-# PFANT
-
-# Configuration file for Synthetic Spectrum Software
-Turbospectrum2019/COM-v19.1/CS31.com
-
-# Synthetic Spectrum Output
-Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec
-
-# Folder name to save results
-Results
-
-# Observed Spectra (one or more)
-cs340n.dat
-tab
-cs437n.dat
-tab
+```bash
+meafs-desktop-remove
+pip uninstall meafs
 ```
-
-### Order of Execution
-
-1. The first file to execute is the one responsible for the fitting, the file is the one named as `abundance_fit.py`. This file will create the directory where the results will be stored, a folder inside it named as `On_time_Plots` and a file named `found_values.csv`.
-
-    The folder created contains plots for each line evaluated, showing some previous analysis. The file created is where all the results will be stored. The columns of the `found_values.csv` file are:
-
-    1. Element name;
-    2. Absorption line wavelength in Angstroms;
-    3. Found Wavelength shift;
-    4. Found Continuum;
-    5. Found Convolution;
-    6. Abundance of reference;
-    7. Found Abundance;
-    8. Difference between the reference and the found abundance;
-    9. Chi Square of the abundance fit;
-    10. Equivalent Width of the line curve fitted.
-
-    If, for some reason, the `abundance_fit.py` file stops execution, the lines already analyzed aren't lost, since after each line the MEAFS saves the results in the `found_values.csv` file. Then, to return execution where it stopped, simply run the python again, MEAFS will automatically detect the results folder and it will remove from the execution the lines present in the `found_values.csv` file.
-
-2. The second file, the `abundance_analysis.py` will generate some plots with the data inside the `found_values.csv` file. All files created will be stored in a folder called `Abundance_Analysis` inside the results folder defined in the configuration file.
-
-    The script makes four types of analysis:
-
-    1. Histograms for each element with found abundances;
-    2. Histograms for each element with difference between the reference and the found abundance;
-    3. Plot of each line containing the original spectrum and the synthetic one.
-    4. Box plot summarizing the found abundances and their confidence levels.
-
-3. The last python file, the `unify_plots.py`, simply create a new folder called `Unique_Plot` at the results folder and, using LaTeX, unify all plots created with `abundance_fit.py` and `abundance_analysis.py` in a five PDF file, each file for one type of analyses made.
 
 <hr/>
