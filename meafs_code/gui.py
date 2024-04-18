@@ -62,6 +62,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Load Gui
         super(MEAFS, self).__init__(parent)
         self.setupUi(self)
+        self.setWindowIcon(QtGui.QIcon(str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))))
 
         # Read Settings
         self.sett_path = Path(os.path.dirname(__file__)).joinpath("settings.csv")
