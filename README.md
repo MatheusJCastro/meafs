@@ -58,7 +58,7 @@ All the methods listed below work in Linux, Windows or MacOS **if you have pytho
 
     - If desirable, disable autoactivation of anaconda with `conda config --set auto_activate_base false`.
 
-- Create MEAFS enviroment with `conda create -n meafs`;
+- Create MEAFS enviroment with `conda create python -n meafs`;
 
 - Then, to activate the environment, type `conda activate meafs`;
 
