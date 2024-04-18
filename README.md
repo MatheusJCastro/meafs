@@ -13,17 +13,17 @@
 1. [Aims](#Aims)
 2. [Prerequisites](#Prerequisites)
 3. [Instalation](#Instalation)
-    1. [Creating Anaconda Environment (recommended)](<### Creating Anaconda Environment (recommended)>)
-    2. [Getting the pip version (recommended)](<### Getting the pip version (recommended) (not yet working)>)
-    3. [Cloning from GitHub](<### Cloning from GitHub>)
-    4. [Adding the PATH (for non Anaconda installations)](<### Adding the PATH (for non Anaconda installations)>)
-    5. [Step-by-Step for Windows (Python + GCC)](<### Step-by-Step for Windows (Python + GCC)>)
-    6. [Compilation](<### Compilation>)
+    1. [Creating Anaconda Environment (recommended)](<#creating-anaconda-environment-recommended>)
+    2. [Getting the pip version (recommended)](<#getting-the-pip-version-recommended-not-yet-working>)
+    3. [Cloning from GitHub](<#cloning-from-github>)
+    4. [Adding the PATH (for non Anaconda installations)](<#adding-the-path-for-non-anaconda-installations)>)
+    5. [Step-by-Step for Windows (Python + GCC)](<#step-by-step-for-windows-python--gcc>)
+    6. [Compilation](<#compilation>)
 4. [Usage](#Usage)
-    1. [With Installation](<### With Installation>)
-    2. [Without Installation](<### Without Installation>)
-    3. [Flags and Arguments](<### Flags and Arguments>)
-    4. [Auto Save](<### Auto Save>)
+    1. [With Installation](<#with-installation>)
+    2. [Without Installation](<#without-installation>)
+    3. [Flags and Arguments](<#flags-and-arguments>)
+    4. [Auto Save](<#auto-save>)
 5. [Uninstall](#Uninstall)
 
 ## Aims
@@ -35,21 +35,21 @@ The software also fits the wavelength shift, continuum and convolution of the sp
 
 ## Prerequisites
 
-- Python3 and GCC needs to be previously installed in the system (step-by-step to install for Windows users [bellow](<### Step-by-Step for Windows (Python + GCC)>));
+- Python3 and GCC needs to be previously installed in the system (step-by-step to install for Windows users [bellow](<#step-by-step-for-windows-python--gcc>));
 
 - A software for creating a synthetic spectrum also needs to be previously installed. This version of MEAFS is compatible with the following softwares:
     - Turbospectrum2019: [https://github.com/bertrandplez/Turbospectrum2019](https://github.com/bertrandplez/Turbospectrum2019)
 
 - Optionally: to execute the `unify_plots.py`, a LaTeX installation must be present on the system.
 
-- Optionally: [Anaconda](<### Creating Anaconda Environment (recommended)>).
+- Optionally: [Anaconda](<#creating-anaconda-environment-recommended>).
 
 ## Instalation
 
 There are many options to run MEAFS. We strongly recommend the use of Anaconda environment, but it is not mandatory.  
 You can install it from pip or run directly the source code from the repository.  
 
-All the methods listed below work in Linux, Windows or MacOS **if you have python and gcc installed** (step-by-step to install for Windows users [bellow](<### Step-by-Step for Windows (Python + GCC)>)).
+All the methods listed below work in Linux, Windows or MacOS **if you have python and gcc installed** (step-by-step to install for Windows users [bellow](<#step-by-step-for-windows-python--gcc>)).
 
 ### Creating Anaconda Environment (recommended)
 - First, download anaconda [here](https://www.anaconda.com/products/individual#download-section) and execute the script.
@@ -81,7 +81,7 @@ Or you can directly clone from the GitHub page with:
 git clone https://github.com/MatheusJCastro/meafs.git
 ```
 
-After cloning, you can install it with pip or run without any installation at all (see the [Usage](<### Without Installation>)  section).  
+After cloning, you can install it with pip or run without any installation at all (see the [Usage](<#without-installation>)  section).  
 
 To build the package and install it with pip from the source, first install the `build` package:  
 
@@ -188,8 +188,8 @@ Also, any saved section can be passed as an argument. It will power the GUI with
 ### Auto Save
 In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 5 seconds in a file named `auto_save.pkl`.  
 Also, if auto save is enabled, when MEAFS is closed, it will save the session in the `auto_save_last.pkl` file.  
-These files are located under the MEAFS directory and the `-h` [flag](<### Flags and Arguments>) will show the location.  
-To load any of these files, simply use the [flags](<### Flags and Arguments>) or load them in the *File* - *Open...* menu
+These files are located under the MEAFS directory and the `-h` [flag](<#flags-and-arguments>) will show the location.  
+To load any of these files, simply use the [flags](<#flags-and-arguments>) or load them in the *File* - *Open...* menu
 
 ## Uninstall
 
