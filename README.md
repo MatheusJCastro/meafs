@@ -62,16 +62,13 @@ All the methods listed below work in Linux, Windows or MacOS **if you have pytho
 
 - Then, to activate the environment, type `conda activate meafs`;
 
-### Getting the pip version (recommended) (not yet working)
+### Getting the pip version (recommended)
 
-<s>
-You can easily get the pip version by typing in the terminal:
+The pip version can easily be acquired by typing in the terminal:
 
 #```bash
 #pip install meafs
 #```
-
-</s>
 
 ### Cloning from GitHub
 
