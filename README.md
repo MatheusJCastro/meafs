@@ -66,9 +66,9 @@ All the methods listed below work in Linux, Windows or MacOS **if you have pytho
 
 The pip version can easily be acquired by typing in the terminal:
 
-#```bash
-#pip install meafs
-#```
+```bash
+pip install meafs
+```
 
 ### Cloning from GitHub
 
