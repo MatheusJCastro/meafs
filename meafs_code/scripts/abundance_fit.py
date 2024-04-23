@@ -2,28 +2,28 @@
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v4.2                                              #
-# Last Modification: 04/17/2024                     #
+# v4.6                                              #
+# Last Modification: 04/23/2024                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
-from astropy.convolution import Gaussian1DKernel, convolve
 from specutils.analysis import equivalent_width
 from PyQt6 import QtWidgets, QtCore
-from scipy.optimize import minimize
 from specutils import Spectrum1D
 import matplotlib.pyplot as plt
 import astropy.units as u
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import subprocess
-import ctypes
 import time
 import sys
 import os
 
-version = 4.2
+from . import fit_functions as ff
+from . import voigt_functions as vf
+from . import turbospec_functions as tf
+
+version = 4.6
 
 
 def open_linelist_refer_fl(list_name):
@@ -63,21 +63,6 @@ def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
     return new_linelist, prev
 
 
-def c_init(c_name):
-    # Funtion to initialize the C shared library
-    c_library = ctypes.CDLL("{}".format(c_name))
-
-    # Defining functions argument types
-    c_library.bisec.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_int, ctypes.c_float]
-    c_library.bisec.restype = ctypes.c_int
-
-    c_library.chi2.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_int,
-                               ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_int]
-    c_library.chi2.restype = ctypes.c_float
-
-    return c_library
-
-
 def plot_spec_gui(specs, canvas, ax, plot_line_refer):
     if specs != []:
         min_all_old = min(specs[0].iloc[:, 0])
@@ -91,6 +76,7 @@ def plot_spec_gui(specs, canvas, ax, plot_line_refer):
         same_line_plots.iloc[line]["refer"].remove()
         ind = plot_line_refer[plot_line_refer["refer"] == same_line_plots.iloc[line]["refer"]].index
         plot_line_refer = plot_line_refer.drop(ind)
+    plot_line_refer.reset_index(drop=True, inplace=True)
 
     for spec in specs:
         lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1])
@@ -129,201 +115,6 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
     plt.close()
 
 
-def check_elem_configfl(fl_name, elem):
-    # Function to find the desired element in the Turbospectrum2019 configuration file
-    with open(fl_name, 'r') as file:
-        fl = file.read()
-
-    elem = "foreach " + elem + "_ab"
-    pos = fl.find(elem)
-
-    if pos == -1:
-        return False
-    else:
-        return True
-
-
-def bisec(spec, lamb):
-    # Function to apply the bisection script to find a number position in an array
-
-    # Uncomment the script bellow to use the C library (slower)
-    # global c_lib
-    # arr = spec[0].tolist()
-    # arr_c = (ctypes.c_float * len(arr))(*arr)
-    #
-    # index = c_lib.bisec(arr_c, len(arr), lamb)
-    #
-    # return index
-
-    # Bisection Script
-    if lamb < spec.iloc[0][0]:
-        return -1
-    elif lamb > spec.iloc[-1][0]:
-        return -1
-    else:
-        gap = [0, len(spec) - 1]
-
-        while True:
-            new_gap = gap[0] + (gap[1] - gap[0]) // 2
-
-            if lamb < spec.iloc[new_gap][0]:
-                gap[1] = new_gap
-            else:
-                gap[0] = new_gap
-
-            if gap[0] + 1 == gap[1]:
-                return gap[0]
-
-
-def cut_spec(spc, lamb, cut_val=1.):
-    # Function to restrict the array in the desired range
-    val0 = bisec(spc, lamb - cut_val)
-    val1 = bisec(spc, lamb + cut_val)+1
-
-    return spc.iloc[val0:val1]
-
-
-def change_spec_range_configfl(fl_name, lamb, cut_val):
-    # Function to change the spectrum range in Turbospectrum2019 configuration file
-    spec_range = [lamb - cut_val, lamb + cut_val]
-
-    with open(fl_name, 'r') as file:
-        fl = file.read()
-
-    for i, str_i in enumerate(["set lam_min    = ", "set lam_max    = "]):
-        pos = fl.find(str_i)
-        # noinspection PyListCreation
-        pos = [pos + fl[pos:].find("'") + 1]
-        # noinspection
-        pos.append(pos[0] + fl[pos[0]:].find("'"))
-        fl = fl[:pos[0]] + str(spec_range[i]) + fl[pos[1]:]
-
-    with open(fl_name, "w") as file:
-        file.write(fl)
-
-
-def change_abund_configfl(fl_name, elem, abund=None, find=True):
-    # Function to change the element abundance in Turbospectrum2019 configuration file
-    # or to find the actual value
-    with open(fl_name, 'r') as file:
-        fl = file.read()
-
-    elem = "foreach " + elem + "_ab"
-    pos = fl.find(elem)
-    pos += fl[pos:].find("(") + 1
-    pos_end = pos + fl[pos:].find(")")
-
-    if find:
-        abund = float(fl[pos:pos_end])
-    else:
-        fl = fl[:pos] + str(abund) + fl[pos_end:]
-
-        with open(fl_name, "w") as file:
-            file.write(fl)
-
-    return abund
-
-
-def run_configfl(config_fl):
-    # Run Turbospectrum2019
-    run = config_fl.split("/")[-1]
-    config_fodler = config_fl.removesuffix(run)
-
-    subprocess.check_output("cd \"{}\" && ./{}".format(config_fodler, run), shell=True)
-
-
-def chi2(spec1, spec2):
-    # Function to find the chi square of two arrays
-
-    global c_lib
-
-    # Using C library
-    spec1x = spec1[0].tolist()
-    spec1y = spec1[1].tolist()
-
-    # noinspection PyCallingNonCallable,PyTypeChecker
-    spec1x = (ctypes.c_float * len(spec1x))(*spec1x)
-    # noinspection PyCallingNonCallable,PyTypeChecker
-    spec1y = (ctypes.c_float * len(spec1y))(*spec1y)
-
-    spec2x = spec2[0].tolist()
-    spec2y = spec2[1].tolist()
-
-    # noinspection PyCallingNonCallable,PyTypeChecker
-    spec2x = (ctypes.c_float * len(spec2x))(*spec2x)
-    # noinspection PyCallingNonCallable,PyTypeChecker
-    spec2y = (ctypes.c_float * len(spec2y))(*spec2y)
-
-    return c_lib.chi2(spec1x, spec1y, len(spec1x), spec2x, spec2y, len(spec2x))
-
-    # Using Python (slower)
-    # sp1_interpol = np.array([])
-    # sp2_interpol = np.array([])
-    #
-    # for i in spec2.iloc():
-    #     pos = bisec(spec1, i[0])
-    #     if pos != -1:
-    #         x1 = spec1.iloc[pos][0]
-    #         x2 = spec1.iloc[pos + 1][0]
-    #         y1 = spec1.iloc[pos][1]
-    #         y2 = spec1.iloc[pos + 1][1]
-    #         x = i[0]
-    #         y = y1 + (y2 - y1) / (x2 - x1) * (x - x1)
-    #
-    #         sp1_interpol = np.append(sp1_interpol, y)
-    #         sp2_interpol = np.append(sp2_interpol, i[1])
-    #
-    # return sum((sp1_interpol - sp2_interpol)**2 / sp2_interpol)
-
-
-def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
-    # Function to apply lambda shift, continuum fit and convolution to the spectrum
-    spec[0] = spec[0] + lamb_desloc
-    spec[1] = spec[1] * continuum
-
-    if convol != 0:
-        try:
-            # Apply the convolution using the Gaussian1DKernel function
-            g = Gaussian1DKernel(stddev=convol)
-            spec[1] = convolve(spec[1], g)  # convolution between the spectrum and the function above
-        except ValueError:
-            pass
-
-    return spec
-
-
-def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, init=None):
-    # Function to optimize the spectrum
-
-    # Define initial values if not given
-    if init is None:
-        init = [0, 1, 3.85]
-
-    # First, apply a convolution of 3.85
-    sp_convoluted = spec_operations(spec_conv.copy(), convol=init[2])
-
-    # Find the best parameters for lambda shift and continuum
-    def opt_desloc_continuum(guess):
-        sp_fit = spec_operations(sp_convoluted.copy(), lamb_desloc=guess[0], continuum=guess[1], convol=0)
-        return chi2(spec_obs_cut, sp_fit)
-    pars = minimize(opt_desloc_continuum, np.array([init[0], init[1]]), method='Nelder-Mead').x
-
-    spec_obs_cut = cut_spec(spec_obs_cut, lamb, cut_val=cut_val[1])
-    spec_conv = cut_spec(spec_conv, lamb, cut_val=cut_val[1])
-
-    # Finally, find the best convolution
-    def opt_convolution(guess):
-        # noinspection PyTypeChecker
-        sp_fit = spec_operations(spec_conv.copy(), lamb_desloc=pars[0], continuum=pars[1], convol=guess[0])
-        return chi2(spec_obs_cut, sp_fit)
-    par = minimize(opt_convolution, np.array([init[2]]), method='Nelder-Mead', bounds=[[3.5, 4.2]]).x
-
-    pars = np.append(pars, par, axis=0)
-    # pars = [0, 1, 1]
-
-    return pars
-
-
 def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer):
     # noinspection PySimplifyBooleanCheck
     if spec_fit_arr != []:
@@ -334,12 +125,11 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         max_all_old = 1
 
     for j, sp in enumerate(spec_fit_arr):
-        same_elem_plots = plot_line_refer[plot_line_refer["elem"] == elem+order]
-        same_line_plots = same_elem_plots[same_elem_plots["wave"] == lamb]
-        for line in range(len(same_line_plots)):
-            same_line_plots.iloc[line]["refer"].remove()
-            ind = plot_line_refer[plot_line_refer["refer"] == same_line_plots.iloc[line]["refer"]].index
-            plot_line_refer = plot_line_refer.drop(ind)
+        ind = plot_line_refer[(plot_line_refer["elem"] == elem + order) &
+                              (plot_line_refer["wave"] == lamb)].index
+        for line in plot_line_refer.loc[ind, "refer"]: line.remove()
+        plot_line_refer.drop(ind, inplace=True)
+        plot_line_refer.reset_index(drop=True, inplace=True)
 
         lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
         axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
@@ -350,8 +140,8 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         if max_all > max_all_old:
             max_all_old = max_all
 
-        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": lineplot[0]}
-        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": axvlineplot}
+        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": lineplot[0]}
+        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": axvlineplot}
 
         sp.to_csv(Path(folder).joinpath("On_time_Plots",
                                         "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, j + 1)),
@@ -365,7 +155,18 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
     return plot_line_refer
 
 
-def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth, order_sep,
+def check_order(elem):
+    if elem[1].isdigit() or elem[1] == "I" or elem[1] == "V" or elem[1] == "X" or elem[1] == " ":
+        order = elem[1:]
+        elem = elem[0]
+    else:
+        order = elem[2:]
+        elem = elem[0:2]
+
+    return elem, order
+
+
+def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth,
                      cut_val=None, canvas=None, ax=None, plot_line_refer=None,
                      opt_pars=None):
 
@@ -378,10 +179,7 @@ def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth, order_
 
     lamb = float(lamb)
 
-    order = ""
-    if int(order_sep) == 1:
-        order = elem[-1]
-        elem = elem[:-1]
+    elem, order = check_order(elem)
 
     # Try to find element abundance reference. If not found, 0 is used.
     try:
@@ -389,29 +187,36 @@ def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth, order_
     except KeyError:
         abund_val_refer = 0
 
-    change_abund_configfl(config_fl, elem, find=False, abund=abundplot)
-    change_spec_range_configfl(config_fl, lamb, cut_val[3])
-    run_configfl(config_fl)
+    if type_synth[0] == "Equivalent Width":
+        func = vf.find_func(type_synth[1])
+        x = np.linspace(lamb-cut_val[3], lamb+cut_val[3], 1000)
+        spec_fit = pd.DataFrame({0: x, 1: func(x, opt_pars[0] + lamb, opt_pars[2], abundplot, opt_pars[1])})
+    elif type_synth[0] == "TurboSpectrum":
+        tf.change_abund_configfl(config_fl, elem, find=False, abund=abundplot)
+        tf.change_spec_range_configfl(config_fl, lamb, cut_val[3])
+        tf.run_configfl(config_fl)
+        # Return the Turbospectrum2019 configuration file to original abundance value
+        tf.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
-    spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+        spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
 
-    # noinspection PyTypeChecker
-    spec_fit = spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
-                               convol=opt_pars[2])
+        # noinspection PyTypeChecker
+        spec_fit = ff.spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
+                                      convol=opt_pars[2])
+    else:
+        return plot_line_refer
+
     spec_fit_arr = [spec_fit]
-
     plot_line_refer = plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer)
-
-    # Return the Turbospectrum2019 configuration file to original abundance value
-    change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
     return plot_line_refer
 
 
-def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0, cut_val=None,
+def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None,
                   abund_lim_df=1., restart=False, save_name="found_values.csv",
                   ui=None, canvas=None, ax=None, plot_line_refer=None,
-                  opt_pars=None, repfit=2):
+                  opt_pars=None, repfit=2, max_iter=None, convovbound=None,
+                  contpars=None, wavebound=None):
     # Function to analyse the spectrum and find the fit values for it
 
     stop = False
@@ -434,37 +239,54 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
         cut_val = [10/2, 3/2, .4/2, 1/2]
 
     columns_names = ["Element", "Lambda (A)", "Lamb Shift", "Continuum", "Convolution",
-                     "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width (A)"]
+                     "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width Obs (A)",
+                     "Equiv Width Fit (A)"]
 
-    if not restart:
+    if restart:
+        found_val = pd.DataFrame(columns=columns_names)
+    else:
         linelist, found_val = open_previous(linelist, columns_names, fl_name=Path(folder).joinpath(save_name))
 
         if ui is not None:
             rowpos = ui.abundancetable.rowCount()
             for i in range(len(found_val)):
                 elem = found_val.iloc[i, 0]
-                lamb = found_val.iloc[i, 1]
+                lamb = float(found_val.iloc[i, 1])
+
+                elem, order = check_order(elem)
 
                 ui.abundancetable.insertRow(rowpos+i)
-                ui.abundancetable.setItem(rowpos+i, 0, QtWidgets.QTableWidgetItem(str(elem)))
+                ui.abundancetable.setItem(rowpos+i, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
                 ui.abundancetable.setItem(rowpos+i, 1, QtWidgets.QTableWidgetItem(str(lamb)))
                 path = Path(folder).joinpath("On_time_Plots")
                 count = 0
                 while True:
-                    file = path.joinpath("fit_{}_{}_ang_{}.csv".format(elem, lamb, count + 1))
+                    file = path.joinpath("fit_{}_{}_ang_{}.csv".format(elem+order, lamb, count + 1))
 
                     if os.path.isfile(file):
                         data = pd.read_csv(file)
                         count += 1
+
+                        ind = plot_line_refer[(plot_line_refer["elem"] == elem + order) &
+                                              (plot_line_refer["wave"] == lamb)].index
+                        for line in plot_line_refer.loc[ind, "refer"]: line.remove()
+                        plot_line_refer.drop(ind, inplace=True)
+                        plot_line_refer.reset_index(drop=True, inplace=True)
+
                         lineplot = ax.plot(data.iloc[:, 0], data.iloc[:, 1], "--", linewidth=1.5)
                         axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
-                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": lineplot[0]}
-                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem, "wave": lamb, "refer": axvlineplot}
+                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb,
+                                                                     "refer": lineplot[0]}
+                        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb,
+                                                                     "refer": axvlineplot}
                     else:
                         break
                 canvas.draw()
+
+    if opt_pars is None:
+        continuum, cont_err = ff.fit_continuum(spec_obs, contpars=contpars, iterac=max_iter[0])
     else:
-        found_val = pd.DataFrame(columns=columns_names)
+        continuum = None
 
     # For each line in the linelist file
     for i in range(len(linelist)):
@@ -481,10 +303,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
 
         print("Analysing the element {} for lambda {}. Line {} of {}.".format(elem, lamb, i+1, len(linelist)))
 
-        order = ""
-        if int(order_sep) == 1:
-            order = elem[-1]
-            elem = elem[:-1]
+        elem, order = check_order(elem)
 
         # Try to find element abundance reference. If not found, 0 is used.
         try:
@@ -493,103 +312,134 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, order_sep=0,
             abund_val_refer = 0
 
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
-        index_append = len(found_val) #  linelist.index.tolist()[i]
+        index_append = len(found_val)  # linelist.index.tolist()[i]
 
-        if check_elem_configfl(config_fl, elem) and spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0] and \
-           len(cut_spec(spec_obs, lamb, cut_val=cut_val[0])) > 0:
-            # arrumar segundo espectro overwriting os valores bons do primeiro
+        # Check whether the element exists in turbospectrum config file
+        if type_synth[0] == "TurboSpectrum" and not tf.check_elem_configfl(config_fl, elem):
+            print("Element not in TurboSpectrum Configuration file")
+            continue
+        # If the lamb is not between the range of the spec, skip the iteration
+        if not spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0]:
+            print("Wavelength not in the range of the spectrum.")
+            continue
+        # If continuum, conv, abund or plot range to fit is smaller than 0, stop fitting
+        if len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[0])) <= 1:
+            print("Continuum range smaller than 0.")
+            break
+        elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[1])) <= 1:
+            print("Convolution range smaller than 0.")
+            break
+        elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[2])) <= 1:
+            print("Abundance range smaller than 0.")
+            break
+        elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[3])) <= 1:
+            print("Plot range smaller than 0.")
+            break
 
-            chi, equiv_width = 0, 0
+        if max_iter is None:
+            max_iter = [100, 10]
 
-            par = [abund_val_refer]
-            for repeat in range(repfit):
-                # Fit of lambda shift, continuum and convolution
-                spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[0])
-                change_spec_range_configfl(config_fl, lamb, cut_val[0])
+        # arrumar segundo espectro overwriting os valores bons do primeiro
+        chi, equiv_width_obs, equiv_width_fit = 0, 0, 0
+        par = [abund_val_refer]
+        spec_fit = [[], []]
+        for repeat in range(repfit):
+            # Fit of lambda shift, continuum and convolution
+            spec_obs_cut = ff.cut_spec(spec_obs, lamb, cut_val=cut_val[0])
 
-                run_configfl(config_fl)
+            if type_synth[0] == "Equivalent Width":
+                if opt_pars is None:
+                    opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum,
+                                                               iterac=max_iter[1], convovbound=convovbound,
+                                                               wavebound=wavebound)
+                ui.abundancelabel.setText("Deepth")
+            elif type_synth[0] == "TurboSpectrum":
+                tf.change_spec_range_configfl(config_fl, lamb, cut_val[0])
+                tf.run_configfl(config_fl)
                 spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+                ui.abundancelabel.setText("Abundance")
 
                 if opt_pars is None:
-                    opt_pars = optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, init=opt_pars)
-                # opt_pars = [0,0,0]
+                    opt_pars = tf.optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, continuum,
+                                                init=opt_pars, iterac=max_iter[1], convovbound=convovbound,
+                                                wavebound=wavebound)
+            # opt_pars = [0,0,0]
 
-                print("\tLamb Shift:\t\t{:.4f}\n\tContinuum:\t\t{:.4f}\n\tConvolution:\t\t{:.4f}".format(opt_pars[0],
-                                                                                                         opt_pars[1],
-                                                                                                         opt_pars[2]))
-                if ui is not None:
-                    ui.lambshifvalue.setValue(opt_pars[0])
-                    ui.continuumvalue.setValue(opt_pars[1])
-                    ui.convolutionvalue.setValue(opt_pars[2])
-                    # Allow QT to actualize the UI while in the loop
-                    QtCore.QCoreApplication.processEvents()
-                    if stop:
-                        return found_val, ax, plot_line_refer
+            print("\tLamb Shift:\t\t{:.4f}\n"
+                  "\tContinuum:\t\t{:.4f}\n"
+                  "\tConvolution:\t\t{:.4f}".format(opt_pars[0], opt_pars[1], opt_pars[2]))
+            if ui is not None:
+                ui.lambshifvalue.setValue(opt_pars[0])
+                ui.continuumvalue.setValue(opt_pars[1])
+                ui.convolutionvalue.setValue(opt_pars[2])
+                # Allow QT to actualize the UI while in the loop
+                QtCore.QCoreApplication.processEvents()
+                if stop:
+                    return found_val, ax, plot_line_refer
 
-                # Fit of abundance
-                change_spec_range_configfl(config_fl, lamb, cut_val[3])
-                spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[2])
+            # Fit of abundance
+            spec_obs_cut = ff.cut_spec(spec_obs, lamb, cut_val=cut_val[3])
+            if type_synth[0] == "Equivalent Width":
+                par, chi, spec_fit = vf.optimize_abund(spec_obs_cut, type_synth, lamb, opt_pars, iterac=max_iter[2])
+            elif type_synth[0] == "TurboSpectrum":
+                tf.change_spec_range_configfl(config_fl, lamb, cut_val[3])
 
-                def mini_func(abund):
-                    nonlocal chi
-                    change_abund_configfl(config_fl, elem, find=False, abund=abund[0])
-                    run_configfl(config_fl)
-                    spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
-                    # noinspection PyTypeChecker
-                    spec = spec_operations(spec.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
-                                           convol=opt_pars[2])
+                par, chi, spec_fit = tf.optimize_abund(spec_obs_cut, config_fl, conv_name, elem, opt_pars, par,
+                                                       abund_lim, iterac=max_iter[2])
 
-                    chi = chi2(spec_obs_cut, spec)
-                    return chi
+            print("\tAbundance:\t\t{:.4f}".format(par[0]))
 
-                par = minimize(mini_func, np.array(par), method='Nelder-Mead', options={"maxiter": 1},
-                               bounds=[[par[0]-abund_lim, par[0]+abund_lim]]).x
+            if ui is not None:
+                ui.abundancevalue.setValue(par[0])
+                # Allow QT to actualize the UI while in the loop
+                QtCore.QCoreApplication.processEvents()
+                if stop:
+                    return found_val, ax, plot_line_refer
 
-                print("\tAbundance:\t\t{:.4f}".format(par[0]))
+            # Fit of Equivalent Width Observed Spectrum
+            # noinspection PyUnresolvedReferences
+            spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
+                                flux=np.asarray(spec_obs_cut[1]) * u.Jy)
+            equiv_width_obs = equivalent_width(spec1d)
+            # noinspection PyUnresolvedReferences
+            equiv_width_obs = np.float128(equiv_width_obs / u.AA)
 
-                if ui is not None:
-                    ui.abundancevalue.setValue(par[0])
-                    # Allow QT to actualize the UI while in the loop
-                    QtCore.QCoreApplication.processEvents()
-                    if stop:
-                        return found_val, ax, plot_line_refer
+            # Fit of Equivalent Width Fitted Spectrum
+            # noinspection PyUnresolvedReferences
+            spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
+                                flux=np.asarray(spec_fit[1]) * u.Jy)
+            equiv_width_fit = equivalent_width(spec1d)
+            # noinspection PyUnresolvedReferences
+            equiv_width_fit = np.float128(equiv_width_fit / u.AA)
 
-                # Fit of Equivalent Width
-                # noinspection PyUnresolvedReferences
-                spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
-                                    flux=np.asarray(spec_obs_cut[1]) * u.Jy)
-                equiv_width = equivalent_width(spec1d)
-                # noinspection PyUnresolvedReferences
-                equiv_width = np.float128(equiv_width / u.AA)
+        found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
+                                       par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi),
+                                       "{:.4e}".format(equiv_width_obs), "{:.4e}".format(equiv_width_fit)]
 
-            found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
-                                           par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi),
-                                           "{:.4e}".format(equiv_width)]
-
-            # Plot of data
-            spec_obs_cut = cut_spec(spec_obs, lamb, cut_val=cut_val[3])
-
-            change_spec_range_configfl(config_fl, lamb, cut_val[3])
-            run_configfl(config_fl)
+        # Plot of data
+        spec_obs_cut = ff.cut_spec(spec_obs, lamb, cut_val=cut_val[3])
+        if type_synth[0] == "Equivalent Width":
+            func = vf.find_func(type_synth[1])
+            x = np.linspace(min(spec_obs_cut.iloc[:, 0]), max(spec_obs_cut.iloc[:, 0]), 1000)
+            spec_fit = pd.DataFrame({0: x, 1: func(x, b=opt_pars[0]+lamb, c=opt_pars[2], a=par[0], d=opt_pars[1])})
+        elif type_synth[0] == "TurboSpectrum":
+            tf.change_abund_configfl(config_fl, elem, find=False, abund=par[0])
+            tf.change_spec_range_configfl(config_fl, lamb, cut_val[3])
+            tf.run_configfl(config_fl)
+            # Return the Turbospectrum2019 configuration file to original abundance value
+            tf.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
             spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
 
             # noinspection PyTypeChecker
-            spec_fit = spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
-                                       convol=opt_pars[2])
+            spec_fit = ff.spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
+                                          convol=opt_pars[2])
 
-            if ui is None:
-                plot_spec(spec_obs_cut, spec_conv, spec_fit, lamb, elem+order, folder)
-            else:
-                spec_fit_arr = [spec_fit]
-                plot_line_refer = plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer)
-
-            # Return the Turbospectrum2019 configuration file to original abundance value
-            change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
+        if ui is None:
+            plot_spec(spec_obs_cut, spec_conv, spec_fit, lamb, elem+order, folder)
         else:
-            found_val.loc[index_append] = [elem+order, lamb, np.nan, np.nan, np.nan, abund_val_refer, np.nan,
-                                           np.nan, np.nan, np.nan]
-            print("\tValue not found.")
+            spec_fit_arr = [spec_fit]
+            plot_line_refer = plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer)
 
         # Write the line result to the csv file
         found_val.to_csv(Path(folder).joinpath(save_name), index=False, float_format="%.4f")
@@ -702,12 +552,22 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     refer_fl = pd.DataFrame(data=refer_fl, index=inds, columns=["value"])
 
     methodconfig = None
-    if ui.methodbox.currentText() == "TurboSpectrum":
+    if ui.methodbox.currentText() == "Equivalent Width":
+        methodconfig = [ui.methodbox.currentText(),
+                        ui.ewfuncbox.currentText(),
+                        ui.convinitguessvalue.value(),
+                        ui.deepthinitguessvalue.value()]
+    elif ui.methodbox.currentText() == "TurboSpectrum":
         methodconfig = [ui.methodbox.currentText(),
                         ui.turbospectrumoutputname.text(),
                         ui.turbospectrumconfigname.text()]
 
     ui.methodsdatafittab.setCurrentIndex(2)
+
+    max_iter = ui.max_iter
+    convovbound = ui.convovbound
+    wavebound = ui.wavebound
+    contpars = ui.continuumpars
 
     # Allow QT to actualize the UI while in the loop
     QtCore.QCoreApplication.processEvents()
@@ -715,15 +575,17 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     if abundplot is None:
         for spec in spec_obs:
             results_array, ax, plot_line_refer = fit_abundance(linelist, spec, refer_fl, folder, methodconfig,
-                                                               order_sep=1, restart=restart, ui=ui, canvas=canvas, ax=ax,
+                                                               restart=restart, ui=ui, canvas=canvas, ax=ax,
                                                                cut_val=cut_val, plot_line_refer=plot_line_refer,
-                                                               opt_pars=opt_pars, repfit=repfit)
+                                                               opt_pars=opt_pars, repfit=repfit, max_iter=max_iter,
+                                                               convovbound=convovbound, contpars=contpars,
+                                                               wavebound=wavebound)
     else:
         currow = ui.abundancetable.currentRow()
         currow = ui.abundancetable.rowCount() - 1 if currow == -1 else currow
         elem = ui.abundancetable.item(currow, 0).text()
         lamb = ui.abundancetable.item(currow, 1).text()
-        plot_line_refer = plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, methodconfig, order_sep=1,
+        plot_line_refer = plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, methodconfig,
                                            cut_val=cut_val, canvas=canvas, ax=ax, plot_line_refer=plot_line_refer,
                                            opt_pars=opt_pars)
 
@@ -774,7 +636,11 @@ def main(args):
     # Open some files
     linelist = open_linelist_refer_fl(list_name)
     refer_fl = open_linelist_refer_fl(refer_name)
-    spec_obs = open_spec_obs(observed_name, increment=2)
+    # Function to open the observed spectrum file using PANDAS
+    spec_obs = []
+    for i in range(0, len(observed_name), 2):
+        delimiter = observed_name[i + 1]
+        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delimiter))
 
     type_synth = ["TurboSpectrum",
                   conv_name,
@@ -783,7 +649,7 @@ def main(args):
     # Adjust parameters for each spectra declared
     # Caution: be aware of data overlay on the final csv file
     for spec in spec_obs:
-        fit_abundance(linelist, spec, refer_fl, folder, type_synth, order_sep=int(list_name[2]),
+        fit_abundance(linelist, spec, refer_fl, folder, type_synth,
                       restart=False)
 
     # Time Counter
@@ -813,7 +679,7 @@ def args_menu(args):
         help_msg = "\n\t\t\033[1;31mHelp Section\033[m\nabundance_fit.py v{}\n" \
                    "Usage: python3 abundance_fit.py [options] argument\n\n" \
                    "Written by Matheus J. Castro <https://github.com/MatheusJCastro/meafs>\nUnder MIT License.\n\n" \
-                   "This program find elements abundances of a given spectrum.\n\n" \
+                   "This program finds abundances of elements for a given spectrum.\n\n" \
                    "Argument needs to be a \".txt\" file with the MEAFS configuration.\n" \
                    "If no argument is given, the default name is \"meafs_config.txt\".\n\n" \
                    "Options are:\n -h,  -help\t|\tShow this help;\n--h, --help\t|\tShow this help;\n" \
@@ -821,8 +687,6 @@ def args_menu(args):
         print(help_msg)
 
 
-if 'abundance_fit' in __name__:
-    c_lib = c_init(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so"))  # initialize the C library
 if __name__ == '__main__':
     arg = sys.argv[1:]
     main(arg)  # call main subroutine

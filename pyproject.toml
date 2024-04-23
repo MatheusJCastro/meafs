@@ -20,7 +20,7 @@ dependencies = [
     "matplotlib",
     "pandas",
     "numpy",
-    "desktop_file",
+    "desktop_file==1.3",
     "pathlib",
     "PyQt6",
     "dill"

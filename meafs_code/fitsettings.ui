@@ -6,39 +6,35 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>340</width>
-    <height>269</height>
+    <width>582</width>
+    <height>447</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Fit Settings</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="2" column="0" colspan="3">
+   <item row="6" column="0">
+    <widget class="QLabel" name="abundcutlabel">
+     <property name="text">
+      <string>Abundance</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
     <widget class="Line" name="line">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="7" column="1" colspan="2">
-    <widget class="QDoubleSpinBox" name="plotcutvalue">
-     <property name="singleStep">
-      <double>0.010000000000000</double>
+   <item row="4" column="0">
+    <widget class="QLabel" name="wavecutlabel">
+     <property name="toolTip">
+      <string>Continuum range is not used in &quot;Eq. Width&quot; method, but Wave. Shift is.</string>
      </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
-    <widget class="QDoubleSpinBox" name="convovcutvalue">
-     <property name="singleStep">
-      <double>0.010000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="plotcutlabel">
      <property name="text">
-      <string>Plot</string>
+      <string>Cont/Wave. Shift</string>
      </property>
     </widget>
    </item>
@@ -52,62 +48,79 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="2">
+   <item row="12" column="0">
+    <widget class="QLabel" name="abunditerlabel">
+     <property name="text">
+      <string>Abundance</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QDoubleSpinBox" name="wavecutvalue">
+     <property name="toolTip">
+      <string>Continuum range is not used in &quot;Eq. Width&quot; method, but Wave. Shift is.</string>
+     </property>
+     <property name="maximum">
+      <double>999.990000000000009</double>
+     </property>
+     <property name="singleStep">
+      <double>0.010000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
     <widget class="QSpinBox" name="repfitvalue">
      <property name="maximum">
       <number>10</number>
      </property>
     </widget>
    </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QDoubleSpinBox" name="contwavecutvalue">
-     <property name="singleStep">
-      <double>0.010000000000000</double>
+   <item row="10" column="1">
+    <widget class="QSpinBox" name="contitervalue">
+     <property name="maximum">
+      <number>10000</number>
      </property>
     </widget>
    </item>
-   <item row="8" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="okcancelbutton">
+   <item row="10" column="0">
+    <widget class="QLabel" name="contiterlabel">
+     <property name="text">
+      <string>Continuum</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="plotcutlabel">
+     <property name="text">
+      <string>Plot</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="Line" name="line_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <widget class="QLabel" name="waveconviterlabel">
+     <property name="text">
+      <string>Wave. Shift/Conv.</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1" colspan="2">
+   <item row="6" column="1">
     <widget class="QDoubleSpinBox" name="abundcutvalue">
+     <property name="maximum">
+      <double>999.990000000000009</double>
+     </property>
      <property name="singleStep">
       <double>0.010000000000000</double>
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="repfitlabel">
-     <property name="toolTip">
-      <string>The number of times that it will try to fit each line. The subsequent iteration uses the previous result as start point. Default is 2.</string>
-     </property>
-     <property name="text">
-      <string>Forced Loop Interations</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="contwavecutlabel">
-     <property name="text">
-      <string>Continuum/Wave. Shift</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="abundcutlabel">
-     <property name="text">
-      <string>Abundance</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="3">
+   <item row="3" column="0" colspan="2">
     <widget class="QLabel" name="cutvaltitle">
      <property name="toolTip">
       <string>The range that the fit will be applied. The value represents the full range (half of the value left to the fitted line and half to the right).</string>
@@ -117,6 +130,224 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="1">
+    <widget class="QSpinBox" name="abunditervalue">
+     <property name="maximum">
+      <number>10000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QDoubleSpinBox" name="plotcutvalue">
+     <property name="maximum">
+      <double>999.990000000000009</double>
+     </property>
+     <property name="singleStep">
+      <double>0.010000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="2">
+    <widget class="QLabel" name="fitmaxiterlabel">
+     <property name="text">
+      <string>Fit Maximum Iterations</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDoubleSpinBox" name="convovcutvalue">
+     <property name="toolTip">
+      <string>Can not be higher than the value of Continuum/Wave. Shift.</string>
+     </property>
+     <property name="maximum">
+      <double>999.990000000000009</double>
+     </property>
+     <property name="singleStep">
+      <double>0.010000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="1">
+    <widget class="QSpinBox" name="waveconvitervalue">
+     <property name="maximum">
+      <number>10000</number>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="repfitlabel">
+     <property name="toolTip">
+      <string>The number of times that it will try to fit each line. The subsequent iteration uses the previous result as start point. Default is 2.</string>
+     </property>
+     <property name="text">
+      <string>Forced Loop Iterations</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" colspan="2">
+    <widget class="QLabel" name="waveboundlabel">
+     <property name="text">
+      <string>Wave. Shift (Angstrom) Boundaries</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="3">
+    <widget class="QLabel" name="waveboundmaxshiftlabel">
+     <property name="text">
+      <string>Max. Shift (each side)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <widget class="QDoubleSpinBox" name="waveboundmaxshiftvalue"/>
+   </item>
+   <item row="2" column="3" colspan="2">
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3" colspan="2">
+    <widget class="QLabel" name="convboundlabel">
+     <property name="text">
+      <string>Convolution Boundaries</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3">
+    <widget class="QLabel" name="convboundminlabel">
+     <property name="text">
+      <string>Minimum</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="4">
+    <widget class="QDoubleSpinBox" name="convboundminvalue"/>
+   </item>
+   <item row="5" column="3">
+    <widget class="QLabel" name="convboundmaxlabel">
+     <property name="text">
+      <string>Maximum</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="4">
+    <widget class="QDoubleSpinBox" name="convboundmaxvalue"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="repfitvaluelabel">
+     <property name="text">
+      <string>Value</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="3" colspan="2">
+    <widget class="Line" name="line_4">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="3" colspan="2">
+    <widget class="QLabel" name="contfitparamlabel">
+     <property name="text">
+      <string>Continuum Fit Parameters</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="3">
+    <widget class="QLabel" name="contfitparalphalabel">
+     <property name="text">
+      <string>Tolerance (alpha)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="4">
+    <widget class="QDoubleSpinBox" name="contfitparalphavalue"/>
+   </item>
+   <item row="9" column="3">
+    <widget class="QLabel" name="contfitparepslabel">
+     <property name="text">
+      <string>Error (epsilon)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="4">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>10 ^ ( -</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="contfitparepsvalue"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>)</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="2" rowspan="13">
+    <widget class="Line" name="line_5">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="3" colspan="2">
+    <widget class="QDialogButtonBox" name="okcancelbutton">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
     </widget>
    </item>

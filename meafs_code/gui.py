@@ -2,8 +2,8 @@
 #####################################################
 # MEAFS GUI                                         #
 # Matheus J. Castro                                 #
-# v4.5                                              #
-# Last Modification: 04/17/2024                     #
+# v4.6                                              #
+# Last Modification: 04/23/2024                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
@@ -17,7 +17,7 @@ import dill
 import sys
 import os
 
-version = 4.5
+version = 4.6
 
 try:
     from gui_qt import Ui_MEAFS
@@ -69,6 +69,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.settings = pd.read_csv(self.sett_path,  delimiter=",", index_col=None)
         self.autosave.setChecked(self.settings[self.settings.variable == "auto_save"].value.iloc[0])
 
+        # Create modules folder (not distributed in GitHub)
+        if not os.path.exists(Path(os.path.dirname(__file__)).joinpath("modules")):
+            os.mkdir(Path(os.path.dirname(__file__)).joinpath("modules"))
+
         # Linelist Configuration
         self.linelistcontent.setRowCount(5)
         self.linelistcontent.setAlternatingRowColors(True)
@@ -95,10 +99,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.methodbox.model().item(2).setEnabled(False)
         self.methodbox.model().item(3).setEnabled(False)
 
-        self.methodbox.setCurrentIndex(1)
+        self.methodbox.setCurrentIndex(0)
         self.methodbox.currentIndexChanged.connect(self.checkmethod)
 
         self.checkmethod()
+
+        # Eq. Width Configuration
+        self.convinitguessvalue.setValue(0.001)
+        self.deepthinitguessvalue.setValue(-1)
 
         # TurboSpectrum Configuration
         self.mainpath = Path(__file__).parts[:-1]
@@ -194,9 +202,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.fitpar.triggered.connect(self.fitparWindow)
         self.repfit = 2
         self.cut_val = [10 / 2, 3 / 2, .4 / 2, 1 / 2]
+        self.max_iter = [1000, 1000, 10]
+        self.convovbound = [0, 5]
+        self.wavebound = .2
+        self.continuumpars = [2, 8]
 
         # View Submenu Configuration
         self.fullspec.triggered.connect(self.full_spec_plot_range)
+        self.checkcontinuumplot.triggered.connect(self.run_check_continuum)
+        self.erasecontinuumplot.triggered.connect(self.run_erase_continuum)
 
         # Auto Save Configuration
         self.timer = QtCore.QTimer()
@@ -212,16 +226,18 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # TEMPORARY
         self.repfit = 1
-        self.linelistname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/LinesALL.csv")
-        self.refername.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/refer_values.csv")
+        self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
+        self.refername.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/refer_values.csv")
         self.delimitertype.setCurrentIndex(2)
-        self.turbospectrumconfigname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
+        self.turbospectrumconfigname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
                                              "Turbospectrum2019/COM-v19.1/CS31.com")
-        self.turbospectrumoutputname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
+        self.turbospectrumoutputname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
                                              "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec")
         self.dataloadtable.item(0, 1).setText("aaa")
-        self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/Sync/MEAFS GUI/"
+        self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/MEAFS GUI/"
                                                                                   "meafs_code/temp/cs340n.dat")
+        self.methodbox.setCurrentIndex(0)
+        self.max_iter = [1000, 1000, 1]
 
     def keyPressEvent(self, event):
         if isinstance(event, QtGui.QKeyEvent):
@@ -282,7 +298,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                        "Usage: python3 gui.py [options] argument\n\n" \
                        "Written by Matheus J. Castro <https://github.com/MatheusJCastro/meafs>\n" \
                        "Under MIT License.\n\n" \
-                       "This program find elements abundances of a given spectrum.\n" \
+                       "This program finds abundances of elements for a given spectrum.\n" \
                        "GUI developed using PyQt.\n\n" \
                        "Argument needs to be a Pickle File (.pkl) previously saved by MEAFS.\n" \
                        "If no argument is given, an empty session will be opened.\n\n" \
@@ -622,6 +638,32 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              repfit=0, abundplot=abundplot,
                                                                              results_array=self.results_array)
 
+    def run_check_continuum(self):
+        folder = self.outputname.text()
+        elem, order, lamb = "continuum", "", "all"
+
+        for i, spec_obs in enumerate(self.specs_data):
+            continuum, cont_err = ff.fit_continuum(spec_obs, contpars=self.continuumpars,
+                                                   iterac=self.max_iter[0])
+
+            x = np.linspace(min(spec_obs.iloc[:, 0]), max(spec_obs.iloc[:, 0]), 1000)
+            y = np.zeros(1000) + continuum
+            spec_plot = pd.DataFrame({0: x, 1: y})
+
+            spec_fit_arr = [spec_plot]
+            self.plot_line_refer = fit.plot_spec_ui(spec_fit_arr, folder, elem, lamb+str(i), order,
+                                                    self.ax, self.canvas, self.plot_line_refer)
+
+        self.full_spec_plot_range()
+
+    def run_erase_continuum(self):
+        ind = self.plot_line_refer[(self.plot_line_refer["elem"] == "continuum")].index
+        for line in self.plot_line_refer.loc[ind, "refer"]: line.remove()
+        self.plot_line_refer.drop(ind, inplace=True)
+        self.plot_line_refer.reset_index(drop=True, inplace=True)
+
+        self.canvas.draw()
+
     def save_cur_abund(self):
         currow = self.abundancetable.currentRow()
         currow = self.abundancetable.rowCount() - 1 if currow == -1 else currow
@@ -726,32 +768,48 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
     def fitparWindow(self):
         def accept():
             self.repfit = uifitset.repfitvalue.value()
-            self.cut_val = [uifitset.contwavecutvalue.value()/2,
+            self.cut_val = [uifitset.wavecutvalue.value()/2,
                             uifitset.convovcutvalue.value()/2,
                             uifitset.abundcutvalue.value()/2,
                             uifitset.plotcutvalue.value()/2]
+            self.max_iter = [uifitset.contitervalue.value(),
+                             uifitset.waveconvitervalue.value(),
+                             uifitset.abunditervalue.value()]
+            self.convovbound = [uifitset.convboundminvalue.value(),
+                                uifitset.convboundmaxvalue.value()]
+            self.continuumpars = [uifitset.contfitparalphavalue.value(),
+                                  uifitset.contfitparepsvalue.value()]
+            self.wavebound = uifitset.waveboundmaxshiftvalue.value()
 
         def check_convov():
-            if uifitset.convovcutvalue.value() > uifitset.contwavecutvalue.value():
-                uifitset.convovcutvalue.setValue(uifitset.contwavecutvalue.value())
+            if uifitset.convovcutvalue.value() > uifitset.wavecutvalue.value():
+                uifitset.convovcutvalue.setValue(uifitset.wavecutvalue.value())
                 self.show_error("Convolution Fit Range can not be higher than Continuum/Wave. Shit range.")
 
         def check_contwave():
-            if uifitset.convovcutvalue.value() > uifitset.contwavecutvalue.value():
-                uifitset.convovcutvalue.setValue(uifitset.contwavecutvalue.value())
+            if uifitset.convovcutvalue.value() > uifitset.wavecutvalue.value():
+                uifitset.convovcutvalue.setValue(uifitset.wavecutvalue.value())
 
         fitparbox = QtWidgets.QDialog()
         uifitset = Ui_fitparbox()
         uifitset.setupUi(fitparbox)
 
         uifitset.repfitvalue.setValue(self.repfit)
-        uifitset.contwavecutvalue.setValue(self.cut_val[0]*2)
+        uifitset.wavecutvalue.setValue(self.cut_val[0]*2)
         uifitset.convovcutvalue.setValue(self.cut_val[1]*2)
         uifitset.abundcutvalue.setValue(self.cut_val[2]*2)
         uifitset.plotcutvalue.setValue(self.cut_val[3]*2)
+        uifitset.contitervalue.setValue(self.max_iter[0])
+        uifitset.waveconvitervalue.setValue(self.max_iter[1])
+        uifitset.abunditervalue.setValue(self.max_iter[2])
+        uifitset.convboundminvalue.setValue(self.convovbound[0])
+        uifitset.convboundmaxvalue.setValue(self.convovbound[1])
+        uifitset.contfitparalphavalue.setValue(self.continuumpars[0])
+        uifitset.contfitparepsvalue.setValue(self.continuumpars[1])
+        uifitset.waveboundmaxshiftvalue.setValue(self.wavebound)
         uifitset.okcancelbutton.accepted.connect(accept)
 
-        uifitset.contwavecutvalue.valueChanged.connect(check_contwave)
+        uifitset.wavecutvalue.valueChanged.connect(check_contwave)
         uifitset.convovcutvalue.valueChanged.connect(check_convov)
 
         fitparbox.exec()
@@ -821,6 +879,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         list_save = [self.filepath,
                      self.linelistname.text(),
                      self.linelistcheckbox.checkState(),
+                     self.restart.checkState(),
                      self.qtable_to_dict(self.linelistcontent, checkboxes=[2]),
                      self.refername.text(),
                      self.qtable_to_dict(self.refercontent),
@@ -836,7 +895,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.turbospectrumconfigname.text(),
                      self.turbospectrumoutputname.text(),
                      self.repfit,
-                     self.cut_val]
+                     self.cut_val,
+                     self.max_iter,
+                     self.convovbound,
+                     self.wavebound,
+                     self.continuumpars]
 
         if self.filepath != "" and not getdill:
             if flname is None:
@@ -872,28 +935,39 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.filepath = list_save[0]
             self.linelistname.setText(list_save[1])
             self.linelistcheckbox.setCheckState(list_save[2])
-            self.dict_to_qtable(self.linelistcontent, list_save[3], checkboxes=[2])
-            self.refername.setText(list_save[4])
-            self.dict_to_qtable(self.refercontent, list_save[5])
-            self.dict_to_qtable(self.dataloadtable, list_save[6], tooltip=True)
-            self.specs_data = list_save[7]
-            self.fig = list_save[8]
-            self.plot_line_refer = list_save[9]
-            self.results_array = list_save[10]
-            self.outputname.setText(list_save[11])
-            self.progressvalue.setText(list_save[12])
-            self.dict_to_qtable(self.abundancetable, list_save[13])
-            self.methodbox.setCurrentIndex(list_save[14])
-            self.turbospectrumconfigname.setText(list_save[15])
-            self.turbospectrumoutputname.setText(list_save[16])
-            self.repfit = list_save[17]
-            self.cut_val = list_save[18]
+            self.restart.setCheckState(list_save[3])
+            self.dict_to_qtable(self.linelistcontent, list_save[4], checkboxes=[2])
+            self.refername.setText(list_save[5])
+            self.dict_to_qtable(self.refercontent, list_save[6])
+            self.dict_to_qtable(self.dataloadtable, list_save[7], tooltip=True)
+            self.specs_data = list_save[8]
+            self.fig = list_save[9]
+            self.plot_line_refer = list_save[10]
+            self.results_array = list_save[11]
+            self.outputname.setText(list_save[12])
+            self.progressvalue.setText(list_save[13])
+            self.dict_to_qtable(self.abundancetable, list_save[14])
+            self.methodbox.setCurrentIndex(list_save[15])
+            self.turbospectrumconfigname.setText(list_save[16])
+            self.turbospectrumoutputname.setText(list_save[17])
+            self.repfit = list_save[18]
+            self.cut_val = list_save[19]
+            self.max_iter = list_save[20]
+            self.convovbound = list_save[21]
+            self.wavebound = list_save[22]
+            self.continuumpars = list_save[23]
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
             plot_widget = self.plot.itemAt(0).widget()
             plot_widget.deleteLater()
             self.plot.replaceWidget(plot_widget, self.canvas)
+
+            toolbar_widget = self.plot.itemAt(1).widget()
+            toolbar_widget.deleteLater()
+            self.toolbar = QtWidgets.QToolBar()
+            self.toolbar.addWidget(NavigationToolbar2QT(self.canvas))
+            self.plot.replaceWidget(toolbar_widget, self.toolbar)
 
             self.checkmethod()
 
@@ -907,6 +981,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         if close_dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
             list_save = [None,
                          "",
+                         QtCore.Qt.CheckState.Unchecked,
                          QtCore.Qt.CheckState.Unchecked,
                          {"Element": ["", "", "", "", ""],
                           "Wavelength": ["", "", "", "", ""],
@@ -929,7 +1004,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          "",
                          "",
                          2,
-                         [10 / 2, 3 / 2, .4 / 2, 1 / 2]]
+                         [10 / 2, 3 / 2, .4 / 2, 1 / 2],
+                         [1000, 1000, 10],
+                         [0, 5],
+                         .2,
+                         [2, 8]]
 
             self.canvas.figure.delaxes(self.ax)
             self.ax = self.canvas.figure.add_subplot(111)
