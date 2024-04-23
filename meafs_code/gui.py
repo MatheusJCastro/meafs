@@ -224,20 +224,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Arguments Configuration 2
         self.argument_resolve()
 
-        # TEMPORARY
-        self.repfit = 1
-        self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
-        self.refername.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/refer_values.csv")
-        self.delimitertype.setCurrentIndex(2)
-        self.turbospectrumconfigname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
-                                             "Turbospectrum2019/COM-v19.1/CS31.com")
-        self.turbospectrumoutputname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
-                                             "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec")
-        self.dataloadtable.item(0, 1).setText("aaa")
-        self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/MEAFS GUI/"
-                                                                                  "meafs_code/temp/cs340n.dat")
-        self.methodbox.setCurrentIndex(0)
-        self.max_iter = [1000, 1000, 1]
+        # # TEMPORARY
+        # self.repfit = 1
+        # self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
+        # self.refername.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/refer_values.csv")
+        # self.delimitertype.setCurrentIndex(2)
+        # self.turbospectrumconfigname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
+        #                                      "Turbospectrum2019/COM-v19.1/CS31.com")
+        # self.turbospectrumoutputname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
+        #                                      "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec")
+        # self.dataloadtable.item(0, 1).setText("aaa")
+        # self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/MEAFS GUI/"
+        #                                                                           "meafs_code/temp/cs340n.dat")
+        # self.methodbox.setCurrentIndex(0)
+        # self.max_iter = [1000, 1000, 1]
 
     def keyPressEvent(self, event):
         if isinstance(event, QtGui.QKeyEvent):
