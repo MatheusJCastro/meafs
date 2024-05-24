@@ -10,21 +10,27 @@
 
 ## Table of Contents
 
-1. [Aims](#Aims)
-2. [Prerequisites](#Prerequisites)
-3. [Instalation](#Instalation)
-    1. [Creating Anaconda Environment (recommended)](<#creating-anaconda-environment-recommended>)
-    2. [Getting the pip version (recommended)](<#getting-the-pip-version-recommended-not-yet-working>)
-    3. [Cloning from GitHub](<#cloning-from-github>)
-    4. [Adding the PATH (for non Anaconda installations)](<#adding-the-path-for-non-anaconda-installations>)
-    5. [Step-by-Step for Windows (Python + GCC)](<#step-by-step-for-windows-python--gcc>)
-    6. [Compilation](<#compilation>)
-4. [Usage](#Usage)
-    1. [With Installation](<#with-installation>)
-    2. [Without Installation](<#without-installation>)
-    3. [Flags and Arguments](<#flags-and-arguments>)
-    4. [Auto Save](<#auto-save>)
-5. [Uninstall](#Uninstall)
+- [Multiple Element Abundance Fit Software - MEAFS](#multiple-element-abundance-fit-software---meafs)
+  - [Table of Contents](#table-of-contents)
+  - [Aims](#aims)
+  - [Prerequisites](#prerequisites)
+  - [Instalation](#instalation)
+    - [Creating Anaconda Environment (recommended)](#creating-anaconda-environment-recommended)
+    - [Getting the pip version (recommended)](#getting-the-pip-version-recommended)
+    - [Cloning from GitHub](#cloning-from-github)
+    - [Adding the PATH (for non Anaconda installations)](#adding-the-path-for-non-anaconda-installations)
+      - [Linux](#linux)
+      - [Windows](#windows)
+    - [Step-by-Step for Windows (Python + GCC)](#step-by-step-for-windows-python--gcc)
+      - [Python](#python)
+      - [GCC](#gcc)
+    - [Compilation](#compilation)
+  - [Usage](#usage)
+    - [With Installation](#with-installation)
+    - [Without Installation](#without-installation)
+    - [Flags and Arguments](#flags-and-arguments)
+    - [Auto Save](#auto-save)
+  - [Uninstall](#uninstall)
 
 ## Aims
 
@@ -147,9 +153,9 @@ Download the *x64* version of [Winlibs](https://winlibs.com).
 
 ### Compilation
 
-There is one file written in C Language (`meafs/meafs_code/scripts/bisec_interpol.c`), the compilation directives can be found in the `meafs/meafs_code/scripts/comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
+There is one file written in C Language (`meafs/meafs_code/scripts/bisec_interpol.c`), **in the first run, MEAFS will compile the C library using GCC**. Otherwise, the compilation directives can be found in the `meafs/meafs_code/scripts/comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
 
-For Linux users just add execution privileges at the `comp.sh` file and execute it in a terminal to create the binary. For that, open a terminal in the `meafs/meafs_code/scripts/` folder and type:
+If the auto compilation fails, for Linux users, just add execution privileges at the `comp.sh` file and execute it in a terminal to create the binary. For that, open a terminal in the `meafs/meafs_code/scripts/` folder and type:
 
 ```bash
 chmod +x comp.sh
