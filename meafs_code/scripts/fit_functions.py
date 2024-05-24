@@ -9,6 +9,7 @@
 from astropy.convolution import Gaussian1DKernel, convolve
 from pathlib import Path
 import numpy as np
+import subprocess
 import ctypes
 import os
 
@@ -136,7 +137,7 @@ def fit_continuum(spec, contpars=None, iterac=1000):
         alpha = contpars[0]
         eps = contpars[1]
 
-    eps = np.float128(10)**(-np.float128(eps))
+    eps = np.float16(10)**(-np.float16(eps))
 
     new_spec = spec.iloc[:, 1].values.tolist()
     median = np.median(new_spec)
@@ -167,5 +168,11 @@ def fit_continuum(spec, contpars=None, iterac=1000):
     return median, std
 
 
+# Compile C files
+if not os.path.isfile(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so")):
+    currdir = os.getcwd()
+    os.chdir(Path(os.path.dirname(__file__)))
+    subprocess.run("gcc -Wall -pedantic -O3 bisec_interpol.c -o bisec_interpol.so -shared", shell=True)
+    os.chdir(currdir)
 
 c_lib = c_init(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so"))  # initialize the C library

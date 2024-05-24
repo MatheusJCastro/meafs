@@ -2,13 +2,15 @@
 #####################################################
 # MEAFS GUI                                         #
 # Matheus J. Castro                                 #
-# v4.6                                              #
-# Last Modification: 04/23/2024                     #
+# v4.7                                              #
+# Last Modification: 06/24/2024                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
-from PyQt6 import QtWidgets, QtGui, QtCore
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.inprocess import QtInProcessKernelManager
+from PyQt6 import QtWidgets, QtGui, QtCore
 import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
@@ -53,6 +55,88 @@ sys._excepthook = sys.excepthook
 sys.excepthook = exception_hook
 
 
+class Stdredirect:
+    def __init__(self, edit, color=None, out=None):
+        self.edit = edit
+        self.color = color
+        self.out = out
+
+    def write(self, text):
+        orig_color = None
+        if self.color:
+            orig_color = self.edit.textColort()
+            self.edit.setTextColor(self.color)
+
+        horScrollBarcur = self.edit.horizontalScrollBar().value()
+        verScrollBarcur = self.edit.verticalScrollBar().value()
+        verScrollBarmax = self.edit.verticalScrollBar().maximum()
+
+        self.edit.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+        self.edit.insertPlainText(text)
+
+        if verScrollBarmax - verScrollBarcur <= 10:
+            self.edit.verticalScrollBar().setValue(self.edit.verticalScrollBar().maximum())
+            self.edit.horizontalScrollBar().setValue(0)
+        else:
+            self.edit.horizontalScrollBar().setValue(horScrollBarcur)
+            self.edit.verticalScrollBar().setValue(verScrollBarcur)
+
+        if self.color:
+            self.edit.setTextColor(orig_color)
+
+        if self.out:
+            self.out.write(text)
+
+    def flush(self):
+        if self.out:
+            self.out.flush()
+
+
+class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
+    # Add only intended buttons
+    toolitems = [('Home', 'Reset original view', 'home', 'home'),
+                 ('Back', 'Back to previous view', 'back', 'back'),
+                 ('Forward', 'Forward to next view', 'forward', 'forward'),
+                 (None, None, None, None),
+                 ('Pan', 'Left button pans, Right button zooms\nx/y fixes axis, CTRL fixes aspect', 'move', 'pan'),
+                 ('Zoom', 'Zoom to rectangle\nx/y fixes axis', 'zoom_to_rect', 'zoom'),
+                 # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+                 (None, None, None, None),
+                 ('Save', 'Save the figure', 'filesave', 'save_figure')
+                 ]
+
+    def __init__(self, canvas, parent=None, coordinates=True):
+        # Calls the original routine
+        super().__init__(canvas, parent, coordinates)
+
+        self.setOrientation(QtCore.Qt.Orientation.Vertical)
+
+        if self.coordinates:
+            self.locLabel = QtWidgets.QLabel("", self)
+            self.locLabel.setAlignment(QtCore.Qt.AlignmentFlag(
+                QtCore.Qt.AlignmentFlag.AlignCenter |
+                QtCore.Qt.AlignmentFlag.AlignBottom))
+
+            self.locLabel.setSizePolicy(QtWidgets.QSizePolicy(
+                QtWidgets.QSizePolicy.Policy.Ignored,
+                QtWidgets.QSizePolicy.Policy.Expanding,
+            ))
+            labelAction = self.addWidget(self.locLabel)
+            labelAction.setVisible(True)
+
+    # disable showing mouse position in toolbar
+    def set_message(self, s):
+        self._message.emit(s)
+        if self.coordinates:
+            if "(x, y)" in s:
+                s = s.split(" = ")
+                s = s[-1]
+                s = s[1:-1]
+                s = s.split(", ")
+                s = "Wave\n{}\n\nFlux\n{}".format(s[0], s[1])
+            self.locLabel.setText(s)
+
+
 class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
     def __init__(self, parent=None):
         # Arguments Configuration 1
@@ -63,6 +147,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         super(MEAFS, self).__init__(parent)
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))))
+
+        # Stdout and Stderr configuration
+        self.stdtext.setReadOnly(True)
+        self.stdtext.insertPlainText("This is MEAFS v{}.\n".format(version) +
+                                     "Messages and errors will appear here.\n\n")
+        sys.stdout = Stdredirect(self.stdtext, out=sys.stdout)
+        sys.stderr = Stdredirect(self.stdtext, out=sys.stderr, color=QtGui.QColor(255, 0, 0))
+        self.clearstdbutton.clicked.connect(self.clearstd)
 
         # Read Settings
         self.sett_path = Path(os.path.dirname(__file__)).joinpath("settings.csv")
@@ -130,6 +222,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                            direc=str(self.pathoutput)))
 
         # Plot Configuration
+        self.tabplotshels.setCurrentIndex(0)
+
         self.fig = plt.figure(tight_layout=True)
         self.canvas = FigureCanvasQTAgg(self.fig)
         self.canvas.figure.supxlabel("Wavelength [\u212B]")
@@ -137,12 +231,17 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.ax = self.canvas.figure.add_subplot(111)
         self.ax.grid()
         self.canvas.draw()
-        self.plot.addWidget(self.canvas)
-        self.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
 
-        self.toolbar = QtWidgets.QToolBar()
-        self.toolbar.addWidget(NavigationToolbar2QT(self.canvas))
-        self.plot.addWidget(self.toolbar)
+        # First add ToolBar
+        # self.toolbar = QtWidgets.QToolBar()
+        # self.toolbar.addWidget(VerticalNavigationToolbar2QT(self.canvas))
+        # self.plot.addWidget(self.toolbar)
+        self.plot.addWidget(VerticalNavigationToolbar2QT(self.canvas))
+
+        # Second add the plot
+        self.plot.addWidget(self.canvas)
+
+        self.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
 
         # Data Configuration
         self.methodsdatafittab.setCurrentIndex(0)
@@ -224,7 +323,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Arguments Configuration 2
         self.argument_resolve()
 
-        # # TEMPORARY
+        # Jupyter Qt Console Configuration
+        self.ipython_widget = self.make_jupyter_widget_with_kernel()
+        self.layoutjupyshell.addWidget(self.ipython_widget)
+        self.ipython_widget.kernel_manager.kernel.shell.push(locals())
+
+        # TEMPORARY
         # self.repfit = 1
         # self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
         # self.refername.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/refer_values.csv")
@@ -238,6 +342,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         #                                                                           "meafs_code/temp/cs340n.dat")
         # self.methodbox.setCurrentIndex(0)
         # self.max_iter = [1000, 1000, 1]
+        # self.tabplotshels.setCurrentIndex(1)
 
     def keyPressEvent(self, event):
         if isinstance(event, QtGui.QKeyEvent):
@@ -249,6 +354,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     def closeEvent(self, event):
         if self.show_quit():
+            self.ipython_widget.kernel_client.stop_channels()
+            self.ipython_widget.kernel_manager.shutdown_kernel()
             event.accept()
         else:
             event.ignore()
@@ -258,17 +365,33 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             exit("Exit button pressed.")
 
     def show_quit(self):
+        textclose = "Are you sure want to quit MEAFS?\n"
+        if self.autosave.isChecked():
+            textclose += "Auto Save is ON."
+        else:
+            textclose += "Auto Save is OFF."
+
         close_dialog = QtWidgets.QMessageBox()
         close_dialog.setWindowTitle("Quit")
-        close_dialog.setText("Are you sure want to quit MEAFS?")
+        close_dialog.setText(textclose)
+
         close_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes)
         close_dialog.addButton(QtWidgets.QMessageBox.StandardButton.No)
         close_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
-        if close_dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+
+        if not self.autosave.isChecked():
+            close_dialog.addButton(QtWidgets.QMessageBox.StandardButton.Save)
+            close_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Save)
+
+        action_close = close_dialog.exec()
+
+        if action_close == QtWidgets.QMessageBox.StandardButton.Yes:
             if self.autosave.isChecked():
                 flname = Path(os.path.dirname(__file__)).joinpath("auto_save_last.pkl")
                 self.save_session(flname=flname)
             return True
+        elif action_close == QtWidgets.QMessageBox.StandardButton.Save:
+            return self.save_session()
         else:
             return False
 
@@ -327,6 +450,25 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 self.load_session(loadprev=True)
             else:
                 exit("File not found or type not recognized.")
+
+    def clearstd(self):
+        self.stdtext.clear()
+
+    @staticmethod
+    def make_jupyter_widget_with_kernel():
+        # Create an in-process kernel
+        kernel_manager = QtInProcessKernelManager()
+        kernel_manager.start_kernel(show_banner=False)
+        kernel = kernel_manager.kernel
+        kernel.gui = 'qt'
+
+        kernel_client = kernel_manager.client()
+        kernel_client.start_channels()
+
+        ipython_widget = RichJupyterWidget()
+        ipython_widget.kernel_manager = kernel_manager
+        ipython_widget.kernel_client = kernel_client
+        return ipython_widget
 
     @staticmethod
     def show_error(msg):
@@ -532,7 +674,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.dataloadtable.setItem(i, 1, item)
             self.dataloadtable.setCellWidget(i, 1, btn)
 
-            self.dataloadtable.item(i, 1).setText(showname)
+            # self.dataloadtable.item(i, 1).setText(showname)
             self.dataloadtable.item(i, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, fname)
 
     def datatableselect(self):
@@ -561,20 +703,21 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         btn.setText(showname)
         self.dataloadtable.setItem(row, 1, item)
         self.dataloadtable.setCellWidget(row, 1, btn)
-        self.dataloadtable.item(row, 1).setText(showname)
+        # self.dataloadtable.item(row, 1).setText(showname)
         self.dataloadtable.item(row, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, fname)
         self.dataloadtable.resizeColumnToContents(1)
 
     def loadData(self):
         specs = []
         for i in range(self.dataloadtable.rowCount()):
-            if self.dataloadtable.item(i, 1).text() != "Data {}".format(i + 1):
-                specs.append(self.dataloadtable.item(i, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole))
+            data_dir = self.dataloadtable.item(i, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
+            if data_dir != "Data {}".format(i + 1):
+                specs.append(data_dir)
 
         if self.delimitertype.currentText() == "Comma":
             sep = ","
         elif self.delimitertype.currentText() == "Tab":
-            sep = "\s+"
+            sep = r"\s+"
         else:
             self.show_error("Delimiter not selected.")
             return
@@ -583,7 +726,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         if len(specs) > 0:
             self.specs_data = fit.open_spec_obs(specs, delimiter=sep)
 
-        self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer)
+        if len(self.specs_data[0].columns) == 1:
+            self.show_error("MEAFS failed to load the data. Maybe wrong separator?")
+            self.specs_data = []
+
+        if self.specs_data:  # check if the list is not empty
+            self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer)
 
     def check_output_folder(self):
         if self.outputname.text() == "":
@@ -652,7 +800,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
             spec_fit_arr = [spec_plot]
             self.plot_line_refer = fit.plot_spec_ui(spec_fit_arr, folder, elem, lamb+str(i), order,
-                                                    self.ax, self.canvas, self.plot_line_refer)
+                                                    self.ax, self.canvas, self.plot_line_refer,
+                                                    vline=False)
 
         self.full_spec_plot_range()
 
@@ -860,15 +1009,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                         qtable.setCellWidget(j, i, checkbox_widget)
 
     def save_session(self, saveas=False, direc=None, flname=None, getdill=False):
-        if direc is None:
-            direc = os.getcwd()
-
-        direc = str(Path(direc).joinpath("session.pkl"))
-
         if (self.filepath is None or saveas) and not getdill and flname is None:
+            if direc is None:
+                direc = os.getcwd()
+
+            direc = str(Path(direc).joinpath("session.pkl"))
+
             self.filepath = QtWidgets.QFileDialog.getSaveFileName(caption="File Name to save current session.",
                                                                   filter="Pickle File (*.pkl)",
                                                                   directory=direc)
+
             self.filepath = self.filepath[0]
 
             if os.path.isdir(self.filepath):
@@ -884,6 +1034,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.refername.text(),
                      self.qtable_to_dict(self.refercontent),
                      self.qtable_to_dict(self.dataloadtable, tooltip=True),
+                     self.delimitertype.currentIndex(),
                      self.specs_data,
                      self.fig,
                      self.plot_line_refer,
@@ -899,9 +1050,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.max_iter,
                      self.convovbound,
                      self.wavebound,
-                     self.continuumpars]
+                     self.continuumpars,
+                     self.tabplotshels.currentIndex(),
+                     self.stdtext.toPlainText()]
 
-        if self.filepath != "" and not getdill:
+        if getdill:
+            return list_save
+        elif self.filepath != "":
             if flname is None:
                 pathfinal = self.filepath
             else:
@@ -909,10 +1064,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
             with open(pathfinal, "wb") as file:
                 dill.dump(list_save, file)
-        elif getdill:
-            return list_save
+            return True
         else:
             self.filepath = None
+            return False
 
     def load_session(self, direc=None, list_save=None, loadprev=False):
         if direc is None:
@@ -940,34 +1095,39 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.refername.setText(list_save[5])
             self.dict_to_qtable(self.refercontent, list_save[6])
             self.dict_to_qtable(self.dataloadtable, list_save[7], tooltip=True)
-            self.specs_data = list_save[8]
-            self.fig = list_save[9]
-            self.plot_line_refer = list_save[10]
-            self.results_array = list_save[11]
-            self.outputname.setText(list_save[12])
-            self.progressvalue.setText(list_save[13])
-            self.dict_to_qtable(self.abundancetable, list_save[14])
-            self.methodbox.setCurrentIndex(list_save[15])
-            self.turbospectrumconfigname.setText(list_save[16])
-            self.turbospectrumoutputname.setText(list_save[17])
-            self.repfit = list_save[18]
-            self.cut_val = list_save[19]
-            self.max_iter = list_save[20]
-            self.convovbound = list_save[21]
-            self.wavebound = list_save[22]
-            self.continuumpars = list_save[23]
+            self.delimitertype.setCurrentIndex(list_save[8])
+            self.specs_data = list_save[9]
+            self.fig = list_save[10]
+            self.plot_line_refer = list_save[11]
+            self.results_array = list_save[12]
+            self.outputname.setText(list_save[13])
+            self.progressvalue.setText(list_save[14])
+            self.dict_to_qtable(self.abundancetable, list_save[15])
+            self.methodbox.setCurrentIndex(list_save[16])
+            self.turbospectrumconfigname.setText(list_save[17])
+            self.turbospectrumoutputname.setText(list_save[18])
+            self.repfit = list_save[19]
+            self.cut_val = list_save[20]
+            self.max_iter = list_save[21]
+            self.convovbound = list_save[22]
+            self.wavebound = list_save[23]
+            self.continuumpars = list_save[24]
+            self.tabplotshels.setCurrentIndex(list_save[25])
+            self.stdtext.clear()
+            self.stdtext.insertPlainText(list_save[26])
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
-            plot_widget = self.plot.itemAt(0).widget()
+            plot_widget = self.plot.itemAt(1).widget()
             plot_widget.deleteLater()
             self.plot.replaceWidget(plot_widget, self.canvas)
 
-            toolbar_widget = self.plot.itemAt(1).widget()
+            toolbar_widget = self.plot.itemAt(0).widget()
             toolbar_widget.deleteLater()
-            self.toolbar = QtWidgets.QToolBar()
-            self.toolbar.addWidget(NavigationToolbar2QT(self.canvas))
-            self.plot.replaceWidget(toolbar_widget, self.toolbar)
+            # self.toolbar = QtWidgets.QToolBar()
+            # self.toolbar.addWidget(NavigationToolbar2QT(self.canvas))
+            # self.plot.replaceWidget(toolbar_widget, self.toolbar)
+            self.plot.replaceWidget(toolbar_widget, VerticalNavigationToolbar2QT(self.canvas))
 
             self.checkmethod()
 

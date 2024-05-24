@@ -69,7 +69,7 @@ def create():
 
     if "linux" in sys.platform:
         module_create(df.getMenuPath())
-    elif "win" in sys.platform:
+    elif "win" in sys.platform and "darwin" not in sys.platform:
         import win32com.client
 
         fls = os.listdir(dir)

@@ -1,6 +1,6 @@
 [project]
 name = "meafs"
-version = "4.6.3"
+version = "4.7.0"
 authors = [
     { name="Matheus J. Castro" }
 ]
@@ -23,7 +23,8 @@ dependencies = [
     "desktop_file==1.3",
     "pathlib",
     "PyQt6",
-    "dill"
+    "dill",
+    "qtconsole"
 ]
 
 [project.scripts]

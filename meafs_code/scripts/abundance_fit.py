@@ -2,8 +2,8 @@
 #####################################################
 # Abundance Fit                                     #
 # Matheus J. Castro                                 #
-# v4.6                                              #
-# Last Modification: 04/23/2024                     #
+# v4.7                                              #
+# Last Modification: 06/24/2024                     #
 # Contact: matheusdejesuscastro@gmail.com           #
 #####################################################
 
@@ -38,7 +38,7 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
     for i in range(0, len(observed_name), increment):
         if increment == 2:
             delimiter = observed_name[i + 1]
-        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delimiter))
+        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delimiter, comment="#"))
     return spec_obs
 
 
@@ -115,7 +115,7 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
     plt.close()
 
 
-def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer):
+def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True):
     # noinspection PySimplifyBooleanCheck
     if spec_fit_arr != []:
         min_all_old = min(spec_fit_arr[0].iloc[:, 0])
@@ -132,7 +132,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         plot_line_refer.reset_index(drop=True, inplace=True)
 
         lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
-        axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
+
         min_all = min(sp.iloc[:, 0])
         max_all = max(sp.iloc[:, 0])
         if min_all < min_all_old:
@@ -141,7 +141,10 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
             max_all_old = max_all
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": lineplot[0]}
-        plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": axvlineplot}
+
+        if vline:
+            axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
+            plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": axvlineplot}
 
         sp.to_csv(Path(folder).joinpath("On_time_Plots",
                                         "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, j + 1)),
@@ -198,7 +201,7 @@ def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth,
         # Return the Turbospectrum2019 configuration file to original abundance value
         tf.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
-        spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+        spec_conv = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
 
         # noinspection PyTypeChecker
         spec_fit = ff.spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
@@ -352,12 +355,14 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                     opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum,
                                                                iterac=max_iter[1], convovbound=convovbound,
                                                                wavebound=wavebound)
-                ui.abundancelabel.setText("Deepth")
+                if ui is not None:
+                    ui.abundancelabel.setText("Deepth")
             elif type_synth[0] == "TurboSpectrum":
                 tf.change_spec_range_configfl(config_fl, lamb, cut_val[0])
                 tf.run_configfl(config_fl)
-                spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
-                ui.abundancelabel.setText("Abundance")
+                spec_conv = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
+                if ui is not None:
+                    ui.abundancelabel.setText("Abundance")
 
                 if opt_pars is None:
                     opt_pars = tf.optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, continuum,
@@ -402,7 +407,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                 flux=np.asarray(spec_obs_cut[1]) * u.Jy)
             equiv_width_obs = equivalent_width(spec1d)
             # noinspection PyUnresolvedReferences
-            equiv_width_obs = np.float128(equiv_width_obs / u.AA)
+            equiv_width_obs = np.float16(equiv_width_obs / u.AA)
 
             # Fit of Equivalent Width Fitted Spectrum
             # noinspection PyUnresolvedReferences
@@ -410,7 +415,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                 flux=np.asarray(spec_fit[1]) * u.Jy)
             equiv_width_fit = equivalent_width(spec1d)
             # noinspection PyUnresolvedReferences
-            equiv_width_fit = np.float128(equiv_width_fit / u.AA)
+            equiv_width_fit = np.float16(equiv_width_fit / u.AA)
 
         found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
                                        par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi),
@@ -429,7 +434,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
             # Return the Turbospectrum2019 configuration file to original abundance value
             tf.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
 
-            spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+            spec_conv = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
 
             # noinspection PyTypeChecker
             spec_fit = ff.spec_operations(spec_conv.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
@@ -463,7 +468,7 @@ def read_config(config_name):
         if sep == "comma":
             return ","
         elif sep == "tab":
-            return "\s+"
+            return r"\s+"
         else:
             return ","
 
@@ -528,10 +533,8 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     folder = ui.outputname.text()
 
     # Create necessary folders
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-    if not os.path.exists(Path(folder).joinpath("On_time_Plots")):
-        os.mkdir(Path(folder).joinpath("On_time_Plots"))
+    folder_create = Path(folder).joinpath("On_time_Plots")
+    os.makedirs(folder_create, exist_ok=True)
 
     linelist = []
     for line in range(ui.linelistcontent.rowCount()):
@@ -601,8 +604,8 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     # Time Counter
     end = time.time()
     dif = end - init
-    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s).".format(dif // 3600, (dif // 60) % 60, dif % 60,
-                                                                             dif)
+    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s).\n".format(dif // 3600, (dif // 60) % 60,
+                                                                               dif % 60, dif)
 
     # noinspection PyTypeChecker
     with open(str(Path(folder).joinpath("log.txt")), "a") as f:
