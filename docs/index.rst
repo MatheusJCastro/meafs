@@ -8,6 +8,9 @@ Multiple Element Abundance Fitting Software - MEAFS
 
 | Here you can find how to install, run and read the results from MEAFS.
 
+| GitHub Page: `https://github.com/MatheusJCastro/meafs <https://github.com/MatheusJCastro/meafs>`_
+| Pypi Page: `https://pypi.org/project/meafs/ <https://pypi.org/project/meafs/>`_
+
 Aims
 ----
 
