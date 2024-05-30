@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-#####################################################
-# MEAFS GUI                                         #
-# Matheus J. Castro                                 #
-# v4.7                                              #
-# Last Modification: 06/24/2024                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
+"""
+| MEAFS GUI
+| Matheus J. Castro
+| v4.7
+| Last Modification: 06/28/2024
+
+| This is the main file. Here it is included all MEAFS features and the GUI.
+"""
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
@@ -46,6 +47,10 @@ except ModuleNotFoundError:
 
 
 def exception_hook(exctype, value, traceback):
+    """
+    Function to redirect the errors of the modules to the main module, so the error can be verified.
+    """
+
     print(exctype, value, traceback)
     sys._excepthook(exctype, value, traceback)
     sys.exit(1)
@@ -56,23 +61,44 @@ sys.excepthook = exception_hook
 
 
 class Stdredirect:
-    def __init__(self, edit, color=None, out=None):
+    """
+    Class that redirect the stdout (outputs) and the stderr (errors) to the GUI and to the terminal, if available.
+    """
+
+    def __init__(self, edit, color=None, out=None, showtab=None):
+        """
+        Declare the needed variables.
+
+        :param edit: the QT Widget that will receive the messages.
+        :param color: the color of the message.
+        :param out: the original stdout/stderr to redirect the messages.
+        :param showtab: If the tab where the message is written should be triggered as selected or not.
+        """
+
         self.edit = edit
         self.color = color
         self.out = out
+        self.showtab = showtab
 
     def write(self, text):
-        orig_color = None
-        if self.color:
-            orig_color = self.edit.textColort()
-            self.edit.setTextColor(self.color)
+        """
+        Write function that actually writes the output in the GUI and in the terminal (if present).
+
+        :param text: the text message to be printed.
+        """
+
+        if self.showtab:
+            self.showtab.setCurrentIndex(2)
 
         horScrollBarcur = self.edit.horizontalScrollBar().value()
         verScrollBarcur = self.edit.verticalScrollBar().value()
         verScrollBarmax = self.edit.verticalScrollBar().maximum()
 
         self.edit.moveCursor(QtGui.QTextCursor.MoveOperation.End)
-        self.edit.insertPlainText(text)
+        if self.color:
+            self.edit.insertHtml("<span style='color: {};'>{}</span><br><br>".format(self.color, text))
+        else:
+            self.edit.insertPlainText(text)
 
         if verScrollBarmax - verScrollBarcur <= 10:
             self.edit.verticalScrollBar().setValue(self.edit.verticalScrollBar().maximum())
@@ -81,18 +107,23 @@ class Stdredirect:
             self.edit.horizontalScrollBar().setValue(horScrollBarcur)
             self.edit.verticalScrollBar().setValue(verScrollBarcur)
 
-        if self.color:
-            self.edit.setTextColor(orig_color)
-
         if self.out:
             self.out.write(text)
 
     def flush(self):
+        """
+        Flush function from the sys.flush()
+        """
+
         if self.out:
             self.out.flush()
 
 
 class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
+    """
+    Class to create a vertical toolbar for the plot in the matplotlib package.
+    """
+
     # Add only intended buttons
     toolitems = [('Home', 'Reset original view', 'home', 'home'),
                  ('Back', 'Back to previous view', 'back', 'back'),
@@ -106,6 +137,14 @@ class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
                  ]
 
     def __init__(self, canvas, parent=None, coordinates=True):
+        """
+        Define the vertical property of the toolbar and calls the original toolbar from matplotlib.
+
+        :param canvas: the canvas where the toolbar should be effective.
+        :param parent: parent widget.
+        :param coordinates: coordinates of the mouse pointer.
+        """
+
         # Calls the original routine
         super().__init__(canvas, parent, coordinates)
 
@@ -118,14 +157,22 @@ class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
                 QtCore.Qt.AlignmentFlag.AlignBottom))
 
             self.locLabel.setSizePolicy(QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.Policy.Ignored,
+                # QtWidgets.QSizePolicy.Policy.Ignored,  # using Fixed instead
+                QtWidgets.QSizePolicy.Policy.Fixed,
                 QtWidgets.QSizePolicy.Policy.Expanding,
             ))
+            self.locLabel.setFixedWidth(50)  # default: 30
             labelAction = self.addWidget(self.locLabel)
             labelAction.setVisible(True)
 
-    # disable showing mouse position in toolbar
+    # config showing mouse position in toolbar
     def set_message(self, s):
+        """
+        Write the mouse pointer coordinates in the toolbar.
+
+        :param s: the message to write (coordinates)
+        """
+
         self._message.emit(s)
         if self.coordinates:
             if "(x, y)" in s:
@@ -133,12 +180,31 @@ class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
                 s = s[-1]
                 s = s[1:-1]
                 s = s.split(", ")
-                s = "Wave\n{}\n\nFlux\n{}".format(s[0], s[1])
+
+                # Check if the value is negative, the negative sign string used by the toolbar
+                # is not recognized in the function float()
+                if ord(s[0][0]) == 8722:
+                    s = ["-"+s[0][1:], s[1]]
+                if ord(s[1][0]) == 8722:
+                    s = [s[0], "-"+s[1][1:]]
+
+                s = "Wave\n{:.0f}\nFlux\n{:.2f}".format(float(s[0]),
+                                                        float(s[1]))
             self.locLabel.setText(s)
 
 
 class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
+    """
+    Main class that define the properties of the GUI.
+    """
+
     def __init__(self, parent=None):
+        """
+        Defines and create all variables used by the program.
+
+        :param parent: the parent class (in this case the GUI created using the Qt Designer).
+        """
+
         # Arguments Configuration 1
         self.args = sys.argv
         self.argument_resolve(fastcheck=True)
@@ -148,12 +214,17 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))))
 
+        # Jupyter Qt Console Configuration
+        self.ipython_widget = self.make_jupyter_widget_with_kernel()
+        self.layoutjupyshell.addWidget(self.ipython_widget)
+        self.ipython_widget.kernel_manager.kernel.shell.push(locals())
+
         # Stdout and Stderr configuration
         self.stdtext.setReadOnly(True)
         self.stdtext.insertPlainText("This is MEAFS v{}.\n".format(version) +
                                      "Messages and errors will appear here.\n\n")
         sys.stdout = Stdredirect(self.stdtext, out=sys.stdout)
-        sys.stderr = Stdredirect(self.stdtext, out=sys.stderr, color=QtGui.QColor(255, 0, 0))
+        sys.stderr = Stdredirect(self.stdtext, out=sys.stderr, color="lightcoral", showtab=self.tabplotshels)
         self.clearstdbutton.clicked.connect(self.clearstd)
 
         # Read Settings
@@ -323,11 +394,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Arguments Configuration 2
         self.argument_resolve()
 
-        # Jupyter Qt Console Configuration
-        self.ipython_widget = self.make_jupyter_widget_with_kernel()
-        self.layoutjupyshell.addWidget(self.ipython_widget)
-        self.ipython_widget.kernel_manager.kernel.shell.push(locals())
-
         # TEMPORARY
         # self.repfit = 1
         # self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
@@ -345,6 +411,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # self.tabplotshels.setCurrentIndex(1)
 
     def keyPressEvent(self, event):
+        """
+        Catches keyboard events to create shortcuts used.
+
+        Available shortcuts are:
+            | Ctrl+S: Save the session;
+            | Ctrl+V: Show the entire spectrum.
+
+        :param event: the event itself.
+        """
+
         if isinstance(event, QtGui.QKeyEvent):
             if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
                 if event.key() == QtCore.Qt.Key.Key_S:
@@ -353,6 +429,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                     self.full_spec_plot_range()
 
     def closeEvent(self, event):
+        """
+        Handles the close button event and trigger an "are you sure?" message.
+
+        :param event: the event itself.
+        """
+
         if self.show_quit():
             self.ipython_widget.kernel_client.stop_channels()
             self.ipython_widget.kernel_manager.shutdown_kernel()
@@ -361,10 +443,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             event.ignore()
 
     def quitbtn(self):
+        """
+        Create an alias to the close button event.
+        """
+
         if self.show_quit():
             exit("Exit button pressed.")
 
     def show_quit(self):
+        """
+        Shows the quit message "are you sure?"
+
+        :return: true or false, depending on the clicked button.
+        """
+
         textclose = "Are you sure want to quit MEAFS?\n"
         if self.autosave.isChecked():
             textclose += "Auto Save is ON."
@@ -396,6 +488,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             return False
 
     def enable_auto_save(self):
+        """
+        Enable or disable the timed auto-save and the close auto-save capability and write
+        this setting in to the settings file.
+        """
+
         if self.autosave.isChecked():
             self.settings.loc[self.settings.variable == "auto_save", "value"] = 1
             self.timer.start()
@@ -407,6 +504,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.settings.to_csv(self.sett_path, index=None)
 
     def auto_save(self):
+        """
+        Save the session by the *auto_save.plk* file name or the name previously chosen by the user.
+        """
+
         if self.filepath is None:
             flname = Path(os.path.dirname(__file__)).joinpath("auto_save.pkl")
             self.save_session(flname=flname)
@@ -414,6 +515,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.save_session()
 
     def argument_resolve(self, fastcheck=False):
+        """
+        Resolve the arguments passed in the commandline.
+
+        :param fastcheck: if true, only check for the help and version arguments.
+        """
+
         if "-h" in self.args or "--help" in self.args:
             path1 = Path(os.path.dirname(__file__)).joinpath("auto_save_last.pkl")
             path2 = Path(os.path.dirname(__file__)).joinpath("auto_save.pkl")
@@ -452,10 +559,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 exit("File not found or type not recognized.")
 
     def clearstd(self):
+        """
+        Clear the QT Widget that receive the stdout and stderr messages.
+        """
+
         self.stdtext.clear()
 
     @staticmethod
     def make_jupyter_widget_with_kernel():
+        """
+        Create and configure the Jupyter QT Widget.
+
+        :return: the widget itself.
+        """
+
         # Create an in-process kernel
         kernel_manager = QtInProcessKernelManager()
         kernel_manager.start_kernel(show_banner=False)
@@ -472,6 +589,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     @staticmethod
     def show_error(msg):
+        """
+        Show a QT window for some user-input-error message.
+
+        :param msg: the message to be showed.
+        """
+
         error_dialog = QtWidgets.QMessageBox()
         error_dialog.setWindowTitle("Error")
         error_dialog.setIcon(QtWidgets.QMessageBox.Icon.Warning)
@@ -487,6 +610,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     @staticmethod
     def browse(uiobject, caption, direc=None):
+        """
+        Show a File Dialog to select some file.
+
+        :param uiobject: the QT widget that shows the file path.
+        :param caption: the caption in File Dialog.
+        :param direc: the first directory that File Dialog should show.
+        """
+
         if direc is None:
             direc = os.getcwd()
 
@@ -498,6 +629,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     @staticmethod
     def browse_dir_out(uiobject, caption, direc=None):
+        """
+        Show a File Dialog to select some directory.
+
+        :param uiobject: the QT widget that shows the file path.
+        :param caption: the caption in File Dialog.
+        :param direc: the first directory that File Dialog should show.
+        """
+
         if direc is None:
             direc = os.getcwd()
 
@@ -509,6 +648,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             uiobject.setText(fname)
 
     def tablecheckbox(self, state):
+        """
+        Create a QT Widget with a CheckBox inside to use it in QT tables.
+
+        :param state: if it should be checked or not.
+        :return: the QT widget containing the checkbox.
+        """
+
         item = QtWidgets.QCheckBox()
 
         if state:
@@ -530,6 +676,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         return checkbox_widget
 
     def loadLinelist(self):
+        """
+        Load a line-list file with element and wavelength in the proper QT table.
+        """
+
         fname = self.linelistname.text()
         if fname != "":
             linelist_data = fit.open_linelist_refer_fl(fname)
@@ -554,6 +704,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.show_error("Empty Linelist location.")
 
     def checkLinelistElements(self):
+        """
+        Check or uncheck all checkboxes in the line-list table.
+        """
+
         for i in range(self.linelistcontent.rowCount()):
             if self.linelistcheckbox.checkState() == QtCore.Qt.CheckState.Checked:
                 checkbox_widget = self.tablecheckbox(True)
@@ -565,6 +719,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.checkLineliststate()
 
     def checkLineliststate(self):
+        """
+        Count the number of checked checkboxes in the line-list table,
+        update the progress total value accordingly and also check or
+        uncheck the "Select All" element.
+        """
+
         linescurrent = self.progressvalue.text().split("/")
 
         checkeds = 0
@@ -584,6 +744,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.linelistcheckbox.setCheckState(QtCore.Qt.CheckState.Unchecked)
 
     def tablecheckboxindividual(self):
+        """
+        Check or uncheck a unique checkbox in the line-list table.
+        """
+
         row = self.linelistcontent.currentIndex().row()
         col = self.linelistcontent.currentIndex().column()
         if col == 2:
@@ -598,6 +762,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.checkLineliststate()
 
     def loadRefer(self):
+        """
+        Load the abundance reference file containing the elements and their abundances in the QT table.
+        """
+
         fname = self.refername.text()
         if fname != "":
             refer_data = fit.open_linelist_refer_fl(fname)
@@ -614,6 +782,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.show_error("Empty Abundance Reference file location.")
 
     def LineAddRemove(self, uiobject, add, islinelist=False):
+        """
+        Add new or removes lines from a QT table.
+
+        :param uiobject: the QT table widget to change.
+        :param add: true: add a line; false: remove a line.
+        :param islinelist: if it is a line-list table, also calls the function to generate the checkboxes.
+        """
         if add is True:
             new_row = uiobject.rowCount() + 1
             uiobject.setRowCount(new_row)
@@ -625,12 +800,22 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             uiobject.setRowCount(uiobject.rowCount() - 1)
 
     def graymethods(self, metharray):
+        """
+        Gray the tabs of the methods that are not selected.
+
+        :param metharray: the pattern that should be grayed.
+        """
+
         self.eqwidthtab.setEnabled(metharray[0])
         self.turbspectrumtab.setEnabled(metharray[1])
         self.pfanttab.setEnabled(metharray[2])
         self.synthetab.setEnabled(metharray[3])
 
     def checkmethod(self):
+        """
+        Check which methods tab is selected and disable the other ones.
+        """
+
         if self.methodbox.currentIndex() == 0:
             self.graymethods([True, False, False, False])
             self.methodstab.setCurrentIndex(0)
@@ -645,6 +830,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.methodstab.setCurrentIndex(3)
 
     def datatableconfig(self, load=False, loaddata=None):
+        """
+        Configure the button to show the spectrum file name and the tooltip
+        to show the full path in the data QT table.
+
+        :param load: if it is to load or to clear the spectrum data.
+        :param loaddata: the data containing the file names.
+        """
+
         self.dataloadtable.setRowCount(10)
         self.dataloadtable.verticalHeader().setVisible(False)
 
@@ -678,6 +871,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.dataloadtable.item(i, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, fname)
 
     def datatableselect(self):
+        """
+        Configure the data QT table with the buttons to select spectra or clear them.
+        """
+
         row = self.dataloadtable.currentRow()
 
         fname = [""]
@@ -708,6 +905,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.dataloadtable.resizeColumnToContents(1)
 
     def loadData(self):
+        """
+        Load the data present in the QT table and call the function to plot the spectra in the GUI.
+        """
+
         specs = []
         for i in range(self.dataloadtable.rowCount()):
             data_dir = self.dataloadtable.item(i, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
@@ -734,12 +935,22 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer)
 
     def check_output_folder(self):
+        """
+        Check if the output folder location is written.
+
+        :return: true if it is present, otherwise false.
+        """
+
         if self.outputname.text() == "":
             self.show_error("Empty Output Location.")
             return False
         return True
 
     def run_fit(self):
+        """
+        Call the fit algorithm.
+        """
+
         if self.check_output_folder():
             self.abundancetable.setRowCount(0)
             self.results_array, self.ax, self.plot_line_refer = fit.gui_call(self.specs_data,
@@ -752,6 +963,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              repfit=self.repfit)
 
     def run_fit_nopars(self):
+        """
+        Call the fit algorithm only for the abundance, without fitting the
+        Wavelength Shift, Continuum and Convolution.
+        """
+
         if self.check_output_folder():
             opt_pars = [self.lambshifvalue.value(),
                         self.continuumvalue.value(),
@@ -769,6 +985,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              repfit=self.repfit)
 
     def run_nofit(self):
+        """
+        Call the fit algorithm without any fit at all, only to generate the plots
+        with the selected values.
+        """
+
         if self.check_output_folder():
             opt_pars = [self.lambshifvalue.value(),
                         self.continuumvalue.value(),
@@ -787,6 +1008,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              results_array=self.results_array)
 
     def run_check_continuum(self):
+        """
+        Call the Continuum algorithm and draw in the plot the results.
+        """
+
         folder = self.outputname.text()
         elem, order, lamb = "continuum", "", "all"
 
@@ -806,6 +1031,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.full_spec_plot_range()
 
     def run_erase_continuum(self):
+        """
+        Erase from the plot the continuum fit line.
+        """
+
         ind = self.plot_line_refer[(self.plot_line_refer["elem"] == "continuum")].index
         for line in self.plot_line_refer.loc[ind, "refer"]: line.remove()
         self.plot_line_refer.drop(ind, inplace=True)
@@ -814,6 +1043,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.canvas.draw()
 
     def save_cur_abund(self):
+        """
+        Save the results of the fit in a CSV file.
+        """
+
         currow = self.abundancetable.currentRow()
         currow = self.abundancetable.rowCount() - 1 if currow == -1 else currow
         elem = self.abundancetable.item(currow, 0).text()
@@ -841,6 +1074,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.results_array.to_csv(Path(folder).joinpath(save_name), index=False, float_format="%.4f")
 
     def open_prev_results(self):
+        """
+        Open CSV files with previous runs and load the results, including
+        the available plots (if any).
+        """
+
         init_path = self.outputname.text()
         fname = QtWidgets.QFileDialog.getOpenFileName(caption="Select Previous Results File",
                                                       filter="Text File (*.txt, *.csv, *)",
@@ -872,6 +1110,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.canvas.draw()
 
     def results_show_tab(self):
+        """
+        Show the results of the selected line in the results table in the results
+        tab and focus the plot in the current line.
+        """
+
         currow = self.abundancetable.currentRow()
 
         self.lambshifvalue.setValue(self.results_array.iloc[currow, 2])
@@ -884,6 +1127,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.canvas.draw()
 
     def full_spec_plot_range(self):
+        """
+        Find the total maximum and minimum values of the current plot and
+        change the range to it.
+        """
+
         if self.specs_data != []:
             xmin_all_old = min(self.specs_data[0].iloc[:, 0])
             xmax_all_old = max(self.specs_data[0].iloc[:, 0])
@@ -915,7 +1163,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.canvas.draw()
 
     def fitparWindow(self):
+        """
+        Call and get the values of the *Fit Parameters* window.
+        """
+
         def accept():
+            """Write the values from the window in the main variables"""
+
             self.repfit = uifitset.repfitvalue.value()
             self.cut_val = [uifitset.wavecutvalue.value()/2,
                             uifitset.convovcutvalue.value()/2,
@@ -930,14 +1184,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                   uifitset.contfitparepsvalue.value()]
             self.wavebound = uifitset.waveboundmaxshiftvalue.value()
 
-        def check_convov():
+        def check_convov(showerror=False):
+            """Check if the convolution respect the limits"""
             if uifitset.convovcutvalue.value() > uifitset.wavecutvalue.value():
                 uifitset.convovcutvalue.setValue(uifitset.wavecutvalue.value())
-                self.show_error("Convolution Fit Range can not be higher than Continuum/Wave. Shit range.")
-
-        def check_contwave():
-            if uifitset.convovcutvalue.value() > uifitset.wavecutvalue.value():
-                uifitset.convovcutvalue.setValue(uifitset.wavecutvalue.value())
+                if showerror:
+                    self.show_error("Convolution Fit Range can not be higher than Continuum/Wave. Shit range.")
 
         fitparbox = QtWidgets.QDialog()
         uifitset = Ui_fitparbox()
@@ -958,13 +1210,22 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         uifitset.waveboundmaxshiftvalue.setValue(self.wavebound)
         uifitset.okcancelbutton.accepted.connect(accept)
 
-        uifitset.wavecutvalue.valueChanged.connect(check_contwave)
-        uifitset.convovcutvalue.valueChanged.connect(check_convov)
+        uifitset.wavecutvalue.valueChanged.connect(lambda: check_convov(showerror=False))
+        uifitset.convovcutvalue.valueChanged.connect(lambda: check_convov(showerror=True))
 
         fitparbox.exec()
 
     @staticmethod
     def qtable_to_dict(qtable, checkboxes=None, tooltip=False):
+        """
+        Transform a QT Table in a dictionary.
+
+        :param qtable: the QT Table to be read.
+        :param checkboxes: the index of checkboxes, if exists.
+        :param tooltip: get the item or the tooltip (for spectrum data table)
+        :return: the dictionary
+        """
+
         rows = qtable.rowCount()
         columns = qtable.columnCount()
         dict_table = {}
@@ -992,6 +1253,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         return dict_table
 
     def dict_to_qtable(self, qtable, dict_table, checkboxes=None, tooltip=False):
+        """
+        Transform a QT Table in a dictionary.
+
+        :param qtable: the QT Table to be written.
+        :param dict_table: the dictionary to read the data.
+        :param checkboxes: the index of checkboxes, if exists.
+        :param tooltip: write the item or the tooltip (for spectrum data table)
+        """
+
         qtable.setColumnCount(len(dict_table))
         qtable.setRowCount(len(dict_table[list(dict_table.keys())[0]]))
         for i, value in enumerate(dict_table):
@@ -1009,6 +1279,18 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                         qtable.setCellWidget(j, i, checkbox_widget)
 
     def save_session(self, saveas=False, direc=None, flname=None, getdill=False):
+        """
+        Save a session using dill.
+
+        :param saveas: if true, ignore the `self.filepath` variable.
+        :param direc: the directory where the File Dialog should first open.
+        :param flname: file name to save the session. If present, the File Dialog will not be shown.
+        :param getdill: if true, does not save the session and
+                        return the list to be saved.
+        :return: the list to be saved (if ``getdill`` is true), true if the session is saved or
+                 false if the `self.filepath` was not properly filled.
+        """
+
         if (self.filepath is None or saveas) and not getdill and flname is None:
             if direc is None:
                 direc = os.getcwd()
@@ -1052,7 +1334,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.wavebound,
                      self.continuumpars,
                      self.tabplotshels.currentIndex(),
-                     self.stdtext.toPlainText()]
+                     self.stdtext.toHtml()]
 
         if getdill:
             return list_save
@@ -1070,6 +1352,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             return False
 
     def load_session(self, direc=None, list_save=None, loadprev=False):
+        """
+        Load a previously saved session, or a list with all session-variables.
+
+        :param direc: the directory where the File Dialog should first open.
+        :param list_save: a list with all session-variable. If it is different from None,
+                          the prompt to choose a file will not be shown.
+        :param loadprev: if true, the path of the file needs to be written in the
+                         ``self.filepath`` variable.
+        """
+
         if direc is None:
             direc = os.getcwd()
 
@@ -1114,7 +1406,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.continuumpars = list_save[24]
             self.tabplotshels.setCurrentIndex(list_save[25])
             self.stdtext.clear()
-            self.stdtext.insertPlainText(list_save[26])
+            self.stdtext.insertHtml(list_save[26])
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
@@ -1132,13 +1424,26 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.checkmethod()
 
     def new_session(self):
+        """
+        Load a new empty session by overriding all variable to the default values.
+        """
+
         close_dialog = QtWidgets.QMessageBox()
         close_dialog.setWindowTitle("New Session")
         close_dialog.setText("Are you sure want to open a new session? All changes not saved will be lost.")
         close_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes)
         close_dialog.addButton(QtWidgets.QMessageBox.StandardButton.No)
         close_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+
         if close_dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+            self.fig = plt.figure(tight_layout=True)
+            self.canvas = FigureCanvasQTAgg(self.fig)
+            self.canvas.figure.supxlabel("Wavelength [\u212B]")
+            self.canvas.figure.supylabel("Flux")
+            self.ax = self.canvas.figure.add_subplot(111)
+            self.ax.grid()
+            self.canvas.draw()
+
             list_save = [None,
                          "",
                          QtCore.Qt.CheckState.Unchecked,
@@ -1152,6 +1457,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          {"": [None, None, None, None, None, None, None, None, None, None],
                           "Data": ["Data 1", "Data 2", "Data 3", "Data 4", "Data 5",
                                    "Data 6", "Data 7", "Data 8", "Data 9", "Data 10"]},
+                         0,
                          [],
                          self.fig,
                          pd.DataFrame(columns=["elem", "wave", "refer"]),
@@ -1168,11 +1474,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          [1000, 1000, 10],
                          [0, 5],
                          .2,
-                         [2, 8]]
-
-            self.canvas.figure.delaxes(self.ax)
-            self.ax = self.canvas.figure.add_subplot(111)
-            self.ax.grid()
+                         [2, 8],
+                         0,
+                         ""]
 
             self.lambshifvalue.setValue(0.0000)
             self.continuumvalue.setValue(0.0000)
@@ -1185,6 +1489,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
 
 def main():
+    """
+    Main function to run the GUI.
+    """
+
     app = QtWidgets.QApplication(sys.argv)
     win = MEAFS()
     win.show()

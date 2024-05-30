@@ -1,10 +1,11 @@
-#####################################################
-# MEAFS Desktop Entry Creation                      #
-# Matheus J. Castro                                 #
-# v1.2                                              #
-# Last Modification: 04/12/2024                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
+"""
+| MEAFS Desktop Entry Creation
+| Matheus J. Castro
+| v1.3
+| Last Modification: 06/28/2024
+
+| This file analyse and create aliases in the system to run MEAFS through an entry in the system menu.
+"""
 
 import desktop_file as df
 from pathlib import Path
@@ -13,6 +14,15 @@ import os
 
 
 def get_curr_dir():
+
+    """
+    Get the current environment running python (like anaconda or system)
+    and the directory where the file is located.
+
+    :return: the command that activates anaconda environment (if present) and the file absolute path.
+    """
+
+
     def anaconda_error():
         sys.exit("Error: anaconda environment detected but path not found.")
 
@@ -51,6 +61,8 @@ def get_curr_dir():
 
 
 def create():
+    """Create the menu entry in the system to run MEAFS."""
+
     def module_create(path):
         print("Creating shortcut at: ", path)
         shortcut = df.Shortcut(path, "MEAFS", "{}python{} -m meafs_code".format(conda, vers))
@@ -103,6 +115,8 @@ def create():
 
 
 def remove():
+    """Remove the menu entry in the system that run MEAFS."""
+
     def erasing(path_fl, fl):
         path_fl = str(Path(path_fl).joinpath(fl))
         print("Removing file: ", path_fl)

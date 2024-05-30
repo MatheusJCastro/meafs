@@ -1,10 +1,11 @@
-#####################################################
-# MEAFS Fit Functions                               #
-# Matheus J. Castro                                 #
-# v1.4                                              #
-# Last Modification: 04/23/2024                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
+"""
+| MEAFS Fit Functions
+| Matheus J. Castro
+| v1.4
+| Last Modification: 04/23/2024
+
+| Fit functions that are used, like the C library, the :math:`\\chi^2` calculation, bisection and more.
+"""
 
 from astropy.convolution import Gaussian1DKernel, convolve
 from pathlib import Path
@@ -15,7 +16,13 @@ import os
 
 
 def c_init(c_name):
-    # Funtion to initialize the C shared library
+    """
+    Function to initialize the C shared library
+
+    :param c_name: name of the shared C library.
+    :return: the initialized object.
+    """
+
     c_library = ctypes.CDLL("{}".format(c_name))
 
     # Defining functions argument types
@@ -30,7 +37,13 @@ def c_init(c_name):
 
 
 def chi2(spec1, spec2):
-    # Function to find the chi square of two arrays
+    """
+    Function to find the :math:`\\chi^2` of two arrays using the C library.
+
+    :param spec1: first array.
+    :param spec2: seccond array.
+    :return: the :math:`\\chi^2`.
+    """
 
     global c_lib
 
@@ -74,7 +87,13 @@ def chi2(spec1, spec2):
 
 
 def bisec(spec, lamb):
-    # Function to apply the bisection script to find a number position in an array
+    """
+    Function to apply the bisection script to find a number position in an array.
+
+    :param spec: array to analyse.
+    :param lamb: value to look for.
+    :return: the position.
+    """
 
     # Uncomment the script bellow to use the C library (slower)
     # global c_lib
@@ -106,7 +125,15 @@ def bisec(spec, lamb):
 
 
 def cut_spec(spc, lamb, cut_val=1.):
-    # Function to restrict the array in the desired range
+    """
+    Function to restrict the array in the desired range
+
+    :param spc: the array.
+    :param lamb: the central position.
+    :param cut_val: the range to be restricted.
+    :return: the restricted array.
+    """
+
     val0 = bisec(spc, lamb - cut_val)
     val1 = bisec(spc, lamb + cut_val)+1
 
@@ -114,7 +141,16 @@ def cut_spec(spc, lamb, cut_val=1.):
 
 
 def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
-    # Function to apply lambda shift, continuum fit and convolution to the spectrum
+    """
+    Function to apply lambda shift, continuum fit and convolution to the spectrum
+
+    :param spec: the spectrum to be changed.
+    :param lamb_desloc: the shift in wavelength to be applied.
+    :param continuum: the continuum to be applied.
+    :param convol: the convolution to be applied.
+    :return: the modified spectrum.
+    """
+
     spec[0] = spec[0] + lamb_desloc
     spec[1] = spec[1] * continuum
 
@@ -130,6 +166,15 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
 
 
 def fit_continuum(spec, contpars=None, iterac=1000):
+    """
+    Fit the overrall continuum in the entire spectrum.
+
+    :param spec: spectrum data.
+    :param contpars: the calibration values of the method.
+    :param iterac: maximum number of iterations.
+    :return: the mean and the standard deviation (continuum and errors).
+    """
+
     if contpars is None:
         alpha = .5
         eps = 20

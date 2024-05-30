@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
+"""
+| MEAFS Abundance Analysis
+| Matheus J. Castro
+| v3.0
+| Last Modification: 07/01/2022
 
-#####################################################
-# Abundance Analysis                                #
-# Matheus J. Castro                                 #
-# v3.0                                              #
-# Last Modification: 07/01/2022                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
-
-# This program generates graphics to analyse the results obtained with the abundance_fit.py
-
-# For this code work, it must be in the same folder as the abundance_fit.py file
+| This program generates graphics to analyse the results obtained with the abundance_fit.py
+| For this code work, it must be in the same folder as the *abundance_fit.py* file
+"""
 
 import matplotlib.pyplot as plt
 from scipy.stats import norm
@@ -27,7 +24,13 @@ except ModuleNotFoundError:
 
 
 def erase_emission_order(abund):
-    # Function to erase the emission order in the database
+    """
+    Erase the emission order in the database.
+
+    :param abund: pandas element with the abundances for each line.
+    :return: the abundance dataframe without the emission orders.
+    """
+
     new_elem = []
     for i in range(len(abund)):
         new_elem.append(abund.Element.iloc[i][:-1])
@@ -38,14 +41,27 @@ def erase_emission_order(abund):
 
 
 def erase_null_abund(abund):
-    # Function to erase the empty slots in the database
+    """
+    Erase the empty slots in the database.
+
+    :param abund: pandas element with the abundances.
+    :return: the abundance dataframe without the null elements.
+    """
+
     abund = abund[abund["Fit Abundance"].notnull()]
     return abund
 
 
 def plot_abund_hist(abund, elements, folder):
-    # Plot histograms for abundance for each element
-    # and trace a gaussian with the mean and standard deviation
+    """
+    Creeate histograms for abundance for each element
+    and trace a gaussian with the mean and standard deviation.
+
+    :param abund: pandas element with the abundances.
+    :param elements: elements to create histograms.
+    :param folder: directory to be saved.
+    """
+
     for i in elements:
         elem_abunds = abund["Fit Abundance"][abund.Element == i]
 
@@ -79,8 +95,15 @@ def plot_abund_hist(abund, elements, folder):
 
 
 def plot_differ_hist(abund, elements, folder):
-    # Plot histograms for abundance shift for each element
-    # and trace a gaussian with the mean and standard deviation
+    """
+    Plot histograms for abundance shift for each element
+    and trace a gaussian with the mean and standard deviation
+
+    :param abund: pandas element with the abundances.
+    :param elements: elements to create histograms.
+    :param folder: directory to be saved.
+    """
+
     for i in elements:
         elem_differ = abund["Differ"][abund.Element == i]
 
@@ -114,6 +137,14 @@ def plot_differ_hist(abund, elements, folder):
 
 
 def plot_abund_box(abund, elements, folder):
+    """
+    Create the abundance box plot.
+
+    :param abund: pandas element with the abundances.
+    :param elements: elements to create histograms.
+    :param folder: directory to be saved.
+    """
+
     abund_matrix = []
     for i in elements:
         abund_matrix.append(abund["Fit Abundance"][abund.Element == i])
@@ -143,7 +174,17 @@ def plot_abund_box(abund, elements, folder):
 
 
 def get_spectrum(fit_data, conv_name, config_fl, elem, abundance_shift=0., cut_val=1.):
-    # Function to get the observed spectrum in the desired range
+    """
+    Function to get the synthetic spectrum in the desired range.
+
+    :param fit_data: pandas dataframe with the results.
+    :param conv_name: file name of the TurboSpectrum output file.
+    :param config_fl: file name of the TurboSpectrum configuration file.
+    :param elem: element to be plotted.
+    :param abundance_shift: overall shift in abundance, if needed.
+    :param cut_val: range to plot.
+    :return: the final spectrum.
+    """
 
     # Get data from fit
     lamb = fit_data["Lambda (A)"]
@@ -155,7 +196,7 @@ def get_spectrum(fit_data, conv_name, config_fl, elem, abundance_shift=0., cut_v
     ab_fit.run_configfl(config_fl)
 
     # Read and cut the model spectrum to the desired range
-    spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
+    spec = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
     # spec = ab_fit.cut_spec(spec, lamb, cut_val/2)
 
     # Apply the fit resolutions to the spectra
@@ -166,7 +207,14 @@ def get_spectrum(fit_data, conv_name, config_fl, elem, abundance_shift=0., cut_v
 
 
 def get_diff(spec1, spec2):
-    # Function to get the difference of observed and model spectrum
+    """
+    Get the difference of observed and synthetic spectrum.
+
+    :param spec1: first spectrum.
+    :param spec2: second spectrum.
+    :return: -1 if it finds nothing; otherwise the difference.
+    """
+
     lambs = np.array([])
     sp1_interpol = np.array([])
     sp2_interpol = np.array([])
@@ -193,7 +241,21 @@ def get_diff(spec1, spec2):
 
 def plot_lines(obs_specs, abund, refer_fl, conv_name, config_fl, folder, order_sep, cut_val=.5, abundance_shift=.1,
                drop=0):
-    # Plot the spectrum fit and the observed one
+    """
+    Plot the spectrum fit and the observed one
+
+    :param obs_specs: spectrum data.
+    :param abund: abundance pandas object.
+    :param refer_fl: file name of the reference abundances file.
+    :param conv_name: file name of the TurboSpectrum output file.
+    :param config_fl: file name of the TurboSpectrum configuration file.
+    :param folder: directory to save.
+    :param order_sep: it needs to get of the order in the elements.
+    :param cut_val: range to plot the lines.
+    :param abundance_shift: overall abundance shift.
+    :param drop: remove elements of the ``abund`` dataframe.
+    """
+
     abund.drop(range(drop), inplace=True)
 
     for i in range(len(abund)):
@@ -291,7 +353,12 @@ def plot_lines(obs_specs, abund, refer_fl, conv_name, config_fl, folder, order_s
 
 
 def folders_creation(folder):
-    # Subroutine to create necessary folders
+    """
+    Subroutine to create necessary folders
+
+    :param folder: root folder of the results.
+    """
+
     if not os.path.exists(folder+"Abundance_Analysis"):
         os.mkdir(folder+"Abundance_Analysis")
     if not os.path.exists(folder+"Abundance_Analysis/Abundance_Hist"):
@@ -303,7 +370,11 @@ def folders_creation(folder):
 
 
 def main(args):
-    # Main Routine
+    """
+    Main Routine.
+
+    :param args: command line arguments.
+    """
 
     # Arguments Menu Call
     config_name = ab_fit.args_menu(args)

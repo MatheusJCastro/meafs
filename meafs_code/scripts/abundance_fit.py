@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-#####################################################
-# Abundance Fit                                     #
-# Matheus J. Castro                                 #
-# v4.7                                              #
-# Last Modification: 06/24/2024                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
+"""
+| MEAFS Abundance Fit
+| Matheus J. Castro
+| v4.7
+| Last Modification: 06/28/2024
+
+| Main fit code to do all the operations with the spectrum, call the modules to generate
+  the synthetic spectrum, plot the curves and more.
+"""
 
 from specutils.analysis import equivalent_width
 from PyQt6 import QtWidgets, QtCore
@@ -27,12 +29,27 @@ version = 4.6
 
 
 def open_linelist_refer_fl(list_name):
-    # Function to open the Linelist using PANDAS
+    """
+    Open the Linelist using PANDAS.
+
+    :param list_name: file name of the linelist.
+    :return: the pandas dataframe with the linelist.
+    """
+
     return pd.read_csv(list_name, header=None)
 
 
 def open_spec_obs(observed_name, delimiter=None, increment=1):
-    # Function to open the observed spectrum file using PANDAS
+    """
+    Open the observed spectrum file using PANDAS.
+
+    :param observed_name: file name with the spectrum.
+    :param delimiter: delimiter type of the file.
+    :param increment: increment to get the delimiter automatically
+                      (previously necessary in the older no-gui version).
+    :return: the pandas dataframe with the spectrum.
+    """
+
     spec_obs = []
 
     for i in range(0, len(observed_name), increment):
@@ -43,7 +60,15 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
 
 
 def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
-    # Function to open the previous results and analyze it
+    """
+    Open the previous results and analyse it.
+
+    :param linelist: linelist object.
+    :param columns_names: names of the columns in the file.
+    :param fl_name: file name.
+    :return: the new linelist and the pandas dataframe with the previous results.
+    """
+
     try:
         # Try to open
         prev = pd.read_csv(fl_name, delimiter=",")
@@ -64,6 +89,16 @@ def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
 
 
 def plot_spec_gui(specs, canvas, ax, plot_line_refer):
+    """
+    Plot the spectrum in the GUI.
+
+    :param specs: spectrum data to be plotted.
+    :param canvas: canvas to plot.
+    :param ax: ax to plot.
+    :param plot_line_refer: array to save the reference label of the plots.
+    :return: the actualized ``plot_line_refer`` array.
+    """
+
     if specs != []:
         min_all_old = min(specs[0].iloc[:, 0])
         max_all_old = max(specs[0].iloc[:, 0])
@@ -96,7 +131,20 @@ def plot_spec_gui(specs, canvas, ax, plot_line_refer):
 
 
 def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
-    # Plot the spectra
+    """
+    Plot the spectra (previously necessary in the older no-gui version).
+
+    :param spec1: first spectrum data.
+    :param spec2: second spectrum data.
+    :param spec3: third spectrum data.
+    :param lamb: current wavelength.
+    :param elem: current element.
+    :param folder: directory to save the plot.
+    :param show: true to show with the ``matplotlib.pyplot.show()``.
+    :param save: true to save the spectrum.
+    """
+
+
     plt.figure(figsize=(16, 9))
 
     plt.plot(spec1[0], spec1[1], label="Observed")
@@ -116,6 +164,21 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
 
 
 def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True):
+    """
+    Plot the current line results in the GUI.
+
+    :param spec_fit_arr: spectrum line data.
+    :param folder: directory to save.
+    :param elem: current element.
+    :param lamb: current wavelength.
+    :param order: current order of the line.
+    :param ax: ax to plot.
+    :param canvas: canvas to plot.
+    :param plot_line_refer: array to save the reference label of the plots.
+    :param vline: if it also plots a vertical line or not.
+    :return: the actualized ``plot_line_refer`` array.
+    """
+
     # noinspection PySimplifyBooleanCheck
     if spec_fit_arr != []:
         min_all_old = min(spec_fit_arr[0].iloc[:, 0])
@@ -159,6 +222,14 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
 
 
 def check_order(elem):
+    """
+    | Check if the current element has any type of order written in the end of the string.
+    | Supported types are: roman numbers *(I, II, III...)* and western digits *(1, 2, 3...)*.
+
+    :param elem:
+    :return: the element without the order and the order itself.
+    """
+
     if elem[1].isdigit() or elem[1] == "I" or elem[1] == "V" or elem[1] == "X" or elem[1] == " ":
         order = elem[1:]
         elem = elem[0]
@@ -172,6 +243,22 @@ def check_order(elem):
 def plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, type_synth,
                      cut_val=None, canvas=None, ax=None, plot_line_refer=None,
                      opt_pars=None):
+    """
+    Plot in the GUI the specified parameters.
+
+    :param elem: current element.
+    :param lamb: current wavelength.
+    :param abundplot: abundance to be plotted.
+    :param refer_fl: reference abundance dataframe.
+    :param folder: directory to save.
+    :param type_synth: type of the current synthetics spectrum generator.
+    :param cut_val: range to plot.
+    :param canvas: canvas to plot.
+    :param ax: ax to plot.
+    :param plot_line_refer: array to save the reference label of the plots.
+    :param opt_pars: parameters for the convolution, wavelength shift and continuum.
+    :return: the actualized ``plot_line_refer`` array.
+    """
 
     if type_synth[0] == "TurboSpectrum":
         conv_name = type_synth[1]
@@ -220,7 +307,31 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                   ui=None, canvas=None, ax=None, plot_line_refer=None,
                   opt_pars=None, repfit=2, max_iter=None, convovbound=None,
                   contpars=None, wavebound=None):
-    # Function to analyse the spectrum and find the fit values for it
+    """
+    Main function to analyse the spectrum and find the fit values for it
+
+    :param linelist: linelist dataframe.
+    :param spec_obs: spectrum data.
+    :param refer_fl: reference abundace dataframe.
+    :param folder: directory to save.
+    :param type_synth: type of the current synthetics spectrum generator.
+    :param cut_val: ranges to cut the spectrum.
+    :param abund_lim_df: default value of the range of the allowed abundance.
+    :param restart: if it should ignore past results in the database.
+    :param save_name: file name of the previous results.
+    :param ui: main GUI QT object.
+    :param canvas: canvas to plot.
+    :param ax: ax to plot.
+    :param plot_line_refer: array to save the reference label of the plots.
+    :param opt_pars: convolution, wavelength shift and continuum initial guess.
+    :param repfit: number of iterations of the main fit function.
+    :param max_iter: maximum allowed iterations of the Nelder-Mead method.
+    :param convovbound: range to fit the convolution.
+    :param contpars: the calibration values of the overall continuum fit method.
+    :param wavebound: range to fit the wavelength shift.
+    :return: dataframe with the results of the fit, the actualized
+             ``ax`` array and the actualized ``plot_line_refer`` array.
+    """
 
     stop = False
 
@@ -462,7 +573,17 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
 
 def read_config(config_name):
-    # Function to read the configuration file
+    """
+    Function to read the configuration file (previously necessary in
+    the older no-gui version).
+
+    :param config_name: configuration file name.
+    :return: linelist file name, reference abundance file name, type of the
+             synthetics spectrum to use, TurboSpectrum configuration file name,
+             TurboSpectrum results file name, directory to save the results,
+             spectrum file name.
+    """
+
     def separator(sep):
         # Define the type of separator
         if sep == "comma":
@@ -505,6 +626,25 @@ def read_config(config_name):
 
 def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer=None, opt_pars=None,
              repfit=2, abundplot=None, results_array=None):
+    """
+    Main function to be called from the GUI.
+
+    :param spec_obs: spectrum data.
+    :param ui: main GUI QT object.
+    :param checkstate: QT checked state for checkboxes.
+    :param canvas: GUI canvas plot object.
+    :param ax: GUI ax plot object.
+    :param cut_val: range to cut the spectrum.
+    :param plot_line_refer: array with a list of the current available plots.
+    :param opt_pars: convolution, wavelength shift and continuum parameters.
+    :param repfit: number of iterations of the main fit function.
+    :param abundplot: overwrite the abundance fit and only plot the value
+                      present in this variable.
+    :param results_array: array for the results of the fit.
+    :return: the results of the fit, the actualized ``ax`` variable and the
+             actualized ``plot_line_refer`` variable.
+    """
+
     # Time Counter
     init = time.time()
     init_local = time.localtime()
@@ -619,7 +759,11 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
 
 
 def main(args):
-    # Main subroutine to call the functions
+    """
+    Main subroutine to call the functions (previously necessary in the older no-gui version).
+
+    :param args: system command line arguments.
+    """
 
     # Time Counter
     init = time.time()
@@ -667,6 +811,11 @@ def main(args):
 
 
 def args_menu(args):
+    """
+    Run the arguments resolve and print them if necessary (previously necessary in the older no-gui version).
+
+    :param args: system command line arguments.
+    """
 
     if len(args) <= 1 and not any((i == "-h" or i == "--h" or i == "-help" or i == "--help") for i in args):
         if len(args) != 0:

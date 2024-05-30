@@ -1,10 +1,11 @@
-#####################################################
-# MEAFS TurboEspectrum Functions                    #
-# Matheus J. Castro                                 #
-# v1.2                                              #
-# Last Modification: 04/23/2024                     #
-# Contact: matheusdejesuscastro@gmail.com           #
-#####################################################
+"""
+| MEAFS TurboEspectrum Functions
+| Matheus J. Castro
+| v1.2
+| Last Modification: 04/23/2024
+
+| TurboSpectrum module functions.
+"""
 
 from scipy.optimize import minimize
 import pandas as pd
@@ -15,7 +16,14 @@ from . import fit_functions as ff
 
 
 def check_elem_configfl(fl_name, elem):
-    # Function to find the desired element in the Turbospectrum2019 configuration file
+    """
+    Find the desired element in the Turbospectrum2019 configuration file.
+
+    :param fl_name: file name of the TurboSpectrum configuration file.
+    :param elem: element to look for.
+    :return: true if finds it; false if not.
+    """
+
     with open(fl_name, 'r') as file:
         fl = file.read()
 
@@ -29,7 +37,14 @@ def check_elem_configfl(fl_name, elem):
 
 
 def change_spec_range_configfl(fl_name, lamb, cut_val):
-    # Function to change the spectrum range in Turbospectrum2019 configuration file
+    """
+    Change the spectrum range in Turbospectrum2019 configuration file
+
+    :param fl_name: file name of the TurboSpectrum configuration file.
+    :param lamb: central wavelength.
+    :param cut_val: range to be applied.
+    """
+
     spec_range = [lamb - cut_val, lamb + cut_val]
 
     with open(fl_name, 'r') as file:
@@ -48,8 +63,17 @@ def change_spec_range_configfl(fl_name, lamb, cut_val):
 
 
 def change_abund_configfl(fl_name, elem, abund=None, find=True):
-    # Function to change the element abundance in Turbospectrum2019 configuration file
-    # or to find the actual value
+    """
+    Change the element abundance in Turbospectrum2019 configuration file
+    or find the current value.
+
+    :param fl_name: file name of the TurboSpectrum configuration file.
+    :param elem: element to be changed.
+    :param abund: desired abundance.
+    :param find: true if it is only to get the current value.
+    :return: abundance.
+    """
+
     with open(fl_name, 'r') as file:
         fl = file.read()
 
@@ -70,7 +94,12 @@ def change_abund_configfl(fl_name, elem, abund=None, find=True):
 
 
 def run_configfl(config_fl):
-    # Run Turbospectrum2019
+    """
+    Run Turbospectrum2019.
+
+    :param config_fl: file name of the TurboSpectrum configuration file.
+    """
+
     run = config_fl.split("/")[-1]
     config_fodler = config_fl.removesuffix(run)
 
@@ -79,7 +108,21 @@ def run_configfl(config_fl):
 
 def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, continuum, init=None, iterac=100, convovbound=None,
                   wavebound=None):
-    # Function to optimize the spectrum
+    """
+    Fit of the Convolution, Wavelength Shift and Continuum using the minimization of the :math:`\\chi^2`
+    with the Nelder-Mead method.
+
+    :param spec_obs_cut: spectrum data.
+    :param spec_conv: synthetic spectrum data.
+    :param lamb: current wavelength.
+    :param cut_val: range to cut the spectrum for the convolution fit.
+    :param continuum: continuum value.
+    :param init: initial guess values for the Wavelength Shift, Continuum and Convolution.
+    :param iterac: maximum allowed iterations of the Nelder-Mead method.
+    :param convovbound: range to fit the convolution.
+    :param wavebound: range to fit the wavelength shift.
+    :return: the optimized parameters
+    """
 
     # Define initial values if not given
     if init is None:
@@ -121,10 +164,26 @@ def optimize_spec(spec_obs_cut, spec_conv, lamb, cut_val, continuum, init=None, 
 
 
 def optimize_abund(spec_obs_cut, config_fl, conv_name, elem, opt_pars, par, abund_lim, iterac=10):
+    """
+    Fit of the Abundance using the minimization of the :math:`\\chi^2`
+    with the Nelder-Mead method.
+
+    :param spec_obs_cut: spectrum data.
+    :param config_fl: file name of the TurboSpectrum configuration file.
+    :param conv_name: file name of the TurboSpectrum output file.
+    :param elem: element to be fitted.
+    :param opt_pars: the Continuum, Convolution and Wavelength Shift parameters.
+    :param par: initial guess for the optimization.
+    :param abund_lim: range to try the fit.
+    :param iterac: maximum allowed iterations of the Nelder-Mead method.
+    :return: the abundance, the value of the minimum :math:`\\chi^2` and the spectrum
+             generated with the best parameters.
+    """
+
     def opt_abund(abund):
         change_abund_configfl(config_fl, elem, find=False, abund=abund[0])
         run_configfl(config_fl)
-        spec = pd.read_csv(conv_name, header=None, delimiter="\s+")
+        spec = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
         # noinspection PyTypeChecker
         spec = ff.spec_operations(spec.copy(), lamb_desloc=opt_pars[0], continuum=opt_pars[1],
                                   convol=opt_pars[2])
@@ -135,7 +194,7 @@ def optimize_abund(spec_obs_cut, config_fl, conv_name, elem, opt_pars, par, abun
     par = minimize(opt_abund, np.array(par), method='Nelder-Mead', options={"maxiter": iterac},
                    bounds=[[par[0] - abund_lim, par[0] + abund_lim]]).x
 
-    spec_conv = pd.read_csv(conv_name, header=None, delimiter="\s+")
+    spec_conv = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
     spec_fit = ff.spec_operations(spec_conv, lamb_desloc=opt_pars[0], continuum=opt_pars[1],
                                   convol=opt_pars[2])
     chi = ff.chi2(spec_obs_cut, spec_fit)

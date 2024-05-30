@@ -1,10 +1,9 @@
-/***************************************************/
-/* Bisection and Chi Square                       */
-/* Matheus J. Castro                               */
-/* v1.0                                            */
-/* Last Modification: 02/17/2022                   */
-/* Contact: matheusdejesuscastro@gmail.com         */
-/***************************************************/
+/***************************************************
+* Bisection and Chi Square
+* Matheus J. Castro
+* v1.0
+* Last Modification: 02/17/2022
+***************************************************/
 
 // This program uses the bisection script to find position values of an array
 // and calculates the chi square of two arrays

@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
+"""
+| MEAFS Unify generated plots in a single PDF file for each type
+| Matheus J. Castro
+| v2.0
+| Last Modification: 07/01/2022
 
-############################################################
-# Unify generated plots in a single PDF file for each type #
-# Matheus J. Castro                                        #
-# v2.0                                                     #
-# Last Modification: 07/01/2022                            #
-# Contact: matheusdejesuscastro@gmail.com                  #
-############################################################
+| This script aims to create a single result file for each analyze type created with the abundance_fit.py and
+  abundance_analysis.py scripts.
+| It uses pdflatex to generate it. You can install it following the steps for your OS distribution here:
+  https://www.latex-project.org/get/
 
-# This script aims to create a single result file for each analyze type created with the abundance_fit.py and
-# abundance_analysis.py scripts.
-# It uses pdflatex to generate it. You can install it following the steps for your OS distribution here:
-# https://www.latex-project.org/get/
-
-# For this code work, it must be in the same folder as the abundance_fit.py file
+| For this code work, it must be in the same folder as the *abundance_fit.py* file
+"""
 
 import os
 import sys
@@ -26,17 +24,37 @@ except ModuleNotFoundError:
 
 
 def write(fl_name, data):
+    """
+    Write the data in a file.
+
+    :param fl_name: file name.
+    :param data: data to be written.
+    """
+
     # Write the latex file
     with open(fl_name, 'w') as file:
         file.write(data)
 
 
 def run_pdflatex(fl_name, folder):
+    """
+    Run the ``pdflatex`` command to generate the unified PDF.
+
+    :param fl_name: file name.
+    :param folder: directory where the file should be created.
+    """
+
     # Run pdflatex command
     os.system("cd {}Unique_Plot && pdflatex -interaction=nonstopmode {}".format(folder, fl_name))
 
 
 def main(args):
+    """
+    Main function that read the plot files.
+
+    :param args: command line arguments.
+    """
+
     # Arguments Menu Call
     config_name = ab_fit.args_menu(args)
 

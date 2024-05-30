@@ -696,7 +696,7 @@ class Ui_MEAFS(object):
         self.tabplotshels.setTabText(self.tabplotshels.indexOf(self.tabplot), _translate("MEAFS", "Spectrum Plot"))
         self.tabplotshels.setTabText(self.tabplotshels.indexOf(self.tabjupyshell), _translate("MEAFS", "Jupyter Shell"))
         self.clearstdbutton.setText(_translate("MEAFS", "Clear"))
-        self.tabplotshels.setTabText(self.tabplotshels.indexOf(self.tabstoutstderr), _translate("MEAFS", "Stdout/Stderr"))
+        self.tabplotshels.setTabText(self.tabplotshels.indexOf(self.tabstoutstderr), _translate("MEAFS", "Stdout"))
         self.menuFile.setTitle(_translate("MEAFS", "File"))
         self.menuView.setTitle(_translate("MEAFS", "View"))
         self.menuEdit.setTitle(_translate("MEAFS", "Edit"))
