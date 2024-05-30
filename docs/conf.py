@@ -31,6 +31,7 @@ def capture_command_output(command):
     return output
 
 clangver = capture_command_output("clang --version")
+print(clangver)
 clangver = clangver.replace("\n", " ")
 clangver = clangver.split(" ")
 clangver = clangver[clangver.index("version") + 1]
@@ -51,6 +52,8 @@ for i in candidates:
     if clangver in version_test[-1]:
         libclang_path += i
         break
+        
+print(libclang_path)
 
 from clang.cindex import Config
 Config.set_library_file(libclang_path)
