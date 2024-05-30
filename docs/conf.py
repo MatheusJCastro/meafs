@@ -24,7 +24,9 @@ extensions = ["sphinx.ext.todo", "sphinx.ext.viewcode", "sphinx.ext.autodoc", "s
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
-c_autodoc_compilation_args = ["-Wall", "-pedantic", "-O3", "-o bisec_interpol.so", "-shared"]
+
+from clang.cindex import Config
+Config.set_library_file('/usr/lib/libclang.so')
 
 
 # -- Options for HTML output -------------------------------------------------

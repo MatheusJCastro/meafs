@@ -1,11 +1,11 @@
 /***************************************************
-* Bisection and Chi Square
-* Matheus J. Castro
-* v1.0
-*
-* This program uses the bisection script to find position values of an array
-* and calculates the chi square of two arrays
-* The intention is not to run the program itself, but use it as a shared library inside python
+| Bisection and :math:`\chi^2`
+| Matheus J. Castro
+| v1.0
+
+| This program uses the bisection script to find position values of an array
+  and calculates the :math:`\chi^2` of two arrays.
+| The goal is not to run the program itself, but use it as a shared library inside python.
 ***************************************************/
 
 #include<stdbool.h>
@@ -16,8 +16,16 @@
 #include<math.h>
 #include<omp.h>
 
+/**
+Function that applies the bisection method.
+
+:param float* spec[]: the array to look for.
+:param int len: the size of the array.
+:param float lamb: the value to find the index.
+
+:returns: the left index of the searched value.
+*/
 int bisec(float spec[], int len, float lamb){
-    // Function to use the bisection script
     if(lamb < spec[0])
         return -1;
     else if(lamb > spec[len - 1])
@@ -40,8 +48,19 @@ int bisec(float spec[], int len, float lamb){
     }
 }
 
+/**
+Function to find the :math:`\chi^2` of two arrays.
+
+:param float* spec1x[]: the first 1D-array (x axis).
+:param float* spec1y[]: the first 1D-array (y axis).
+:param int len1: the size of the first array.
+:param float* spec2x[]: the second 1D-array (x axis).
+:param float* spec2y[]: the second 1D-array (y axis).
+:param int len2: the size of the second array.
+
+:returns: the :math:`\chi^2`.
+*/
 float chi2(float spec1x[], float spec1y[], int len1, float spec2x[], float spec2y[], int len2){
-    // Function to find the chi square of two arrays
     float sp1, sp2, chi = 0;
     int pos;
 
@@ -58,7 +77,11 @@ float chi2(float spec1x[], float spec1y[], int len1, float spec2x[], float spec2
     return chi;
 }
 
+/**
+Just a warning to not run the code itself.
 
+:returns: int 0.
+*/
 int main(){
     // Main function, useless
     printf("This script is a shared library. You cannot run it as itself.\n");
