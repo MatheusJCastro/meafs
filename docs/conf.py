@@ -25,6 +25,17 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
+def capture_command_output(command):
+    stream = os.popen(command)
+    output = stream.read().strip()
+    return output
+
+clangver = capture_command_output("clang --version")
+clangver = clangver.replace("\n", " ")
+clangver = clangver.split(" ")
+clangver = clangver[clangver.index("version") + 1]
+clangver = clangver.split(".")[0]
+
 libclang_path = "/usr/lib/"
 candidates = []
 for i in os.listdir(libclang_path):
@@ -36,7 +47,8 @@ for i in os.listdir(libclang_path):
     elif "libclang" in i and ".so" in i and "cpp" not in i:
         candidates.append(i)
 for i in candidates:
-    if "libclang.so" in i:
+    version_test = i.split("/")
+    if clangver in version_test[-1]:
         libclang_path += i
         break
 
