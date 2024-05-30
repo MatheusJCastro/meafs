@@ -14,7 +14,7 @@ build:
     # nodejs: "19"
     # rust: "1.64"
     # golang: "1.19"
-   apt_packages:
+  apt_packages:
      -libclang
 
 # Build documentation in the "docs/" directory with Sphinx
