@@ -25,8 +25,15 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
+def capture_command_output(command):
+    stream = os.popen(command)
+    output = stream.read().strip()
+    return output
+
+libclang_path=capture_command_output("whereis libclang.so | awk '{split($0,a,\" \"); print a[2]}'")
+
 from clang.cindex import Config
-Config.set_library_file('/usr/lib/libclang.so')
+Config.set_library_file(libclang_path)
 
 
 # -- Options for HTML output -------------------------------------------------
