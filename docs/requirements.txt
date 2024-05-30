@@ -1,5 +1,4 @@
 sphinx-rtd-theme
 sphinx-c-autodoc
-clang==17.0.6
-libclang==17.0.6
+libclang
 myst-parser
