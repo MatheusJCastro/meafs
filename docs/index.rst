@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Multiple Element Abundance Fitting Software (MEAFS)
+Multiple Element Abundance Fitting Software - MEAFS
 =================================================================================
 
 | Here you can find how to install, run and read the results from MEAFS.

@@ -5,6 +5,8 @@
 *Written by: Matheus J. Castro*  
 *Under MIT License*  
 
+More information at: [https://meafs.readthedocs.io/](https://meafs.readthedocs.io/)
+
 <hr/>
 <hr/>
 

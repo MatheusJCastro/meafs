@@ -24,7 +24,7 @@ from . import fit_functions as ff
 from . import voigt_functions as vf
 from . import turbospec_functions as tf
 
-version = 4.6
+version = "4.7"
 
 
 def open_linelist_refer_fl(list_name):
