@@ -31,6 +31,7 @@ def capture_command_output(command):
     return output
 
 libclang_path=capture_command_output("whereis libclang.so | awk '{split($0,a,\" \"); print a[2]}'")
+print(os.system("whereis libclang.so"), "-------------------------------------------------------")
 
 from clang.cindex import Config
 Config.set_library_file(libclang_path)
