@@ -1,0 +1,3 @@
+sphinx-c-autodoc
+libclang
+myst-parser
