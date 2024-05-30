@@ -30,11 +30,14 @@ os.system("python3 --version")
 os.system("pip list | grep libclang")
 import clang
 print(os.path.abspath(clang.__file__), "aaaaaa")
-#os.system("ls /usr/local/lib/python3.10/dist-packages/")
-#os.system("ls /usr/local/lib/python3.10/dist-packages/clang/")
-#os.system("ls /usr/local/lib/python3.10/dist-packages/clang/native/")
-#from clang.cindex import Config
-#Config.set_library_file("/usr/local/lib/python3.12/site-packages/clang/native/libclang.so")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/site-packages/")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/site-packages/clang/")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/site-packages/clang/")
+os.system("ls /home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/site-packages/clang/native/")
+from clang.cindex import Config
+Config.set_library_file("/home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/python3.12/site-packages/clang/native/libclang.so")
 
 
 # -- Options for HTML output -------------------------------------------------
