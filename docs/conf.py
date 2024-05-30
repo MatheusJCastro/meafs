@@ -28,8 +28,9 @@ c_autodoc_roots = ['../meafs_code/scripts/']
 os.system("clang --version")
 os.system("python3 --version")
 os.system("pip list | grep libclang")
-os.system("ls /usr/local/lib/")
-os.system("ls /usr/local/lib/python3.10/")
+os.system("ls /usr/local/lib/python3.10/dist-packages/")
+os.system("ls /usr/local/lib/python3.10/dist-packages/clang/")
+os.system("ls /usr/local/lib/python3.10/dist-packages/clang/native/")
 #from clang.cindex import Config
 #Config.set_library_file("/usr/local/lib/python3.12/site-packages/clang/native/libclang.so")
 
