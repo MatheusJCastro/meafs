@@ -25,6 +25,10 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
+from clang.cindex import Config
+Config.set_library_file("/usr/lib/python3.12/site-packages/clang/native/libclang.so")
+
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
