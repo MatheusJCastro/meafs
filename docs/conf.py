@@ -25,13 +25,20 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
-def capture_command_output(command):
-    stream = os.popen(command)
-    output = stream.read().strip()
-    return output
-
-libclang_path=capture_command_output("whereis libclang.so | awk '{split($0,a,\" \"); print a[2]}'")
-print(os.system("whereis libclang.so"), "-------------------------------------------------------")
+libclang_path = "/usr/lib/"
+candidates = []
+for i in os.listdir(libclang_path):
+    if "llvm" in i:
+        partial_path = i + "/lib/"
+        for j in os.listdir(libclang_path + partial_path):
+            if "libclang" in j and ".so" in j and "cpp" not in j:
+                candidates.append(partial_path + j)
+    elif "libclang" in i and ".so" in i and "cpp" not in i:
+        candidates.append(i)
+for i in candidates:
+    if "libclang.so" in i:
+        libclang_path += i
+        break
 
 from clang.cindex import Config
 Config.set_library_file(libclang_path)
