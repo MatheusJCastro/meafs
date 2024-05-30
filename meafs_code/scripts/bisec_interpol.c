@@ -2,12 +2,11 @@
 * Bisection and Chi Square
 * Matheus J. Castro
 * v1.0
-* Last Modification: 02/17/2022
+*
+* This program uses the bisection script to find position values of an array
+* and calculates the chi square of two arrays
+* The intention is not to run the program itself, but use it as a shared library inside python
 ***************************************************/
-
-// This program uses the bisection script to find position values of an array
-// and calculates the chi square of two arrays
-// The intention is not to run the program itself, but use it as a shared library inside python
 
 #include<stdbool.h>
 #include<stdlib.h>

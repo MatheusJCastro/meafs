@@ -20,12 +20,12 @@ meafs\_code.scripts.abundance\_fit module
    :undoc-members:
    :show-inheritance:
 
-..
-	meafs\_code.scripts.bisec\_interpol module
-	------------------------------------------
-	.. autocmodule:: bisec_interpol.c
-	   :members:
-	   :undoc-members:
+meafs\_code.scripts.bisec\_interpol module
+------------------------------------------
+
+.. autocmodule:: bisec_interpol.c
+   :members:
+   :undoc-members:
 
 meafs\_code.scripts.fit\_functions module
 -----------------------------------------
