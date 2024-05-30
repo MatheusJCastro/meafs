@@ -3,7 +3,6 @@
 | MEAFS Abundance Analysis
 | Matheus J. Castro
 | v3.0
-| Last Modification: 07/01/2022
 
 | This program generates graphics to analyse the results obtained with the abundance_fit.py
 | For this code work, it must be in the same folder as the *abundance_fit.py* file

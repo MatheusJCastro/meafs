@@ -2,7 +2,6 @@
 | MEAFS TurboEspectrum Functions
 | Matheus J. Castro
 | v1.2
-| Last Modification: 04/23/2024
 
 | TurboSpectrum module functions.
 """

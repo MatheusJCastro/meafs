@@ -3,7 +3,6 @@
 | MEAFS Abundance Fit
 | Matheus J. Castro
 | v4.7
-| Last Modification: 06/28/2024
 
 | Main fit code to do all the operations with the spectrum, call the modules to generate
   the synthetic spectrum, plot the curves and more.
