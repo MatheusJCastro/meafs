@@ -25,40 +25,6 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
-def capture_command_output(command):
-    stream = os.popen(command)
-    output = stream.read().strip()
-    return output
-
-clangver = capture_command_output("clang --version")
-print(clangver)
-clangver = clangver.replace("\n", " ")
-clangver = clangver.split(" ")
-clangver = clangver[clangver.index("version") + 1]
-clangver = clangver.split(".")[0]
-
-libclang_path = "/usr/lib/"
-candidates = []
-for i in os.listdir(libclang_path):
-    if "llvm" in i:
-        partial_path = i + "/lib/"
-        for j in os.listdir(libclang_path + partial_path):
-            if "libclang" in j and ".so" in j and "cpp" not in j:
-                candidates.append(partial_path + j)
-    elif "libclang" in i and ".so" in i and "cpp" not in i:
-        candidates.append(i)
-for i in candidates:
-    version_test = i.split("/")
-    if clangver in version_test[-1]:
-        libclang_path += i
-        break
-        
-print(libclang_path)
-
-from clang.cindex import Config
-Config.set_library_file(libclang_path)
-
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
