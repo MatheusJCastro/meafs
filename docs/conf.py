@@ -28,8 +28,8 @@ c_autodoc_roots = ['../meafs_code/scripts/']
 os.system("clang --version")
 os.system("python3 --version")
 os.system("pip list | grep libclang")
-import libclang
-os.path.abspath(libclang.__file__)
+import clang
+print(os.path.abspath(clang.__file__))
 os.system("ls /usr/local/lib/python3.10/dist-packages/")
 os.system("ls /usr/local/lib/python3.10/dist-packages/clang/")
 os.system("ls /usr/local/lib/python3.10/dist-packages/clang/native/")
