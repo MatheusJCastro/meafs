@@ -25,8 +25,11 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 c_autodoc_roots = ['../meafs_code/scripts/']
 
+os.system("clang --version")
+os.system("python3 --version")
+os.system("pip list | grep libclang")
 from clang.cindex import Config
-Config.set_library_file("/usr/lib/python3.12/site-packages/clang/native/libclang.so")
+Config.set_library_file("/usr/local/lib/python3.12/site-packages/clang/native/libclang.so")
 
 
 # -- Options for HTML output -------------------------------------------------
