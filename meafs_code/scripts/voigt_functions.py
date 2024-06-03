@@ -57,7 +57,7 @@ def voigt(x, b, c, a, d):
     .. math::
         h(x) = a \\cdot f(x) \\cdot g(x) + d
 
-    With :math:`f(x)` being the :eq:`gauss` and :math:`g(x)` being the :eq:`loren`
+    With :math:`f(x)` being the :eq:`gauss` and :math:`g(x)` being the :eq:`loren`.
 
     :param x: can be a list or a number.
     :param b: a single number.

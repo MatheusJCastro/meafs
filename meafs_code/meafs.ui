@@ -24,6 +24,7 @@
        <widget class="QLabel" name="referlabel">
         <property name="font">
          <font>
+          <pointsize>12</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -40,8 +41,8 @@
        <widget class="QLabel" name="referlabel2">
         <property name="font">
          <font>
-          <weight>75</weight>
-          <bold>true</bold>
+          <weight>50</weight>
+          <bold>false</bold>
          </font>
         </property>
         <property name="text">
@@ -125,6 +126,7 @@
        <widget class="QLabel" name="abundanceslabel">
         <property name="font">
          <font>
+          <pointsize>12</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -227,8 +229,8 @@
         </property>
         <property name="font">
          <font>
-          <weight>75</weight>
-          <bold>true</bold>
+          <weight>50</weight>
+          <bold>false</bold>
          </font>
         </property>
         <property name="text">
@@ -244,6 +246,7 @@
        <widget class="QLabel" name="linelistlabel">
         <property name="font">
          <font>
+          <pointsize>12</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -308,8 +311,8 @@
         </property>
         <property name="font">
          <font>
-          <weight>75</weight>
-          <bold>true</bold>
+          <weight>50</weight>
+          <bold>false</bold>
          </font>
         </property>
         <property name="text">
@@ -391,7 +394,7 @@
     <item row="4" column="2">
      <widget class="QTabWidget" name="methodsdatafittab">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="datatab">
        <attribute name="title">
@@ -476,6 +479,7 @@
             </property>
             <property name="font">
              <font>
+              <pointsize>12</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -641,8 +645,8 @@
                   <property name="font">
                    <font>
                     <pointsize>10</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
+                    <weight>50</weight>
+                    <bold>false</bold>
                    </font>
                   </property>
                   <property name="text">
@@ -658,8 +662,8 @@
                   <property name="font">
                    <font>
                     <pointsize>10</pointsize>
-                    <weight>75</weight>
-                    <bold>true</bold>
+                    <weight>50</weight>
+                    <bold>false</bold>
                    </font>
                   </property>
                   <property name="text">
@@ -869,6 +873,9 @@
           </item>
           <item row="5" column="0" colspan="3">
            <widget class="QPushButton" name="manualfitbutton">
+            <property name="toolTip">
+             <string>This Option saves automatically.</string>
+            </property>
             <property name="text">
              <string>Manual Fit</string>
             </property>
@@ -986,7 +993,7 @@
       </widget>
       <widget class="QWidget" name="tabstoutstderr">
        <attribute name="title">
-        <string>Stdout</string>
+        <string>Stdout/Stderr</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_12">
         <item row="2" column="1">
@@ -1093,7 +1100,7 @@
   </action>
   <action name="fullspec">
    <property name="text">
-    <string>Change Plot to full spectrum range (CRTL+V)</string>
+    <string>Change Plot to full spectrum range (CRTL+Shift+V)</string>
    </property>
    <property name="toolTip">
     <string>Change Plot to full spectrum range (CRTL+V)</string>

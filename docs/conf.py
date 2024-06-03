@@ -23,6 +23,7 @@ extensions = ["sphinx.ext.todo", "sphinx.ext.viewcode", "sphinx.ext.autodoc", "s
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
 c_autodoc_roots = ['../meafs_code/scripts/']
 
 
@@ -33,6 +34,10 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 html_logo = '../meafs_code/images/Meafs_Logo.png'
 html_theme_options = {'logo_only': True}
+
+html_css_files = [
+    'css/custom.css',
+]
 
 # Bug Fix for Clang bindins
 def capture_command_output(command):

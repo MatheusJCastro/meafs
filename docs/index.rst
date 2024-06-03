@@ -18,9 +18,11 @@ The MEAFS is a fitting tool software for spectra abundance analysis. The aims is
 The software also fits the wavelength shift, continuum and convolution of the spectrum.
 
 .. image:: ../meafs_code/images/Meafs_Gui.png
-   :width: 600
+   :width: 90%
+   :align: center
    :alt: MEAFS GUI
 
+| 
 
 .. toctree::
    :maxdepth: 1
@@ -28,7 +30,7 @@ The software also fits the wavelength shift, continuum and convolution of the sp
    
    installation
    usage
-   configuration
+   manual
    modules
 
 Indices and tables

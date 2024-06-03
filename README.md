@@ -114,7 +114,7 @@ Or you can directly clone from the GitHub page with:
 git clone https://github.com/MatheusJCastro/meafs.git
 ```
 
-After cloning, you can install it with pip or run without any installation at all (see the [Usage - Without Installation](<#without-installation>) section).  
+After cloning, you can install it with pip or run without any installation at all (see the [Basic Usage - Without Installation](<#without-installation>) section).  
 
 To build the package and install it with pip from the source, first install the `build` package:  
 
@@ -177,7 +177,7 @@ If you are on Windows, check this `comp.sh` file for the full `gcc` command.
 
 If you did not install with pip (both directly or by cloning), you can just erase the *meafs* folder.  
 
-Otherwise, first remove the menu entries (if you have added it, see [Usage - With Installation](<#with-installation>)) and then uninstall:
+Otherwise, first remove the menu entries (if you have added it, see [Basic Usage - With Installation](<#with-installation>)) and then uninstall:
 
 ```bash
 meafs-desktop-remove

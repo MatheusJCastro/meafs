@@ -1,3 +1,5 @@
+.. _pack_overview:
+
 Package Overview
 ================
 

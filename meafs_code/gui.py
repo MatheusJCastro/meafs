@@ -2,7 +2,7 @@
 """
 | MEAFS GUI
 | Matheus J. Castro
-| v4.7.12
+| v4.7.13
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
@@ -10,8 +10,11 @@
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
+from specutils.analysis import equivalent_width
 from PyQt6 import QtWidgets, QtGui, QtCore
+from specutils import Spectrum1D
 import matplotlib.pyplot as plt
+import astropy.units as u
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -19,7 +22,7 @@ import dill
 import sys
 import os
 
-version = "4.7.12"
+version = "4.7.13"
 
 try:
     from gui_qt import Ui_MEAFS
@@ -212,6 +215,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         super(MEAFS, self).__init__(parent)
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon(str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))))
+
+        self.run.setStyleSheet("QWidget { font-weight: 750 }")
+        self.stop.setStyleSheet("font-weight: 750")
+        self.setStyleSheet("QLabel { font-weight: 750 }")
 
         # Jupyter Qt Console Configuration
         self.ipython_widget = self.make_jupyter_widget_with_kernel()
@@ -415,13 +422,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         Available shortcuts are:
             | Ctrl+S: Save the session;
-            | Ctrl+V: Show the entire spectrum.
+            | Ctrl+Shift+V: Show the entire spectrum.
 
         :param event: the event itself.
         """
 
         if isinstance(event, QtGui.QKeyEvent):
-            if event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+            if event.modifiers() == (QtCore.Qt.KeyboardModifier.ControlModifier |
+                                     QtCore.Qt.KeyboardModifier.ShiftModifier):
                 if event.key() == QtCore.Qt.Key.Key_S:
                     self.save_session()
                 if event.key() == QtCore.Qt.Key.Key_V:
@@ -521,6 +529,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         if "-h" in self.args or "--help" in self.args:
+            root_path = Path(os.path.dirname(__file__))
             path1 = Path(os.path.dirname(__file__)).joinpath("auto_save_last.pkl")
             path2 = Path(os.path.dirname(__file__)).joinpath("auto_save.pkl")
             help_msg = "\n\t\t\033[1;31mHelp Section\033[m\nMEAFS v{}\n" \
@@ -531,6 +540,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                        "GUI developed using PyQt.\n\n" \
                        "Argument needs to be a Pickle File (.pkl) previously saved by MEAFS.\n" \
                        "If no argument is given, an empty session will be opened.\n\n" \
+                       "The root folder of this MEAFS installation is: {}\n\n" \
                        "Options are:\n" \
                        " -h, --help\t\t|\tShow this help;\n" \
                        " -v, --version\t\t|\tShow version number;\n" \
@@ -538,7 +548,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                        "\t\t\t|\t{}\n" \
                        " -s, --load-auto-save\t|\tLoad the auto saved session. Default location is:\n" \
                        "\t\t\t|\t{}\n" \
-                       "\n\nExample:\n./gui.py sesssion.pkl\n".format(version, path1, path2)
+                       "\n\nExample:\n./gui.py sesssion.pkl\n\n" \
+                       "For more information go to <https://meafs.readthedocs.io/>\n".format(version, root_path,
+                                                                                           path1, path2)
             print(help_msg)
             exit()
         elif "-v" in self.args or "--version" in self.args:
@@ -968,6 +980,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         if self.check_output_folder():
+            ind = self.abundancetable.currentRow()
+            ind_col = self.abundancetable.currentColumn()
+
+            if ind == -1:
+                self.show_error("No table row selected.")
+                return
+
+            self.restart.setCheckState(QtCore.Qt.CheckState.Unchecked)
+
             opt_pars = [self.lambshifvalue.value(),
                         self.continuumvalue.value(),
                         self.convolutionvalue.value()]
@@ -981,7 +1002,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              cut_val=self.cut_val,
                                                                              plot_line_refer=self.plot_line_refer,
                                                                              opt_pars=opt_pars,
-                                                                             repfit=self.repfit)
+                                                                             repfit=self.repfit,
+                                                                             only_abund_ind=ind)
+
+            self.abundancetable.setCurrentCell(ind, ind_col)
 
     def run_nofit(self):
         """
@@ -990,6 +1014,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         if self.check_output_folder():
+            ind = self.abundancetable.currentRow()
+            if ind == -1:
+                self.show_error("No table row selected.")
+                return
+
             opt_pars = [self.lambshifvalue.value(),
                         self.continuumvalue.value(),
                         self.convolutionvalue.value()]
@@ -1052,8 +1081,24 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         lamb = self.abundancetable.item(currow, 1).text()
         abund = self.abundancevalue.value()
 
-        ind = self.results_array[(self.results_array["Element"] == elem) & (self.results_array["Lambda (A)"] == float(lamb))].index
+        ind = self.results_array[(self.results_array["Element"] == elem) &
+                                 (self.results_array["Lambda (A)"] == float(lamb))].index
         for i in ind:
+            file = Path(self.outputname.text()).joinpath("On_time_Plots",
+                                                  "fit_{}_{}_ang_{}.csv".format(elem, lamb, 1))
+
+            if os.path.isfile(file):
+                spec_fit = pd.read_csv(file)
+                # Fit of Equivalent Width Fitted Spectrum
+                # noinspection PyUnresolvedReferences
+                spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit.iloc[:, 0]) * u.AA,
+                                    flux=np.asarray(spec_fit.iloc[:, 1]) * u.Jy)
+                equiv_width_fit = equivalent_width(spec1d)
+                # noinspection PyUnresolvedReferences
+                equiv_width_fit = np.float16(equiv_width_fit / u.AA)
+
+                self.results_array.loc[i, "Equiv Width Fit (A)"] = equiv_width_fit
+
             self.results_array.loc[i, "Fit Abundance"] = abund
             self.results_array.loc[i, "Differ"] = np.abs(abund-self.results_array.loc[i, "Refer Abundance"])
             self.results_array.loc[i, "Lamb Shift"] = self.lambshifvalue.value()
@@ -1115,6 +1160,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         currow = self.abundancetable.currentRow()
+
+        elem = self.abundancetable.item(currow, 0).text()
+        lamb = self.abundancetable.item(currow, 1).text()
+        self.linedefvalue.setText("Element {}, line {}".format(elem, lamb))
 
         self.lambshifvalue.setValue(self.results_array.iloc[currow, 2])
         self.continuumvalue.setValue(self.results_array.iloc[currow, 3])
@@ -1324,6 +1373,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.progressvalue.text(),
                      self.qtable_to_dict(self.abundancetable),
                      self.methodbox.currentIndex(),
+                     self.ewfuncbox.currentIndex(),
+                     self.convinitguessvalue.value(),
+                     self.deepthinitguessvalue.value(),
                      self.turbospectrumconfigname.text(),
                      self.turbospectrumoutputname.text(),
                      self.repfit,
@@ -1395,17 +1447,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.progressvalue.setText(list_save[14])
             self.dict_to_qtable(self.abundancetable, list_save[15])
             self.methodbox.setCurrentIndex(list_save[16])
-            self.turbospectrumconfigname.setText(list_save[17])
-            self.turbospectrumoutputname.setText(list_save[18])
-            self.repfit = list_save[19]
-            self.cut_val = list_save[20]
-            self.max_iter = list_save[21]
-            self.convovbound = list_save[22]
-            self.wavebound = list_save[23]
-            self.continuumpars = list_save[24]
-            self.tabplotshels.setCurrentIndex(list_save[25])
+            self.ewfuncbox.setCurrentIndex(list_save[17]),
+            self.convinitguessvalue.setValue(list_save[18]),
+            self.deepthinitguessvalue.setValue(list_save[19]),
+            self.turbospectrumconfigname.setText(list_save[20])
+            self.turbospectrumoutputname.setText(list_save[21])
+            self.repfit = list_save[22]
+            self.cut_val = list_save[23]
+            self.max_iter = list_save[24]
+            self.convovbound = list_save[25]
+            self.wavebound = list_save[26]
+            self.continuumpars = list_save[27]
+            self.tabplotshels.setCurrentIndex(list_save[28])
             self.stdtext.clear()
-            self.stdtext.insertHtml(list_save[26])
+            self.stdtext.insertHtml(list_save[29])
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
@@ -1466,6 +1521,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          {"Element": [],
                           "Wavelength": []},
                          1,
+                         0,
+                         0.001,
+                         -1,
                          "",
                          "",
                          2,

@@ -2,7 +2,7 @@
 """
 | MEAFS Abundance Fit
 | Matheus J. Castro
-| v4.7
+| v4.7.13
 
 | Main fit code to do all the operations with the spectrum, call the modules to generate
   the synthetic spectrum, plot the curves and more.
@@ -24,7 +24,7 @@ from . import fit_functions as ff
 from . import voigt_functions as vf
 from . import turbospec_functions as tf
 
-version = "4.7"
+version = "4.7.13"
 
 
 def open_linelist_refer_fl(list_name):
@@ -35,7 +35,7 @@ def open_linelist_refer_fl(list_name):
     :return: the pandas dataframe with the linelist.
     """
 
-    return pd.read_csv(list_name, header=None)
+    return pd.read_csv(list_name, header=None, comment="#")
 
 
 def open_spec_obs(observed_name, delimiter=None, increment=1):
@@ -70,10 +70,14 @@ def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
 
     try:
         # Try to open
-        prev = pd.read_csv(fl_name, delimiter=",")
+        prev = pd.read_csv(fl_name, delimiter=",", dtype=str)
     except (FileNotFoundError, pd.errors.EmptyDataError):
         # If file not found or empty database, create a new one and return
         return linelist, pd.DataFrame(columns=columns_names)
+
+    for i in prev.columns:
+        if i != "Element" and i != "Chi" and i != "Equiv Width Obs (A)" and i != "Equiv Width Fit (A)":
+            prev[i] = prev[i].astype(float)
 
     # Reads the existing data
     new_linelist = pd.DataFrame(columns=[0, 1])
@@ -305,7 +309,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                   abund_lim_df=1., restart=False, save_name="found_values.csv",
                   ui=None, canvas=None, ax=None, plot_line_refer=None,
                   opt_pars=None, repfit=2, max_iter=None, convovbound=None,
-                  contpars=None, wavebound=None):
+                  contpars=None, wavebound=None, only_abund_ind=None):
     """
     Main function to analyse the spectrum and find the fit values for it
 
@@ -328,6 +332,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
     :param convovbound: range to fit the convolution.
     :param contpars: the calibration values of the overall continuum fit method.
     :param wavebound: range to fit the wavelength shift.
+    :param only_abund_ind: change only abundance without fitting other parameters at this index.
     :return: dataframe with the results of the fit, the actualized
              ``ax`` array and the actualized ``plot_line_refer`` array.
     """
@@ -359,6 +364,11 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
         found_val = pd.DataFrame(columns=columns_names)
     else:
         linelist, found_val = open_previous(linelist, columns_names, fl_name=Path(folder).joinpath(save_name))
+
+        if only_abund_ind is not None:
+            linelist = pd.DataFrame(columns=[0, 1])
+            linelist.loc[0] = [found_val.loc[only_abund_ind, "Element"],
+                               found_val.loc[only_abund_ind, "Lambda (A)"]]
 
         if ui is not None:
             rowpos = ui.abundancetable.rowCount()
@@ -425,7 +435,6 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
             abund_val_refer = 0
 
         abund_lim = abund_lim_df if abund_val_refer != 0 else 3
-        index_append = len(found_val)  # linelist.index.tolist()[i]
 
         # Check whether the element exists in turbospectrum config file
         if type_synth[0] == "TurboSpectrum" and not tf.check_elem_configfl(config_fl, elem):
@@ -527,6 +536,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
             # noinspection PyUnresolvedReferences
             equiv_width_fit = np.float16(equiv_width_fit / u.AA)
 
+        index_append = len(found_val) if only_abund_ind is None else only_abund_ind
         found_val.loc[index_append] = [elem+order, lamb, opt_pars[0], opt_pars[1], opt_pars[2], abund_val_refer,
                                        par[0], np.abs(par[0]-abund_val_refer), "{:.4e}".format(chi),
                                        "{:.4e}".format(equiv_width_obs), "{:.4e}".format(equiv_width_fit)]
@@ -560,10 +570,11 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
         found_val.to_csv(Path(folder).joinpath(save_name), index=False, float_format="%.4f")
 
         if ui is not None:
-            rowpos = ui.abundancetable.rowCount()
-            ui.abundancetable.insertRow(rowpos)
-            ui.abundancetable.setItem(rowpos, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
-            ui.abundancetable.setItem(rowpos, 1, QtWidgets.QTableWidgetItem(str(lamb)))
+            if only_abund_ind is None:
+                rowpos = ui.abundancetable.rowCount()
+                ui.abundancetable.insertRow(rowpos)
+                ui.abundancetable.setItem(rowpos, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
+                ui.abundancetable.setItem(rowpos, 1, QtWidgets.QTableWidgetItem(str(lamb)))
 
             # linescurrent = ui.progressvalue.text().split("/")
             ui.progressvalue.setText("{}/{}".format(i+1, len(linelist)))
@@ -624,7 +635,7 @@ def read_config(config_name):
 
 
 def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer=None, opt_pars=None,
-             repfit=2, abundplot=None, results_array=None):
+             repfit=2, abundplot=None, results_array=None, only_abund_ind=None):
     """
     Main function to be called from the GUI.
 
@@ -640,6 +651,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     :param abundplot: overwrite the abundance fit and only plot the value
                       present in this variable.
     :param results_array: array for the results of the fit.
+    :param only_abund_ind: change only abundance without fitting other parameters at this index.
     :return: the results of the fit, the actualized ``ax`` variable and the
              actualized ``plot_line_refer`` variable.
     """
@@ -662,7 +674,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     ui.abundancetable.setDisabled(True)
 
     ui.run.setText("Running")
-    ui.run.setStyleSheet("background-color: red")
+    ui.run.setStyleSheet("background-color: red; font-weight: 750; color: white")
 
     if ui.restart.checkState() == QtCore.Qt.CheckState.Checked:
         restart = True
@@ -721,7 +733,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
                                                                cut_val=cut_val, plot_line_refer=plot_line_refer,
                                                                opt_pars=opt_pars, repfit=repfit, max_iter=max_iter,
                                                                convovbound=convovbound, contpars=contpars,
-                                                               wavebound=wavebound)
+                                                               wavebound=wavebound, only_abund_ind=only_abund_ind)
     else:
         currow = ui.abundancetable.currentRow()
         currow = ui.abundancetable.rowCount() - 1 if currow == -1 else currow
@@ -738,7 +750,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     ui.abundancetable.setDisabled(False)
 
     ui.run.setText("Run")
-    ui.run.setStyleSheet("background-color: none")
+    ui.run.setStyleSheet("background-color: none; font-weight: 750")
 
     # Time Counter
     end = time.time()
