@@ -655,6 +655,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             uiobject.setText(fname)
 
     def gui_hold(self, value):
+        """
+        Froozen some widgets in the GUI so they can not be modified while running the fit.
+
+        :param value: if it is to hold or not the GUI
+        """
+
         self.run.setDisabled(value)
         self.manualfitbutton.setDisabled(value)
         self.currentvaluesplotbutton.setDisabled(value)
@@ -670,7 +676,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         self.run.setText(btt_text)
         self.run.setStyleSheet("background-color: {}; font-weight: 750".format(back_col))
-
 
     def tablecheckbox(self, state):
         """
