@@ -467,6 +467,8 @@ Stdout and Stderr
 All print functions and errors of the code are redirected to the 
 Stdout/Stderr tab. Use it for debug and/or follow up the fit process.
 
+It is possible to clear the Stdout/Stderr bt pressing the *Clear* button.
+
 Save and open sessions
 ----------------------
 
