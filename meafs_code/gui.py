@@ -2,7 +2,7 @@
 """
 | MEAFS GUI
 | Matheus J. Castro
-| v4.7.14
+| v4.8.3
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
@@ -22,7 +22,7 @@ import dill
 import sys
 import os
 
-version = "4.7.14"
+version = "4.8.3"
 
 try:
     from gui_qt import Ui_MEAFS
@@ -55,7 +55,7 @@ def exception_hook(exctype, value, traceback):
 
     print(exctype, value, traceback)
     sys._excepthook(exctype, value, traceback)
-    sys.exit(1)
+    # sys.exit(1)
 
 
 sys._excepthook = sys.excepthook
@@ -98,7 +98,9 @@ class Stdredirect:
 
         self.edit.moveCursor(QtGui.QTextCursor.MoveOperation.End)
         if self.color:
-            self.edit.insertHtml("<span style='color: {};'>{}</span><br><br>".format(self.color, text))
+            text_html = text.replace("\n", "<br>")
+            self.edit.insertHtml("<span style='white-space: pre; " \
+                                 "color: {};'>{}</span>".format(self.color, text_html))
         else:
             self.edit.insertPlainText(text)
 
@@ -235,8 +237,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Read Settings
         self.sett_path = Path(os.path.dirname(__file__)).joinpath("settings.csv")
-        self.settings = pd.read_csv(self.sett_path,  delimiter=",", index_col=None)
-        self.autosave.setChecked(self.settings[self.settings.variable == "auto_save"].value.iloc[0])
+        self.settings = pd.read_csv(self.sett_path,  delimiter=",", index_col=None, dtype=str)
+        self.autosave.setChecked(int(self.settings[self.settings.variable == "auto_save"].value.iloc[0]))
 
         # Create modules folder (not distributed in GitHub)
         if not os.path.exists(Path(os.path.dirname(__file__)).joinpath("modules")):
@@ -278,25 +280,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.deepthinitguessvalue.setValue(-1)
 
         # TurboSpectrum Configuration
-        self.mainpath = Path(__file__).parts[:-1]
-        self.pathconfig = Path(self.mainpath[0]).joinpath(*self.mainpath[1:]).joinpath("modules", "Turbospectrum2019",
-                                                                                       "COM-v19.1")
-        self.turbospectrumconfigname.setText(str(self.pathconfig))
-        self.pathoutput = Path(self.mainpath[0]).joinpath(*self.mainpath[1:]).joinpath("modules", "Turbospectrum2019",
-                                                                                       "COM-v19.1", "syntspec")
-        self.turbospectrumoutputname.setText(str(self.pathoutput))
+        self.pathconfig = self.settings[self.settings.variable == "turbospectrum_config"].value.iloc[0]
+        self.pathoutput = self.settings[self.settings.variable == "turbospectrum_output"].value.iloc[0]
+        self.turbospec_config_path()
 
-        if not os.path.exists(self.pathconfig):
-            self.pathconfig = os.getcwd()
-        if not os.path.exists(self.pathoutput):
-            self.pathoutput = os.getcwd()
-
-        self.turbospectrumconfigbrowse.clicked.connect(lambda: self.browse(self.turbospectrumconfigname,
-                                                                           "Select TurboSpectrum Configuration File",
-                                                                           direc=str(self.pathconfig)))
-        self.turbospectrumoutputbrowse.clicked.connect(lambda: self.browse(self.turbospectrumoutputname,
-                                                                           "Select TurboSpectrum Output File",
-                                                                           direc=str(self.pathoutput)))
+        self.turbospectrumconfigbrowse.clicked.connect(lambda: self.turbospec_config_path(init=False, tp="config"))
+        self.turbospectrumoutputbrowse.clicked.connect(lambda: self.turbospec_config_path(init=False, tp="output"))
 
         # Plot Configuration
         self.tabplotshels.setCurrentIndex(0)
@@ -383,6 +372,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.wavebound = .2
         self.continuumpars = [2, 8]
 
+        self.errorguireset.triggered.connect(lambda: self.gui_hold(False))
+
         # View Submenu Configuration
         self.fullspec.triggered.connect(self.full_spec_plot_range)
         self.checkcontinuumplot.triggered.connect(self.run_check_continuum)
@@ -415,8 +406,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # self.methodbox.setCurrentIndex(0)
         # self.max_iter = [1000, 1000, 1]
         # self.tabplotshels.setCurrentIndex(1)
-        self.dataloadtable.item(0, 1).setToolTip("/full/path/to/spectrum/data.dat")
-
+        # self.dataloadtable.item(0, 1).setToolTip("/full/path/to/spectrum/data.dat")
+        # self.settings.loc[self.settings.variable == "turbospectrum_config", "value"] = ""
+        # self.settings.loc[self.settings.variable == "turbospectrum_output", "value"] = ""
+        # noinspection PyTypeChecker
+        # self.settings.to_csv(self.sett_path, index=None)
 
     def keyPressEvent(self, event):
         """
@@ -503,10 +497,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         if self.autosave.isChecked():
-            self.settings.loc[self.settings.variable == "auto_save", "value"] = 1
+            self.settings.loc[self.settings.variable == "auto_save", "value"] = "1"
             self.timer.start()
         else:
-            self.settings.loc[self.settings.variable == "auto_save", "value"] = 0
+            self.settings.loc[self.settings.variable == "auto_save", "value"] = "0"
             self.timer.stop()
 
         # noinspection PyTypeChecker
@@ -659,6 +653,24 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             if fname[-7:] != "Results":
                 fname = str(Path(fname).joinpath("Results"))
             uiobject.setText(fname)
+
+    def gui_hold(self, value):
+        self.run.setDisabled(value)
+        self.manualfitbutton.setDisabled(value)
+        self.currentvaluesplotbutton.setDisabled(value)
+        self.currentvaluessavebutton.setDisabled(value)
+        self.abundancetable.setDisabled(value)
+
+        if value:
+            btt_text = "Running"
+            back_col = "red"
+        else:
+            btt_text = "Run"
+            back_col = "none"
+
+        self.run.setText(btt_text)
+        self.run.setStyleSheet("background-color: {}; font-weight: 750".format(back_col))
+
 
     def tablecheckbox(self, state):
         """
@@ -841,6 +853,51 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         elif self.methodbox.currentIndex() == 3:
             self.graymethods([False, False, False, True])
             self.methodstab.setCurrentIndex(3)
+
+    def turbospec_config_path(self, init=True, tp=None):
+        """
+        Check, select and write into the settings the path to the configuration and output files
+        of TurboSpectrum
+
+        :param init: if it is only to look if the path in the database exists
+        :param tp: type of file being called
+        """
+
+        if init:
+            mainpath = Path(__file__).parts[:-1]
+
+            if self.pathconfig is np.nan:
+                self.pathconfig = Path(mainpath[0]).joinpath(*mainpath[1:]).joinpath("modules",
+                                                                                     "Turbospectrum2019",
+                                                                                     "COM-v19.1")
+            if self.pathoutput is np.nan:
+                self.pathoutput = Path(mainpath[0]).joinpath(*mainpath[1:]).joinpath("modules",
+                                                                                     "Turbospectrum2019",
+                                                                                     "COM-v19.1", "syntspec")
+            self.turbospectrumconfigname.setText(str(self.pathconfig))
+            self.turbospectrumoutputname.setText(str(self.pathoutput))
+
+            if not os.path.exists(self.pathconfig):
+                self.pathconfig = mainpath
+            if not os.path.exists(self.pathoutput):
+                self.pathoutput = mainpath
+
+        else:
+            if tp == "config":
+                self.browse(self.turbospectrumconfigname,
+                            "Select TurboSpectrum Configuration File",
+                            direc=str(self.pathconfig))
+                self.settings.loc[
+                    self.settings.variable == "turbospectrum_config", "value"] = self.turbospectrumconfigname.text()
+            elif tp == "output":
+                self.browse(self.turbospectrumoutputname,
+                            "Select TurboSpectrum Output File",
+                            direc=str(self.pathoutput))
+                self.settings.loc[
+                    self.settings.variable == "turbospectrum_output", "value"] = self.turbospectrumoutputname.text()
+
+            # noinspection PyTypeChecker
+            self.settings.to_csv(self.sett_path, index=None)
 
     def datatableconfig(self, load=False, loaddata=None):
         """

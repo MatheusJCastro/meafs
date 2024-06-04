@@ -2,7 +2,7 @@
 """
 | MEAFS Abundance Fit
 | Matheus J. Castro
-| v4.7.14
+| v4.8.3
 
 | Main fit code to do all the operations with the spectrum, call the modules to generate
   the synthetic spectrum, plot the curves and more.
@@ -24,7 +24,7 @@ from . import fit_functions as ff
 from . import voigt_functions as vf
 from . import turbospec_functions as tf
 
-version = "4.7.14"
+version = "4.8.3"
 
 
 def open_linelist_refer_fl(list_name):
@@ -659,22 +659,15 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     # Time Counter
     init = time.time()
     init_local = time.localtime()
-    init_time = "Run started at: {} {} {}, {}:{}:{}.".format(init_local.tm_year,
-                                                             init_local.tm_mon,
-                                                             init_local.tm_mday,
-                                                             init_local.tm_hour,
-                                                             init_local.tm_min,
-                                                             init_local.tm_sec)
+    init_time = "Run started at: {} {} {}, {}:{}:{}. ".format(init_local.tm_year,
+                                                              init_local.tm_mon,
+                                                              init_local.tm_mday,
+                                                              init_local.tm_hour,
+                                                              init_local.tm_min,
+                                                              init_local.tm_sec)
     print(init_time)
 
-    ui.run.setDisabled(True)
-    ui.manualfitbutton.setDisabled(True)
-    ui.currentvaluesplotbutton.setDisabled(True)
-    ui.currentvaluessavebutton.setDisabled(True)
-    ui.abundancetable.setDisabled(True)
-
-    ui.run.setText("Running")
-    ui.run.setStyleSheet("background-color: red; font-weight: 750; color: white")
+    ui.gui_hold(True)
 
     if ui.restart.checkState() == QtCore.Qt.CheckState.Checked:
         restart = True
@@ -715,6 +708,22 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
         methodconfig = [ui.methodbox.currentText(),
                         ui.turbospectrumoutputname.text(),
                         ui.turbospectrumconfigname.text()]
+        if not os.path.exists(methodconfig[1]) or not os.path.exists(methodconfig[2]):
+            ui.gui_hold(False)
+
+            msg_err = "Error: TurboSpectrum files are not properly set. Run aborted.\n"
+
+            # noinspection PyTypeChecker
+            with open(str(Path(folder).joinpath("log.txt")), "a") as f:
+                f.write(init_time)
+                f.write(msg_err)
+                f.write("\n")
+                f.close()
+            print(msg_err)
+
+            ui.show_error("TurboSpectrum files are not properly set. Run aborted.")
+
+            return results_array, ax, plot_line_refer
 
     ui.methodsdatafittab.setCurrentIndex(2)
 
@@ -743,14 +752,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
                                            cut_val=cut_val, canvas=canvas, ax=ax, plot_line_refer=plot_line_refer,
                                            opt_pars=opt_pars)
 
-    ui.run.setDisabled(False)
-    ui.manualfitbutton.setDisabled(False)
-    ui.currentvaluesplotbutton.setDisabled(False)
-    ui.currentvaluessavebutton.setDisabled(False)
-    ui.abundancetable.setDisabled(False)
-
-    ui.run.setText("Run")
-    ui.run.setStyleSheet("background-color: none; font-weight: 750")
+    ui.gui_hold(False)
 
     # Time Counter
     end = time.time()
