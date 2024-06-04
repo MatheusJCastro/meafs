@@ -166,7 +166,7 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
 
 def fit_continuum(spec, contpars=None, iterac=1000):
     """
-    Fit the overrall continuum in the entire spectrum.
+    Fit the overall continuum in the entire spectrum.
 
     :param spec: spectrum data.
     :param contpars: the calibration values of the method.

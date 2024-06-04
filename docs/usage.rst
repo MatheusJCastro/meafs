@@ -55,10 +55,16 @@ Also, any saved section can be passed as an argument and meafs will power the GU
 
 If no argument is given, the GUI will power with a new empty session.
 
-Auto Save
----------
+Auto Save Capability
+--------------------
 
-| In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 5 seconds in a file named ``auto_save.pkl``.  
-| Also, if auto save is enabled, when MEAFS is closed, it will save the session in the ``auto_save_last.pkl`` file.  
-| These files are located under the MEAFS directory and the ``-h`` :ref:`flag <flags>` will show the location.  
-| To load any of these files, simply use the :ref:`flags <flags>` or load them in the *File* - *Open...* menu.
+| In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save 
+  the session every 5 seconds in a file named ``auto_save.pkl``.  
+| Also, if auto save is enabled, when MEAFS is closed, it will save the session in 
+  the ``auto_save_last.pkl`` file.  
+| These files are located under the MEAFS directory and the ``-h`` :ref:`flag <flags>` 
+  will show the location.  
+| To load any of these files, simply use the :ref:`flags <flags>` or load them in the 
+  *File* - *Open...* menu.
+
+See more at :ref:`auto_save_manual`.

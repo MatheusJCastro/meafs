@@ -742,7 +742,7 @@
       </widget>
       <widget class="QWidget" name="fitparameterstab">
        <attribute name="title">
-        <string>Fit Parameters</string>
+        <string>Fit Results</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_13">
         <item row="0" column="0">
@@ -1100,7 +1100,7 @@
   </action>
   <action name="fullspec">
    <property name="text">
-    <string>Change Plot to full spectrum range (CRTL+Shift+V)</string>
+    <string>Change Plot to full spectrum range (Ctrl+Shift+V)</string>
    </property>
    <property name="toolTip">
     <string>Change Plot to full spectrum range (CRTL+V)</string>

@@ -38,7 +38,7 @@ Analyze    A checkbox if this wavelength should or should not
 ========== =====================================================
 
 | The table can be manually filled or a *CSV* file with two columns can be imported.
-| For the first one, you can simply write in the table values, and click 
+| For the first one, simply write it in the table values, and click 
   *Add Line* or *Remove Line* buttons to match the number of rows desired.
 | For the Second one, click *Browse* and select the line-list file, then 
   click *Load* to load the data in the table.
@@ -51,8 +51,11 @@ checkboxes.
 The *Restart* checkbox change the behavior of MEAFS in how it will read the 
 line-list. If it is **unchecked**, MEAFS will ignore lines that are already
 in the *found_values.csv* file (see :ref:`analyzing_results`). Otherwise, if it is 
-**checked**, MEAFS will fit all selected lines and overwrite the **entire** results 
+**checked**, MEAFS will fit all selected lines and **overwrite** them in the results 
 file.
+
+If a line that is selected is out of the range of any spectrum data, this line will be 
+skipped.
 
 Loading abundance references
 ----------------------------
@@ -230,15 +233,105 @@ Fit parameters
 
 | 
 
-Continuum check
-+++++++++++++++
+There are several options to change how the fit is done. This menu are 
+located in *Edit* > *Fit Parameters*. 
 
-.. image:: _static/meafs_gui_14.png
-   :width: 80%
-   :align: center
-   :alt: GUI run
-   
-| 
+Change it with caution, since this can drastically modify the results. 
+
+Forced Loop Iterations
+++++++++++++++++++++++
+
+There is one parameter that determines how many iterations the main fit 
+routine will run. 
+
+The main goal here is to have the first fit with no guesses and a second 
+one using the results of the previous one as a start point. That is why 
+the default value is 2.
+
+Interaction range (Angstrom) for each fit
++++++++++++++++++++++++++++++++++++++++++
+
+For each fit, the spectrum will be restrained to a certain range. The 
+parameters here determine this range. 
+
+For example, the plot range, by default, plots a range of :math:`1 Å` 
+(centered in the wavelength of the line and :math:`0.5 Å` for each side). 
+But let's suppose that it is needed to see a line in the same plot that 
+is :math:`1.2 Å` apart from the line that has been fitted. Then, the 
+range for the plot can be set for :math:`3 Å`.
+
+For the abundance, if a wide range is used, the :math:`\chi^2` may not
+be fully minimized, since the abundance in the synthetic spectrum only 
+changes the lines os that specific element. Therefore, a smaller range 
+may benefit the minimization. The resolution of the spectrum can have a 
+huge impact on this. 
+
+Fit Maximum Iterations
+++++++++++++++++++++++
+
+This sets a limit to the maximum number of iterations that each method 
+can use. This can have an impact in how long does it take to fit a line 
+and if it will actually be fitted or the method will be ended before it 
+achieves a satisfactory result.
+
+Wave. Shift (Angstrom) Boundaries
++++++++++++++++++++++++++++++++++
+
+The wavelength shift fit sometimes can try to fit a line that is next to 
+the desired one, especially for crowded regions. To prevent this of 
+happening, the boundaries of the fit can be defined. 
+
+Convolution Boundaries
+++++++++++++++++++++++
+
+The convolution parameters are very specific for each spectrum and, if 
+the user already have a guess of what it is, the constrains can be 
+fixed.
+
+.. _continuum_fit_param:
+
+Continuum Fit Parameters
+++++++++++++++++++++++++
+
+The fit of the continuum uses the *Sigma-clipping continuum level* 
+method described at Sánchez-Monge, 2018: *STATCONT: A statistical 
+continuum level determination method for line-rich sources*.
+
+To summarize it, it is a iteration method that exclude outliers to find 
+the median and the standard deviation of the flux axis and uses these 
+values for the continuum and it's errors, respectively.
+
+The process involves two parameters that determine how the method will 
+be handled:
+
+================ ======================================================
+:math:`\alpha`   Is a weight for the standard deviation that determines
+                 which outliers will be ignored or not. 
+                 
+                 The expression is:
+
+                 .. math::
+                    \mu \pm \alpha \sigma
+
+                 Where :math:`\mu` is the median of the array and 
+                 :math:`\sigma` is the standard deviation.
+
+                 The values that are above of this limit, are considered 
+                 outliers, therefore are excluded from the array.
+
+:math:`\epsilon` Determines the relative error of the iteration process 
+                 by applying:
+                 
+                 .. math::
+                    \frac{\sigma_{old}-\sigma}{\sigma} \leq \epsilon
+
+                 Where :math:`\sigma` is the current standard deviation
+                 of the array and the :math:`\sigma_{old}` is from the 
+                 previous iteration.
+================ ======================================================
+
+See :ref:`check_cont` for a way to verify if these parameters are good 
+or not.
 
 .. _analyzing_results:
 
@@ -252,11 +345,99 @@ Analyzing the results
    
 | 
 
+After the full run, the lines that are selected in the line-list will 
+appear in the *Abundances* table **if** they are in the range of the 
+spectrum (lines that are not in the range of any spectrum will 
+be skipped).
+
+Clicking in one row of this table will select the line and the results 
+of the fit of this line will be shown in the *Fit Results* tab.
+
+Also, all the results are saved in the *found_values.csv* file, under the 
+directory previously chosen. This file has the following columns:
+
+=================== =====================================================
+Element             Corresponding element of this line.
+Lambda (A)          Wavelength in Angstroms.
+Lamb Shift          Wavelength shift in Angstroms for this line.
+Continuum           Continuum value for this line.
+Convolution         Convolution value for this line.
+Refer Abundance     Reference abundance of the element.
+Fit Abundance       Found abundance for this line.
+Differ              Difference of the reference and the fitted abundance.
+Chi                 Minimized :math:`\chi^2` of the abundance fit.
+Equiv Width Obs (A) Equivalent width of the observed spectrum.
+Equiv Width Fit (A) Equivalent width of the synthetic fitted spectrum.
+=================== =====================================================
+
+The plot
+++++++++
+
+The plot area shows all the loaded spectra and all the fitted lines. Once one 
+line is clicked in the results table, the plot will focus on that specific line.
+
+It is possible to modify the range, pam, save, zoom in and out using the 
+Matplotlib toolbar next to the plot.
+
+To show the full spectrum range, there is a button in the menu option *View* > 
+*Change Plot to full spectrum range*. But there is also a keyboard shortcut for 
+that: **Ctrl+Shift+V**.
+
+When the mouse pointer is on top of the plot, the axis values appear in the 
+toolbar, like in the image bellow:
+
+.. image:: _static/meafs_gui_03.1.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+   
+| 
+
+.. _check_cont:
+
+Check continuum fit
++++++++++++++++++++
+
+.. image:: _static/meafs_gui_14.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+   
+| 
+
+It is possible to plot the continuum in the menu option *View* > *Check Continuum* 
+and erase it with *Erase Continuum* button in the same submenu. Note 
+that it is **not** needed to have the continuum plotted in the figure to
+proceed with the fit, this is just to check if the :math:`\alpha` and 
+:math:`\epsilon` parameters are good or not as described in 
+:ref:`continuum_fit_param`.
+
+.. _fit_only_abund:
+
 Fit only abundance run
 ----------------------
 
+After a full run, the lines selected will appear in the results table and can be 
+selected. As showed in :ref:`analyzing_results`, the fit results can be found in 
+the "Fit Results" tab.
+
+In this tab, it is possible to manually change the *Lamb Shift*, *Continuum* and 
+*Convolution* values and press the *Manual fit* button. Every time this button is 
+pressed, it will run a fit only for the abundance using the values that are written
+in the three parameters above.
+
+After this run, the new abundance and the modified parameters will be written in the 
+*found_values.csv* file. To restore the originals values, it is needed to run the fit 
+again (only for the desired line) with the *Restart* option enabled.
+
 No fit run
 ----------
+
+As described in :ref:`fit_only_abund`, in the *Fit Results* tab, it is possible to 
+modify the *Lamb Shift*, *Continuum* and *Convolution* values, however it is also 
+possible to change the abundance value and *Plot Current Values* in the plot. This 
+will not save the results in the *found_values.csv*, for that press *Save Current 
+Values*. 
 
 Jupyter Shell
 -------------
@@ -270,7 +451,8 @@ Jupyter Shell
 
 The Jupyter Shell provides access to the MEAFS session with all the 
 variables and functions available. It can be useful for more advanced
-user or for debug. See :ref:`pack_overview` for the list of variables and functions.
+user or for debug. See :ref:`pack_overview` for the list of variables 
+and functions.
 
 Stdout and Stderr
 -----------------
@@ -299,6 +481,9 @@ MEAFS uses the *dill* library to create sessions of the current loaded
 values. Sessions can be saved and opened, or a new empty one can be created. 
 Note that creating a new session will erase all the values, 
 save the current one before doing this.
+
+
+.. _auto_save_manual:
 
 Auto Save
 ^^^^^^^^^
@@ -335,8 +520,8 @@ And to open the last closed session, type:
 Open old results
 ^^^^^^^^^^^^^^^^
 
-| If you have results from a previous run (*.csv* file) and the folder 
-  *On_time_plots*, you can go to the menu option *File* > *Open 
+| If there are results from a previous run (*.csv* file) and the folder 
+  *On_time_plots*, it is possible to go to the menu option *File* > *Open 
   Abundances...* and select the *CSV* file.
 | MEAFS will read the file and populate te results tab with the 
   information there. Also, it will look for a folder called *On_time_plots*

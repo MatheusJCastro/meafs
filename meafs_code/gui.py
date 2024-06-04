@@ -2,7 +2,7 @@
 """
 | MEAFS GUI
 | Matheus J. Castro
-| v4.7.13
+| v4.7.14
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
@@ -22,7 +22,7 @@ import dill
 import sys
 import os
 
-version = "4.7.13"
+version = "4.7.14"
 
 try:
     from gui_qt import Ui_MEAFS
@@ -415,6 +415,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # self.methodbox.setCurrentIndex(0)
         # self.max_iter = [1000, 1000, 1]
         # self.tabplotshels.setCurrentIndex(1)
+        self.dataloadtable.item(0, 1).setToolTip("/full/path/to/spectrum/data.dat")
+
 
     def keyPressEvent(self, event):
         """

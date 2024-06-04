@@ -2,7 +2,7 @@
 """
 | MEAFS Abundance Fit
 | Matheus J. Castro
-| v4.7.13
+| v4.7.14
 
 | Main fit code to do all the operations with the spectrum, call the modules to generate
   the synthetic spectrum, plot the curves and more.
@@ -24,7 +24,7 @@ from . import fit_functions as ff
 from . import voigt_functions as vf
 from . import turbospec_functions as tf
 
-version = "4.7.13"
+version = "4.7.14"
 
 
 def open_linelist_refer_fl(list_name):
