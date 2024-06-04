@@ -469,6 +469,19 @@ Stdout/Stderr tab. Use it for debug and/or follow up the fit process.
 
 It is possible to clear the Stdout/Stderr bt pressing the *Clear* button.
 
+Errors while running the fit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: _static/meafs_gui_13.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+In case of errors while running a fit, some widgets of the GUI may be frozen. To unlock
+them, go to the menu option *Edit* > *Error GUI Reset*.
+
 Save and open sessions
 ----------------------
 
