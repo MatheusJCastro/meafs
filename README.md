@@ -2,6 +2,10 @@
 
 # Multiple Element Abundance Fit Software - MEAFS
 
+[![Read the Docs](https://img.shields.io/readthedocs/meafs?logo=readthedocs)](https://meafs.readthedocs.io/)
+[![PyPI - Version](https://img.shields.io/pypi/v/meafs?logo=pypi)](https://pypi.org/project/meafs/)
+[![GitHub Release](https://img.shields.io/github/v/tag/MatheusJCastro/meafs?logo=github)](https://github.com/MatheusJCastro/meafs)
+
 *Written by: Matheus J. Castro*  
 *Under MIT License*  
 
@@ -29,6 +33,7 @@ More information at: [https://meafs.readthedocs.io/](https://meafs.readthedocs.i
       - [Windows](#windows)
     - [Compilation](#compilation)
   - [Uninstall](#uninstall)
+    - [Anaconda](#anaconda)
   - [Basic Usage](#basic-usage)
     - [With Installation](#with-installation)
     - [Without Installation](#without-installation)
@@ -182,6 +187,14 @@ Otherwise, first remove the menu entries (if you have added it, see [Basic Usage
 ```bash
 meafs-desktop-remove
 pip uninstall meafs
+```
+
+### Anaconda
+
+If you have created an Anaconda environment, you can delete it with:
+
+```bash
+conda env remove --name meafs
 ```
 
 ## Basic Usage

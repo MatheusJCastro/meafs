@@ -1,6 +1,6 @@
 [project]
 name = "meafs"
-version = "4.8.3"
+version = "4.8.4"
 authors = [
     { name="Matheus J. Castro" }
 ]

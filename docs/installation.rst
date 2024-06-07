@@ -167,4 +167,11 @@ Otherwise, first remove the menu entries (if you have added it, see :ref:`Basic 
    meafs-desktop-remove
    pip uninstall meafs
 
+Anaconda
+^^^^^^^^
 
+If you have created an Anaconda environment, you can delete it with:
+
+.. code-block:: bash
+
+   conda env remove --name meafs 

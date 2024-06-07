@@ -2,7 +2,7 @@
 """
 | MEAFS GUI
 | Matheus J. Castro
-| v4.8.3
+| v4.8.4
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
@@ -22,7 +22,7 @@ import dill
 import sys
 import os
 
-version = "4.8.3"
+version = "4.8.4"
 
 try:
     from gui_qt import Ui_MEAFS
