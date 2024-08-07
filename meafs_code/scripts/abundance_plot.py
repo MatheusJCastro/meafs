@@ -2,7 +2,6 @@
 """
 | MEAFS Abundance Analysis
 | Matheus J. Castro
-| v3.0
 
 | This program generates graphics to analyse the results obtained with the abundance_fit.py
 | For this code work, it must be in the same folder as the *abundance_fit.py* file
@@ -10,6 +9,8 @@
 
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from PyQt6 import QtCore, QtGui
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import sys
@@ -20,6 +21,21 @@ try:
     import abundance_fit as ab_fit
 except ModuleNotFoundError:
     from . import abundance_fit as ab_fit
+
+try:
+    import turbospec_functions as tf
+except ModuleNotFoundError:
+    from . import turbospec_functions as tf
+
+try:
+    import fit_functions as ff
+except ModuleNotFoundError:
+    from . import fit_functions as ff
+
+try:
+    import voigt_functions as vf
+except ModuleNotFoundError:
+    from . import voigt_functions as vf
 
 
 def erase_emission_order(abund):
@@ -51,7 +67,7 @@ def erase_null_abund(abund):
     return abund
 
 
-def plot_abund_hist(abund, elements, folder):
+def plot_abund_hist(abund, elements, folder, ui=None, bins=20):
     """
     Creeate histograms for abundance for each element
     and trace a gaussian with the mean and standard deviation.
@@ -59,6 +75,8 @@ def plot_abund_hist(abund, elements, folder):
     :param abund: pandas element with the abundances.
     :param elements: elements to create histograms.
     :param folder: directory to be saved.
+    :param ui: the main ui class in the GUI.
+    :param bins: define the number of bins for the histogram.
     """
 
     for i in elements:
@@ -74,7 +92,7 @@ def plot_abund_hist(abund, elements, folder):
         plt.xticks(fontsize=18)
         plt.yticks(fontsize=18)
 
-        plt.hist(elem_abunds, bins=20, density=True, label="Data", color="Blue", edgecolor="black", linewidth=1.5,
+        plt.hist(elem_abunds, bins=bins, density=True, label="Data", color="Blue", edgecolor="black", linewidth=1.5,
                  zorder=2)
 
         if len(elem_abunds) > 1 and sum(elem_abunds) != 0:
@@ -88,12 +106,22 @@ def plot_abund_hist(abund, elements, folder):
 
         plt.grid(zorder=1)
         plt.legend(fontsize=18)
+        plt.tight_layout()
 
-        plt.savefig(folder+"Abundance_Analysis/Abundance_Hist/hist_abundance_{}.pdf".format(i))
+        main_path = Path(folder).joinpath("Abundance_Analysis", "Abundance_Hist")
+        fig_path = main_path.joinpath("hist_abundance_{}.pdf".format(i))
+        plt.savefig(fig_path)
         plt.close()
 
+        if ui is not None:
+            pixmap = QtGui.QPixmap(str(fig_path))
+            ui.abundhistplotimage.setPixmap(pixmap.scaled(ui.scale))
+            ui.abundhistplotimage.setFixedSize(ui.scale)
 
-def plot_differ_hist(abund, elements, folder):
+            QtCore.QCoreApplication.processEvents()
+
+
+def plot_differ_hist(abund, elements, folder, ui=None, bins=20):
     """
     Plot histograms for abundance shift for each element
     and trace a gaussian with the mean and standard deviation
@@ -101,6 +129,8 @@ def plot_differ_hist(abund, elements, folder):
     :param abund: pandas element with the abundances.
     :param elements: elements to create histograms.
     :param folder: directory to be saved.
+    :param ui: the main ui class in the GUI.
+    :param bins: define the number of bins for the histogram.
     """
 
     for i in elements:
@@ -116,7 +146,7 @@ def plot_differ_hist(abund, elements, folder):
         plt.xticks(fontsize=18)
         plt.yticks(fontsize=18)
 
-        plt.hist(elem_differ, bins=20, density=True, label="Data", color="Blue", edgecolor="black", linewidth=1.5,
+        plt.hist(elem_differ, bins=bins, density=True, label="Data", color="Blue", edgecolor="black", linewidth=1.5,
                  zorder=2)
 
         if len(elem_differ) > 1 and sum(elem_differ) != 0:
@@ -130,18 +160,29 @@ def plot_differ_hist(abund, elements, folder):
 
         plt.grid(zorder=1)
         plt.legend(fontsize=18)
+        plt.tight_layout()
 
-        plt.savefig(folder+"Abundance_Analysis/Difference_Hist/hist_differ_{}.pdf".format(i))
+        main_path = Path(folder).joinpath("Abundance_Analysis", "Difference_Hist")
+        fig_path = main_path.joinpath("hist_differ_{}.pdf".format(i))
+        plt.savefig(fig_path)
         plt.close()
 
+        if ui is not None:
+            pixmap = QtGui.QPixmap(str(fig_path))
+            ui.differhistplotimage.setPixmap(pixmap.scaled(ui.scale))
+            ui.differhistplotimage.setFixedSize(ui.scale)
 
-def plot_abund_box(abund, elements, folder):
+            QtCore.QCoreApplication.processEvents()
+
+
+def plot_abund_box(abund, elements, folder, ui=None):
     """
     Create the abundance box plot.
 
     :param abund: pandas element with the abundances.
     :param elements: elements to create histograms.
     :param folder: directory to be saved.
+    :param ui: the main ui class in the GUI.
     """
 
     abund_matrix = []
@@ -168,8 +209,15 @@ def plot_abund_box(abund, elements, folder):
     plt.grid(which="both", axis="y")
     plt.tight_layout()
 
-    plt.savefig(folder+"Abundance_Analysis/Abundance_box.pdf")
+    main_path = Path(folder).joinpath("Abundance_Analysis")
+    fig_path = main_path.joinpath("Abundance_box.pdf")
+    plt.savefig(fig_path)
     plt.close()
+
+    if ui is not None:
+        pixmap = QtGui.QPixmap(str(fig_path))
+        ui.boxplotimage.setPixmap(pixmap.scaled(ui.scale))
+        ui.boxplotimage.setFixedSize(ui.scale)
 
 
 def get_spectrum(fit_data, conv_name, config_fl, elem, abundance_shift=0., cut_val=1.):
@@ -190,17 +238,17 @@ def get_spectrum(fit_data, conv_name, config_fl, elem, abundance_shift=0., cut_v
     abundance = fit_data["Fit Abundance"] + abundance_shift
 
     # Run the model with the desired abundance
-    ab_fit.change_spec_range_configfl(config_fl, lamb, cut_val)
-    ab_fit.change_abund_configfl(config_fl, elem, find=False, abund=abundance)
-    ab_fit.run_configfl(config_fl)
+    tf.change_spec_range_configfl(config_fl, lamb, cut_val)
+    tf.change_abund_configfl(config_fl, elem, find=False, abund=abundance)
+    tf.run_configfl(config_fl)
 
     # Read and cut the model spectrum to the desired range
     spec = pd.read_csv(conv_name, header=None, delimiter=r"\s+")
     # spec = ab_fit.cut_spec(spec, lamb, cut_val/2)
 
     # Apply the fit resolutions to the spectra
-    spec = ab_fit.spec_operations(spec.copy(), lamb_desloc=fit_data["Lamb Shift"], continuum=fit_data.Continuum,
-                                  convol=fit_data.Convolution)
+    spec = ff.spec_operations(spec.copy(), lamb_desloc=fit_data["Lamb Shift"], continuum=fit_data.Continuum,
+                              convol=fit_data.Convolution)
 
     return spec
 
@@ -219,7 +267,7 @@ def get_diff(spec1, spec2):
     sp2_interpol = np.array([])
 
     for i in spec2.iloc():
-        pos = ab_fit.bisec(spec1, i[0])
+        pos = ff.bisec(spec1, i[0])
         if pos != -1:
             x1 = spec1.iloc[pos][0]
             x2 = spec1.iloc[pos + 1][0]
@@ -238,49 +286,84 @@ def get_diff(spec1, spec2):
         return [lambs, sp2_interpol-sp1_interpol]
 
 
-def plot_lines(obs_specs, abund, refer_fl, conv_name, config_fl, folder, order_sep, cut_val=.5, abundance_shift=.1,
-               drop=0):
+def plot_lines(obs_specs, abund, refer_fl, type_synth, folder, cut_val=.5, abundance_shift=.1,
+               drop=0, ui=None):
     """
     Plot the spectrum fit and the observed one
 
     :param obs_specs: spectrum data.
     :param abund: abundance pandas object.
     :param refer_fl: file name of the reference abundances file.
-    :param conv_name: file name of the TurboSpectrum output file.
-    :param config_fl: file name of the TurboSpectrum configuration file.
+    :param type_synth: type of the current synthetics spectrum generator.
     :param folder: directory to save.
-    :param order_sep: it needs to get of the order in the elements.
     :param cut_val: range to plot the lines.
     :param abundance_shift: overall abundance shift.
     :param drop: remove elements of the ``abund`` dataframe.
+    :param ui: the main ui class in the GUI.
     """
 
-    abund.drop(range(drop), inplace=True)
+    if len(abund) > 1:
+        abund.drop(range(drop), inplace=True)
+
+    if ui is not None:
+        ui.progressvalue.setText("{}/{}".format(0, len(abund)))
 
     for i in range(len(abund)):
+        if ui is not None:
+            # Allow QT to actualize the UI while in the loop
+            QtCore.QCoreApplication.processEvents()
+            if ui.stop_state:
+                ui.stop_state = False
+                return
+
         elem = abund.Element.iloc[i]
         lamb = abund["Lambda (A)"].iloc[i]
         abundance = abund["Fit Abundance"].iloc[i]
 
-        order = ""
-        if order_sep == "1":
-            order = elem[-1]
-            elem = elem[:-1]
+        elem, order = ab_fit.check_order(elem)
 
         spec_obs = obs_specs[0]
-        if lamb > spec_obs[0].iloc[-1]:
-            spec_obs = obs_specs[1]
+        count = 1
+        while lamb > spec_obs[0].iloc[-1]:
+            spec_obs = obs_specs[count]
+            count += 1
 
-        spec_obs = ab_fit.cut_spec(spec_obs, lamb, cut_val)
+        spec_obs = ff.cut_spec(spec_obs, lamb, cut_val)
 
-        spec_fit = get_spectrum(abund.iloc[i], conv_name, config_fl, elem)
-        spec_fit_under = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=+abundance_shift)
-        spec_fit_above = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=-abundance_shift)
-        spec_no = get_spectrum(abund.iloc[i], conv_name, config_fl, elem, abundance_shift=-99999)
+        if type_synth[0] == "TurboSpectrum":
+            spec_fit = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem)
+            spec_fit_under = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem,
+                                          abundance_shift=+abundance_shift)
+            spec_fit_above = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem,
+                                          abundance_shift=-abundance_shift)
+            spec_no = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem,
+                                   abundance_shift=-99999)
 
-        # Write the refer value back
-        abund_val_refer = float(refer_fl.loc[elem]) if not refer_fl.loc[elem].isnull().item() else 0
-        ab_fit.change_abund_configfl(config_fl, elem, find=False, abund=abund_val_refer)
+            # Write the refer value back
+            try:
+                abund_val_refer = float(refer_fl.loc[elem, "value"]) if not refer_fl.loc[elem].isnull().item() else 0
+            except KeyError:
+                abund_val_refer = 0
+
+            tf.change_abund_configfl(type_synth[2], elem, find=False, abund=abund_val_refer)
+        elif type_synth[0] == "Equivalent Width":
+            opt_pars = [abund["Lamb Shift"].iloc[i],
+                        abund["Continuum"].iloc[i],
+                        abund["Convolution"].iloc[i]]
+            par = [abund["Fit Abundance"].iloc[i]]
+
+            func = vf.find_func(type_synth[1])
+            x = np.linspace(min(spec_obs.iloc[:, 0]), max(spec_obs.iloc[:, 0]), 1000)
+            spec_fit = pd.DataFrame({0: x, 1: func(x, b=opt_pars[0] + lamb, c=opt_pars[2],
+                                                   a=par[0], d=opt_pars[1])})
+            spec_fit_under = pd.DataFrame({0: x, 1: func(x, b=opt_pars[0] + lamb, c=opt_pars[2],
+                                                         a=par[0]+abundance_shift, d=opt_pars[1])})
+            spec_fit_above = pd.DataFrame({0: x, 1: func(x, b=opt_pars[0] + lamb, c=opt_pars[2],
+                                                         a=par[0]-abundance_shift, d=opt_pars[1])})
+            spec_no = pd.DataFrame({0: x, 1: func(x, b=opt_pars[0] + lamb, c=opt_pars[2],
+                                                  a=0, d=opt_pars[1])})
+        else:
+            return
 
         res_fit = get_diff(spec_obs, spec_fit)
         res_fit_under = get_diff(spec_obs, spec_fit_under)
@@ -345,10 +428,21 @@ def plot_lines(obs_specs, abund, refer_fl, conv_name, config_fl, folder, order_s
 
         plt.tight_layout()
         plt.subplots_adjust(wspace=0, hspace=0)
-        plt.savefig(folder+"Abundance_Analysis/Lines_Plot/fit_{}_{}_ang.pdf".format(elem+order, lamb))
+        main_path = Path(folder).joinpath("Abundance_Analysis", "Lines_Plot")
+        fig_path = main_path.joinpath("fit_{}_{}_ang.pdf".format(elem+order, lamb))
+        plt.savefig(fig_path)
         plt.close()
 
         print("{} of {} finished.".format(i+1, len(abund)))
+
+        if ui is not None:
+            ui.progressvalue.setText("{}/{}".format(i + 1, len(abund)))
+
+            pixmap = QtGui.QPixmap(str(fig_path))
+            ui.linesplotimage.setPixmap(pixmap.scaled(ui.scale))
+            ui.linesplotimage.setFixedSize(ui.scale)
+
+            QtCore.QCoreApplication.processEvents()
 
 
 def folders_creation(folder):
@@ -358,14 +452,21 @@ def folders_creation(folder):
     :param folder: root folder of the results.
     """
 
-    if not os.path.exists(folder+"Abundance_Analysis"):
-        os.mkdir(folder+"Abundance_Analysis")
-    if not os.path.exists(folder+"Abundance_Analysis/Abundance_Hist"):
-        os.mkdir(folder+"Abundance_Analysis/Abundance_Hist")
-    if not os.path.exists(folder+"Abundance_Analysis/Difference_Hist"):
-        os.mkdir(folder+"Abundance_Analysis/Difference_Hist")
-    if not os.path.exists(folder+"Abundance_Analysis/Lines_Plot"):
-        os.mkdir(folder+"Abundance_Analysis/Lines_Plot")
+    main_path = Path(folder).joinpath("Abundance_Analysis")
+    if not os.path.exists(main_path):
+        os.mkdir(main_path)
+
+    abhist_path = main_path.joinpath("Abundance_Hist")
+    if not os.path.exists(abhist_path):
+        os.mkdir(abhist_path)
+
+    difhist_path = main_path.joinpath("Difference_Hist")
+    if not os.path.exists(difhist_path):
+        os.mkdir(difhist_path)
+
+    lines_path = main_path.joinpath("Lines_Plot")
+    if not os.path.exists(lines_path):
+        os.mkdir(lines_path)
 
 
 def main(args):
@@ -384,7 +485,8 @@ def main(args):
 
     fl_name = folder+"found_values.csv"  # result file
 
-    linelist, refer_fl, spec_obs = ab_fit.open_files(list_name, observed_name, refer_name)
+    refer_fl = ab_fit.open_linelist_refer_fl(refer_name)
+    spec_obs = ab_fit.open_spec_obs(observed_name)
 
     # Create necessary folders
     folders_creation(folder)
@@ -393,8 +495,10 @@ def main(args):
     abund = pd.read_csv(fl_name)
     abund = erase_null_abund(abund)
 
+    type_synth = ["TurboSpectrum", conv_name, config_fl]
+
     # Plot spectra graphics
-    plot_lines(spec_obs, abund, refer_fl, conv_name, config_fl, folder, order_sep)
+    plot_lines(spec_obs, abund, refer_fl, type_synth, folder)
 
     # Erase emission order and create an array with elements
     if order_sep == "1":

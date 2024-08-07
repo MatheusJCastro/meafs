@@ -1,6 +1,6 @@
 [project]
 name = "meafs"
-version = "4.8.4"
+dynamic = ["version"]
 authors = [
     { name="Matheus J. Castro" }
 ]
@@ -35,4 +35,7 @@ meafs-desktop-remove = "meafs_code.desktop_entry:remove"
 [project.urls]
 "homepage" = "https://meafs.readthedocs.io/"
 "repository" = "https://github.com/MatheusJCastro/meafs"
+
+[tool.setuptools.dynamic]
+version = { attr = "meafs_code.__version__" }
 

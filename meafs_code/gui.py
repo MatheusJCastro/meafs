@@ -2,7 +2,6 @@
 """
 | MEAFS GUI
 | Matheus J. Castro
-| v4.8.4
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
@@ -22,19 +21,19 @@ import dill
 import sys
 import os
 
-version = "4.8.4"
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# noinspection PyUnresolvedReferences
+from meafs_code import __version__
 
 try:
     from gui_qt import Ui_MEAFS
 except ModuleNotFoundError:
-    from . import gui_qt
-    Ui_MEAFS = gui_qt.Ui_MEAFS
+    from .gui_qt import Ui_MEAFS
 
 try:
     from fitsettings_qt import Ui_fitparbox
 except ModuleNotFoundError:
-    from . import fitsettings_qt
-    Ui_fitparbox = fitsettings_qt.Ui_fitparbox
+    from .fitsettings_qt import Ui_fitparbox
 
 try:
     from scripts import *
@@ -44,8 +43,7 @@ except ModuleNotFoundError:
 try:
     from desktop_entry import get_curr_dir
 except ModuleNotFoundError:
-    from . import desktop_entry
-    get_curr_dir = desktop_entry.get_curr_dir
+    from .desktop_entry import get_curr_dir
 
 
 def exception_hook(exctype, value, traceback):
@@ -60,6 +58,9 @@ def exception_hook(exctype, value, traceback):
 
 sys._excepthook = sys.excepthook
 sys.excepthook = exception_hook
+
+# Disable Jupyter Shell warning about frozen modules.
+os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 
 
 class Stdredirect:
@@ -90,7 +91,7 @@ class Stdredirect:
         """
 
         if self.showtab:
-            self.showtab.setCurrentIndex(2)
+            self.showtab.setCurrentIndex(3)
 
         horScrollBarcur = self.edit.horizontalScrollBar().value()
         verScrollBarcur = self.edit.verticalScrollBar().value()
@@ -98,10 +99,13 @@ class Stdredirect:
 
         self.edit.moveCursor(QtGui.QTextCursor.MoveOperation.End)
         if self.color:
-            text_html = text.replace("\n", "<br>")
-            self.edit.insertHtml("<span style='white-space: pre; " \
-                                 "color: {};'>{}</span>".format(self.color, text_html))
+            # text_html = text.replace("\n", "<br>")
+            # self.edit.insertHtml("<span style='white-space: pre; " \
+            #                      "color: {};'>{}</span>".format(self.color, text_html))
+            self.edit.setTextColor(QtGui.QColor(self.color))
+            self.edit.insertPlainText(text)
         else:
+            self.edit.setTextColor(QtGui.QColor(self.edit.palette().text().color()))
             self.edit.insertPlainText(text)
 
         if verScrollBarmax - verScrollBarcur <= 10:
@@ -229,7 +233,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Stdout and Stderr configuration
         self.stdtext.setReadOnly(True)
-        self.stdtext.insertPlainText("This is MEAFS v{}.\n".format(version) +
+        self.stdtext.insertPlainText("This is MEAFS v{}.\n".format(__version__) +
                                      "Messages and errors will appear here.\n\n")
         sys.stdout = Stdredirect(self.stdtext, out=sys.stdout)
         sys.stderr = Stdredirect(self.stdtext, out=sys.stderr, color="lightcoral", showtab=self.tabplotshels)
@@ -289,6 +293,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Plot Configuration
         self.tabplotshels.setCurrentIndex(0)
+        self.tabplotshels.currentChanged.connect(self.checktabshels)
 
         self.fig = plt.figure(tight_layout=True)
         self.canvas = FigureCanvasQTAgg(self.fig)
@@ -308,6 +313,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.plot.addWidget(self.canvas)
 
         self.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
+
+        # Lines Final Plot Configuration
+        self.plotstab.setCurrentIndex(0)
+        self.histplottab.setCurrentIndex(0)
+        self.scale = None
 
         # Data Configuration
         self.methodsdatafittab.setCurrentIndex(0)
@@ -331,6 +341,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.results_array = pd.DataFrame()
 
         self.run.clicked.connect(self.run_fit)
+        self.stop_state = False
+        self.stop.clicked.connect(self.stop_func)
 
         # Run Manual Fit Configuration
         self.manualfitbutton.clicked.connect(self.run_fit_nopars)
@@ -340,6 +352,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Run Save Current Abundance Configuration
         self.currentvaluessavebutton.clicked.connect(self.save_cur_abund)
+
+        # Run Final Plots Tab Configuration
+        self.linesplotsingle.clicked.connect(lambda: self.run_final_plots("lines", single=True))
+        self.linesplotall.clicked.connect(lambda: self.run_final_plots("lines", single=False))
+        self.boxplotcreate.clicked.connect(lambda: self.run_final_plots("box", single=False))
+        self.histplotsingle.clicked.connect(lambda: self.run_final_plots("hist", single=True))
+        self.hitsplotall.clicked.connect(lambda: self.run_final_plots("hist", single=False))
 
         # Abundance Table Configuration
         self.abundancetable.clicked.connect(self.results_show_tab)
@@ -378,6 +397,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.fullspec.triggered.connect(self.full_spec_plot_range)
         self.checkcontinuumplot.triggered.connect(self.run_check_continuum)
         self.erasecontinuumplot.triggered.connect(self.run_erase_continuum)
+        self.clearfinalplotsscale.triggered.connect(self.clear_scale)
 
         # Auto Save Configuration
         self.timer = QtCore.QTimer()
@@ -393,15 +413,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # TEMPORARY
         # self.repfit = 1
-        # self.linelistname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/LinesALL.csv")
-        # self.refername.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/temp/refer_values.csv")
+        # self.linelistname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/LinesALL.csv")
+        # self.refername.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/refer_values.csv")
         # self.delimitertype.setCurrentIndex(2)
-        # self.turbospectrumconfigname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
+        # self.turbospectrumconfigname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
         #                                      "Turbospectrum2019/COM-v19.1/CS31.com")
-        # self.turbospectrumoutputname.setText("/home/castro/Desktop/MEAFS GUI/meafs_code/modules/"
+        # self.turbospectrumoutputname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
         #                                      "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec")
         # self.dataloadtable.item(0, 1).setText("aaa")
-        # self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/MEAFS GUI/"
+        # self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/Sync/"
+        #                                                                           "MEAFS GUI/"
         #                                                                           "meafs_code/temp/cs340n.dat")
         # self.methodbox.setCurrentIndex(0)
         # self.max_iter = [1000, 1000, 1]
@@ -545,12 +566,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                        " -s, --load-auto-save\t|\tLoad the auto saved session. Default location is:\n" \
                        "\t\t\t|\t{}\n" \
                        "\n\nExample:\n./gui.py sesssion.pkl\n\n" \
-                       "For more information go to <https://meafs.readthedocs.io/>\n".format(version, root_path,
+                       "For more information go to <https://meafs.readthedocs.io/>\n".format(__version__, root_path,
                                                                                            path1, path2)
             print(help_msg)
             exit()
         elif "-v" in self.args or "--version" in self.args:
-            print("MEAFS v{}".format(version))
+            print("MEAFS v{}".format(__version__))
             exit()
         elif ("-l" in self.args or "--last" in self.args) and not fastcheck:
             self.filepath = Path(os.path.dirname(__file__)).joinpath("auto_save_last.pkl")
@@ -676,6 +697,30 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         self.run.setText(btt_text)
         self.run.setStyleSheet("background-color: {}; font-weight: 750".format(back_col))
+
+    def checktabshels(self):
+        """
+        Modify the behaviour of some UI elements to guide the user through the creation of the final plots for the
+        abundances.
+        """
+
+        if self.tabplotshels.currentIndex() == 1:
+            self.linelist.setEnabled(False)
+            self.refer.setEnabled(False)
+            self.run.setEnabled(False)
+            self.methodsdatafittab.setCurrentIndex(3)
+            self.methodsdatafittab.setTabEnabled(3, True)
+            self.manualfitbutton.setEnabled(False)
+            self.currentvaluesplotbutton.setEnabled(False)
+            self.currentvaluessavebutton.setEnabled(False)
+        else:
+            self.linelist.setEnabled(True)
+            self.refer.setEnabled(True)
+            self.run.setEnabled(True)
+            self.methodsdatafittab.setTabEnabled(3, False)
+            self.manualfitbutton.setEnabled(True)
+            self.currentvaluesplotbutton.setEnabled(True)
+            self.currentvaluessavebutton.setEnabled(True)
 
     def tablecheckbox(self, state):
         """
@@ -1099,6 +1144,48 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                                                                              repfit=0, abundplot=abundplot,
                                                                              results_array=self.results_array)
 
+    def run_final_plots(self, plot_type, single=False):
+        """
+        Run the subroutines to create the final plots.
+
+        :param plot_type: type of the final plot to create.
+        :param single: create a final plot to a single line or for all of them.
+        """
+
+        if self.abundancetable.rowCount() == 0:
+            self.show_error("Abundance Table is empty!")
+            return
+
+        ind = self.abundancetable.currentRow()
+        if ind == -1 and single:
+            self.show_error("No table row selected.")
+            return
+
+        if self.scale is None:
+            ind = self.plotstab.currentIndex()
+            if ind == 0:
+                getsizefrom = self.linesplotimage
+            elif ind == 1:
+                getsizefrom = self.boxplotimage
+            else:
+                if self.histplottab.currentIndex() == 0:
+                    getsizefrom = self.abundhistplotimage
+                else:
+                    getsizefrom = self.differhistplotimage
+            self.scale = QtCore.QSize(getsizefrom.width(), getsizefrom.height())
+
+        self.results_array, self.ax, self.plot_line_refer = fit.gui_call(self.specs_data,
+                                                                         self,
+                                                                         QtCore.Qt.CheckState.Checked,
+                                                                         self.canvas,
+                                                                         self.ax,
+                                                                         cut_val=self.cut_val,
+                                                                         plot_line_refer=self.plot_line_refer,
+                                                                         results_array=self.results_array,
+                                                                         final_plot=True,
+                                                                         plot_type=plot_type,
+                                                                         single=single)
+
     def run_check_continuum(self):
         """
         Call the Continuum algorithm and draw in the plot the results.
@@ -1133,6 +1220,35 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.plot_line_refer.reset_index(drop=True, inplace=True)
 
         self.canvas.draw()
+
+    def clear_scale(self, show_msg=True):
+        def reset_image(widget):
+            sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
+                                               QtWidgets.QSizePolicy.Policy.Preferred)
+
+            widget.clear()
+            widget.setText("No data.")
+            widget.setSizePolicy(sizepolicy)
+            widget.setMinimumSize(0, 0)
+            widget.setMaximumSize(16777215, 16777215)
+
+        self.scale = None
+
+        reset_image(self.linesplotimage)
+        reset_image(self.boxplotimage)
+        reset_image(self.abundhistplotimage)
+        reset_image(self.differhistplotimage)
+
+        ind = self.plotstab.currentIndex()
+        for i in range(3):
+            self.plotstab.setCurrentIndex(i)
+        self.plotstab.setCurrentIndex(ind)
+
+        if show_msg:
+            self.show_error("Scale cleared.")
+
+    def stop_func(self):
+        self.stop_state = True
 
     def save_cur_abund(self):
         """
@@ -1234,9 +1350,58 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.convolutionvalue.setValue(self.results_array.iloc[currow, 4])
         self.abundancevalue.setValue(self.results_array.iloc[currow, 6])
 
-        self.ax.set_xlim(self.results_array.iloc[currow, 1] - self.cut_val[3],
-                         self.results_array.iloc[currow, 1] + self.cut_val[3])
-        self.canvas.draw()
+        if self.tabplotshels.currentIndex() == 0:
+            self.ax.set_xlim(self.results_array.iloc[currow, 1] - self.cut_val[3],
+                             self.results_array.iloc[currow, 1] + self.cut_val[3])
+            self.canvas.draw()
+        elif self.tabplotshels.currentIndex() == 1:
+            folder = self.outputname.text()
+
+            if self.plotstab.currentIndex() == 0:
+                main_path = Path(folder).joinpath("Abundance_Analysis", "Lines_Plot")
+                fig_path = main_path.joinpath("fit_{}_{}_ang.pdf".format(elem, lamb))
+
+                if fig_path.is_file():
+                    if self.scale is None:
+                        self.scale = QtCore.QSize(self.linesplotimage.width(),
+                                                  self.linesplotimage.height())
+
+                    pixmap = QtGui.QPixmap(str(fig_path))
+                    self.linesplotimage.setPixmap(pixmap.scaled(self.scale))
+                    self.linesplotimage.setFixedSize(self.scale)
+                else:
+                    self.clear_scale(show_msg=False)
+            elif self.plotstab.currentIndex() == 2:
+                if self.histplottab.currentIndex() == 0:
+                    main_path = Path(folder).joinpath("Abundance_Analysis", "Abundance_Hist")
+                    elem, order = fit.check_order(elem)
+                    fig_path = main_path.joinpath("hist_abundance_{}.pdf".format(elem))
+
+                    if fig_path.is_file():
+                        if self.scale is None:
+                            self.scale = QtCore.QSize(self.abundhistplotimage.width(),
+                                                      self.abundhistplotimage.height())
+
+                        pixmap = QtGui.QPixmap(str(fig_path))
+                        self.abundhistplotimage.setPixmap(pixmap.scaled(self.scale))
+                        self.abundhistplotimage.setFixedSize(self.scale)
+                    else:
+                        self.clear_scale(show_msg=False)
+                elif self.histplottab.currentIndex() == 1:
+                    main_path = Path(folder).joinpath("Abundance_Analysis", "Difference_Hist")
+                    elem, order = fit.check_order(elem)
+                    fig_path = main_path.joinpath("hist_differ_{}.pdf".format(elem))
+
+                    if fig_path.is_file():
+                        if self.scale is None:
+                            self.scale = QtCore.QSize(self.differhistplotimage.width(),
+                                                      self.differhistplotimage.height())
+
+                        pixmap = QtGui.QPixmap(str(fig_path))
+                        self.differhistplotimage.setPixmap(pixmap.scaled(self.scale))
+                        self.differhistplotimage.setFixedSize(self.scale)
+                    else:
+                        self.clear_scale(show_msg=False)
 
     def full_spec_plot_range(self):
         """
@@ -1449,7 +1614,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.wavebound,
                      self.continuumpars,
                      self.tabplotshels.currentIndex(),
-                     self.stdtext.toHtml()]
+                     self.stdtext.toHtml(),
+                     self.plotstab.currentIndex(),
+                     self.abundshift.value(),
+                     self.histbinsvalue.value()]
 
         if getdill:
             return list_save
@@ -1525,6 +1693,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.tabplotshels.setCurrentIndex(list_save[28])
             self.stdtext.clear()
             self.stdtext.insertHtml(list_save[29])
+            self.plotstab.setCurrentIndex(list_save[30])
+            self.abundshift.setValue(list_save[31])
+            self.histbinsvalue.setValue(list_save[32])
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
@@ -1540,6 +1711,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.plot.replaceWidget(toolbar_widget, VerticalNavigationToolbar2QT(self.canvas))
 
             self.checkmethod()
+            self.checktabshels()
 
     def new_session(self):
         """
@@ -1562,42 +1734,80 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.ax.grid()
             self.canvas.draw()
 
-            list_save = [None,
+            list_save = [
+                         # filepath
+                         None,
+                         # linelistname
                          "",
+                         # linelistcheckbox
                          QtCore.Qt.CheckState.Unchecked,
+                         # restart
                          QtCore.Qt.CheckState.Unchecked,
+                         # linelistcontent
                          {"Element": ["", "", "", "", ""],
                           "Wavelength": ["", "", "", "", ""],
                           "Analyze": [False, False, False, False, False]},
+                         # refername
                          "",
+                         # refercontent
                          {"Element": ["", "", "", "", ""],
                           "Abundance": ["", "", "", "", ""]},
+                         # dataloadtable
                          {"": [None, None, None, None, None, None, None, None, None, None],
                           "Data": ["Data 1", "Data 2", "Data 3", "Data 4", "Data 5",
                                    "Data 6", "Data 7", "Data 8", "Data 9", "Data 10"]},
+                         # delimitertype
                          0,
+                         # specs_data
                          [],
+                         # fig
                          self.fig,
+                         # plot_line_refer
                          pd.DataFrame(columns=["elem", "wave", "refer"]),
+                         # results_array
                          pd.DataFrame(),
+                         # outputname
                          "",
+                         # progressvalue
                          "0/0",
+                         # abundancetable
                          {"Element": [],
                           "Wavelength": []},
+                         # methodbox
                          1,
+                         # ewfuncbox
                          0,
+                         # convinitguessvalue
                          0.001,
+                         # deepthinitguessvalue
                          -1,
+                         # turbospectrumconfigname
                          "",
+                         # turbospectrumoutputname
                          "",
+                         # repfit
                          2,
+                         # cut_val
                          [10 / 2, 3 / 2, .4 / 2, 1 / 2],
+                         # max_iter
                          [1000, 1000, 10],
+                         # convovbound
                          [0, 5],
+                         # wavebound
                          .2,
+                         # continuumpars
                          [2, 8],
+                         # tabplotshels
                          0,
-                         ""]
+                         # stdtext
+                         "",
+                         # plotstab
+                         0,
+                         # abundshift
+                         0.1,
+                         # histbinsvalue
+                         20
+                         ]
 
             self.lambshifvalue.setValue(0.0000)
             self.continuumvalue.setValue(0.0000)
@@ -1605,6 +1815,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.abundancevalue.setValue(0.0000)
 
             self.methodsdatafittab.setCurrentIndex(0)
+            self.tabplotshels.setCurrentIndex(0)
+            self.plotstab.setCurrentIndex(0)
 
             self.load_session(list_save=list_save)
 

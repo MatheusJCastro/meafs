@@ -2,7 +2,6 @@
 """
 | MEAFS Unify generated plots in a single PDF file for each type
 | Matheus J. Castro
-| v2.0
 
 | This script aims to create a single result file for each analyze type created with the abundance_fit.py and
   abundance_analysis.py scripts.

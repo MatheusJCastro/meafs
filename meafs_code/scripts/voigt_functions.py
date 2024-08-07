@@ -1,7 +1,6 @@
 """
 | MEAFS Voigt Functions
 | Matheus J. Castro
-| v1.6
 
 | Voigt, Gaussian, Lorentzian module functions.
 """

@@ -1,7 +1,6 @@
 """
 | MEAFS TurboEspectrum Functions
 | Matheus J. Castro
-| v1.2
 
 | TurboSpectrum module functions.
 """

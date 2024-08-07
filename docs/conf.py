@@ -11,10 +11,13 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
+# noinspection PyUnresolvedReferences
+from meafs_code import __version__
+
 project = 'MEAFS'
 copyright = '2024, Matheus J. Castro'
 author = 'Matheus J. Castro'
-release = '4.8.4'
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

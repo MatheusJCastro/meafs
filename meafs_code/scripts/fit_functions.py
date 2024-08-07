@@ -1,7 +1,6 @@
 """
 | MEAFS Fit Functions
 | Matheus J. Castro
-| v1.4
 
 | Fit functions that are used, like the C library, the :math:`\\chi^2` calculation, bisection and more.
 """

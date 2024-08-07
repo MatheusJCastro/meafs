@@ -50,7 +50,7 @@ checkboxes.
 
 The *Restart* checkbox change the behavior of MEAFS in how it will read the 
 line-list. If it is **unchecked**, MEAFS will ignore lines that are already
-in the *found_values.csv* file (see :ref:`analyzing_results`). Otherwise, if it is 
+in the *found_values.csv* file (see :ref:`analyzing_results_full`). Otherwise, if it is 
 **checked**, MEAFS will fit all selected lines and **overwrite** them in the results 
 file.
 
@@ -248,7 +248,7 @@ The main goal here is to have the first fit with no guesses and a second
 one using the results of the previous one as a start point. That is why 
 the default value is 2.
 
-Interaction range (Angstrom) for each fit
+Interaction range (\ |ang|\ ) for each fit
 +++++++++++++++++++++++++++++++++++++++++
 
 For each fit, the spectrum will be restrained to a certain range. The 
@@ -274,7 +274,7 @@ can use. This can have an impact in how long does it take to fit a line
 and if it will actually be fitted or the method will be ended before it 
 achieves a satisfactory result.
 
-Wave. Shift (Angstrom) Boundaries
+Wave. Shift (\ |ang|\ ) Boundaries
 +++++++++++++++++++++++++++++++++
 
 The wavelength shift fit sometimes can try to fit a line that is next to 
@@ -335,8 +335,8 @@ or not.
 
 .. _analyzing_results:
 
-Analyzing the results
-^^^^^^^^^^^^^^^^^^^^^
+Preliminary view of the results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: _static/meafs_gui_08.png
    :width: 80%
@@ -353,22 +353,7 @@ be skipped).
 Clicking in one row of this table will select the line and the results 
 of the fit of this line will be shown in the *Fit Results* tab.
 
-Also, all the results are saved in the *found_values.csv* file, under the 
-directory previously chosen. This file has the following columns:
-
-=================== =====================================================
-Element             Corresponding element of this line.
-Lambda (A)          Wavelength in Angstroms.
-Lamb Shift          Wavelength shift in Angstroms for this line.
-Continuum           Continuum value for this line.
-Convolution         Convolution value for this line.
-Refer Abundance     Reference abundance of the element.
-Fit Abundance       Found abundance for this line.
-Differ              Difference of the reference and the fitted abundance.
-Chi                 Minimized :math:`\chi^2` of the abundance fit.
-Equiv Width Obs (A) Equivalent width of the observed spectrum.
-Equiv Width Fit (A) Equivalent width of the synthetic fitted spectrum.
-=================== =====================================================
+Also, all the results are saved in the *found_values.csv* file (see :ref:`analyzing_results_full`).
 
 The plot
 ++++++++
@@ -438,6 +423,160 @@ modify the *Lamb Shift*, *Continuum* and *Convolution* values, however it is als
 possible to change the abundance value and *Plot Current Values* in the plot. This 
 will not save the results in the *found_values.csv*, for that press *Save Current 
 Values*. 
+
+.. _analyzing_results_full:
+
+Analyzing Results
+-----------------
+
+All the results are saved in the *found_values.csv* file, under the 
+directory previously chosen for the results. This file has the
+following columns:
+
+.. |ang| unicode:: U+212B
+   :trim:
+
+======================= ==============================================================
+Element                 Corresponding element of this line.
+Lambda (|ang|)          Wavelength in \ |ang|\ ngstroms.
+Lamb Shift              Wavelength shift in \ |ang|\ ngstroms for this line.
+Continuum               Continuum value for this line.
+Convolution             Convolution value for this line.
+Refer Abundance         Reference abundance of the element.
+Fit Abundance           Found abundance for this line.
+Differ                  Absolute difference of the reference and the fitted abundance.
+Chi                     Minimized :math:`\chi^2` of the abundance fit.
+Equiv Width Obs (|ang|) Equivalent width of the observed spectrum.
+Equiv Width Fit (|ang|) Equivalent width of the synthetic fitted spectrum.
+======================= ==============================================================
+
+Not only that, MEAFS can also create three different types of plots that helps
+extracting the abundances and other parameters from the fit.
+
+.. image:: _static/meafs_gui_15.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+These plots can be created and viewed in the *Final Plots* tabs.
+
+**Attention:** the *Final Plots* tab next to the *Fit Results* tab can only be accessed
+when the *Final Plots* tab next to *Spectrum Plot* tab is selected.
+
+The visualization of these plots in MEAFS is only a scaled image of the actual file
+created. In order to view the full image without any quality loss, open the image file
+in the previously defined directory for the results.
+
+Resizing GUI upon viewing images
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When any image is added into MEAFS, the software will block the scale of the image. This
+blocks resizing the GUI into smaller sizes. If necessary, to unlock the scale go to 
+*View* > *Clear Final Plots Scale* to unblock it.
+
+Lines Plot
+^^^^^^^^^^
+
+.. image:: _static/meafs_gui_16.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+MEAFS is able to create fancy plots for all lines that are
+in the abundances table.
+
+The plot lines are:
+
+================== ===============================================================
+Data Points        Spectrum data.
+Best Fit           Synthetic Spectrum with best fit abundance.
+Abundance Increase Synthetic Spectrum with abundance increased by a defined value.
+Abundance Decrease Synthetic Spectrum with abundance decreased by a defined value.
+Zero Abundance     Synthetic Spectrum with no abundance.
+Residuals          Absolute residuals of data points and best fit abundance.
+================== ===============================================================
+
+The value of the abundance Increase and decrease can be set 
+in the *Final Plots* tab.
+
+It is possible to create the plots for all lines in the 
+*All Lines* button, or select one line in the table and 
+click *Single Line* button.
+
+When you select any line in the table, MEAFS will search
+for the file to plot it, if there is any old file in the 
+right folder with the right name, it will be showed. If 
+there is not, a "No data." label will appear.
+
+Box Plot
+^^^^^^^^
+
+.. image:: _static/meafs_gui_17.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+The box plot can be generated under the *Create* button in
+the *Final Plots* tab. MEAFS will create a full box plot 
+with all the elements and lines available in the abundance
+table.
+
+The plot will show the mean, median, maximum, minimum, 
+confidence level (25% and 75% quartiles) and outliers
+abundances for each element accordingly with the fit 
+results.
+
+Histogram
+^^^^^^^^^
+
+Two types of histograms can be created:
+
+- Abundances Histogram;
+- Difference Histogram.
+
+The number of bins for the histograms can be defined in the
+*Final Plots* tab and, like the *Lines Plot*, the *All 
+Elements* button will generate it for all elements at once 
+and the *Single Element* button will do it only for the 
+element selected in the abundance table.
+
+Also, like the *Lines Plot*, by clicking in any line in the
+abundance plot, MEAFS will load the file or show "No Data."
+label instead.
+
+Abundances Histogram
+++++++++++++++++++++
+
+.. image:: _static/meafs_gui_18.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+The Abundance Histogram consists in a simple histogram 
+showing the distribution of the abundances for the 
+specific element.
+
+Difference Histogram
+++++++++++++++++++++
+
+.. image:: _static/meafs_gui_19.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+The Difference Histogram consists in showing the distribution
+of the absolute value of the difference between the fit 
+abundance and the reference abundance.
 
 Jupyter Shell
 -------------

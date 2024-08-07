@@ -1,7 +1,6 @@
 """
 | MEAFS Desktop Entry Creation
 | Matheus J. Castro
-| v1.3
 
 | This file analyse and create aliases in the system to run MEAFS through an entry in the system menu.
 """

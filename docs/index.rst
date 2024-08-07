@@ -16,7 +16,7 @@ Multiple Element Abundance Fitting Software - MEAFS
    :alt: GitHub Tag
    :target: https://github.com/MatheusJCastro/meafs
 
-| Here you can find how to install, run and read the results from MEAFS.
+| Here you can find how to install, run and read the results from MEAFS v\ |release|.
 
 Aims
 ----

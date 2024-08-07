@@ -2,7 +2,6 @@
 """
 | MEAFS Abundance Fit
 | Matheus J. Castro
-| v4.8.3
 
 | Main fit code to do all the operations with the spectrum, call the modules to generate
   the synthetic spectrum, plot the curves and more.
@@ -23,8 +22,11 @@ import os
 from . import fit_functions as ff
 from . import voigt_functions as vf
 from . import turbospec_functions as tf
+from . import abundance_plot as ap
 
-version = "4.8.3"
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+# noinspection PyUnresolvedReferences
+from meafs_code import __version__
 
 
 def open_linelist_refer_fl(list_name):
@@ -337,12 +339,6 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
              ``ax`` array and the actualized ``plot_line_refer`` array.
     """
 
-    stop = False
-
-    def stop_state():
-        nonlocal stop
-        stop = True
-
     if type_synth[0] == "TurboSpectrum":
         conv_name = type_synth[1]
         config_fl = type_synth[2]
@@ -418,10 +414,10 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
         if ui is not None:
             ui.linedefvalue.setText("Element {}, line {}".format(elem, lamb))
-            ui.stop.clicked.connect(stop_state)
             # Allow QT to actualize the UI while in the loop
             QtCore.QCoreApplication.processEvents()
-            if stop:
+            if ui.stop_state:
+                ui.stop_state = False
                 return found_val, ax, plot_line_refer
 
         print("Analysing the element {} for lambda {}. Line {} of {}.".format(elem, lamb, i+1, len(linelist)))
@@ -498,7 +494,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 ui.convolutionvalue.setValue(opt_pars[2])
                 # Allow QT to actualize the UI while in the loop
                 QtCore.QCoreApplication.processEvents()
-                if stop:
+                if ui.stop_state:
+                    ui.stop_state = False
                     return found_val, ax, plot_line_refer
 
             # Fit of abundance
@@ -517,7 +514,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 ui.abundancevalue.setValue(par[0])
                 # Allow QT to actualize the UI while in the loop
                 QtCore.QCoreApplication.processEvents()
-                if stop:
+                if ui.stop_state:
+                    ui.stop_state = False
                     return found_val, ax, plot_line_refer
 
             # Fit of Equivalent Width Observed Spectrum
@@ -635,7 +633,8 @@ def read_config(config_name):
 
 
 def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer=None, opt_pars=None,
-             repfit=2, abundplot=None, results_array=None, only_abund_ind=None):
+             repfit=2, abundplot=None, results_array=None, only_abund_ind=None, final_plot=False,
+             plot_type=None, single=None):
     """
     Main function to be called from the GUI.
 
@@ -652,6 +651,9 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
                       present in this variable.
     :param results_array: array for the results of the fit.
     :param only_abund_ind: change only abundance without fitting other parameters at this index.
+    :param final_plot: if it's meant to create the final plots instead of fitting.
+    :param plot_type: type of the final plot to create.
+    :param single: create a final plot to a single line or for all of them.
     :return: the results of the fit, the actualized ``ax`` variable and the
              actualized ``plot_line_refer`` variable.
     """
@@ -708,7 +710,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
         methodconfig = [ui.methodbox.currentText(),
                         ui.turbospectrumoutputname.text(),
                         ui.turbospectrumconfigname.text()]
-        if not os.path.exists(methodconfig[1]) or not os.path.exists(methodconfig[2]):
+        if not os.path.isfile(methodconfig[1]) or not os.path.isfile(methodconfig[2]):
             ui.gui_hold(False)
 
             msg_err = "Error: TurboSpectrum files are not properly set. Run aborted.\n"
@@ -725,7 +727,8 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
 
             return results_array, ax, plot_line_refer
 
-    ui.methodsdatafittab.setCurrentIndex(2)
+    if not final_plot:
+        ui.methodsdatafittab.setCurrentIndex(2)
 
     max_iter = ui.max_iter
     convovbound = ui.convovbound
@@ -735,7 +738,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     # Allow QT to actualize the UI while in the loop
     QtCore.QCoreApplication.processEvents()
 
-    if abundplot is None:
+    if abundplot is None and not final_plot:
         for spec in spec_obs:
             results_array, ax, plot_line_refer = fit_abundance(linelist, spec, refer_fl, folder, methodconfig,
                                                                restart=restart, ui=ui, canvas=canvas, ax=ax,
@@ -743,7 +746,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
                                                                opt_pars=opt_pars, repfit=repfit, max_iter=max_iter,
                                                                convovbound=convovbound, contpars=contpars,
                                                                wavebound=wavebound, only_abund_ind=only_abund_ind)
-    else:
+    elif not final_plot:
         currow = ui.abundancetable.currentRow()
         currow = ui.abundancetable.rowCount() - 1 if currow == -1 else currow
         elem = ui.abundancetable.item(currow, 0).text()
@@ -751,8 +754,55 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
         plot_line_refer = plot_abund_nofit(elem, lamb, abundplot, refer_fl, folder, methodconfig,
                                            cut_val=cut_val, canvas=canvas, ax=ax, plot_line_refer=plot_line_refer,
                                            opt_pars=opt_pars)
+    else:
+        ap.folders_creation(folder)
+
+        res_arr_copy = results_array.copy()
+        elements_full = results_array.Element
+        elements = []
+        for i in elements_full:
+            elem, order = check_order(i)
+            elements.append(elem)
+        res_arr_copy.Element = elements
+        elements = np.unique(elements)
+
+        if plot_type == "lines":
+            ui.plotstab.setCurrentIndex(0)
+
+            if not single:
+                res_to_send = results_array
+            else:
+                ind = ui.abundancetable.currentRow()
+                res_to_send = results_array.iloc[[ind]]
+
+            ap.plot_lines(spec_obs,
+                          res_to_send,
+                          refer_fl,
+                          methodconfig,
+                          folder,
+                          cut_val=cut_val[3],
+                          abundance_shift=ui.abundshift.value(),
+                          ui=ui)
+        elif plot_type == "box":
+            ui.plotstab.setCurrentIndex(1)
+            ap.plot_abund_box(res_arr_copy, elements, folder, ui=ui)
+        elif plot_type == "hist":
+            ui.plotstab.setCurrentIndex(2)
+            if single:
+                ind = ui.abundancetable.currentRow()
+                elem = ui.results_array.Element.iloc[ind]
+                elem, order = check_order(elem)
+                elements = [elem]
+                # res_arr_copy = ui.res_arr_copy[ui.results_array.Element.str.contains(elem)]
+
+            bins = ui.histbinsvalue.value()
+            ap.plot_abund_hist(res_arr_copy, elements, folder, ui=ui, bins=bins)
+            ap.plot_differ_hist(res_arr_copy, elements, folder, ui=ui, bins=bins)
 
     ui.gui_hold(False)
+
+    if final_plot:
+        ui.run.setDisabled(True)
 
     # Time Counter
     end = time.time()
@@ -848,7 +898,7 @@ def args_menu(args):
                    "Argument needs to be a \".txt\" file with the MEAFS configuration.\n" \
                    "If no argument is given, the default name is \"meafs_config.txt\".\n\n" \
                    "Options are:\n -h,  -help\t|\tShow this help;\n--h, --help\t|\tShow this help;\n" \
-                   "\n\nExample:\n./abundance_fit.py meafs_config.txt\n".format(version)
+                   "\n\nExample:\n./abundance_fit.py meafs_config.txt\n".format(__version__)
         print(help_msg)
 
 

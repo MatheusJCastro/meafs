@@ -4,10 +4,10 @@ meafs\_code.scripts package
 Submodules
 ----------
 
-meafs\_code.scripts.abundance\_analysis module
+meafs\_code.scripts.abundance\_plot module
 ----------------------------------------------
 
-.. automodule:: meafs_code.scripts.abundance_analysis
+.. automodule:: meafs_code.scripts.abundance_plot
    :members:
    :undoc-members:
    :show-inheritance:
