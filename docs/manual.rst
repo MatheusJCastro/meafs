@@ -1,3 +1,6 @@
+.. |ang| unicode:: U+212B
+   :trim:
+
 User Manual
 ===========
 
@@ -432,9 +435,6 @@ Analyzing Results
 All the results are saved in the *found_values.csv* file, under the 
 directory previously chosen for the results. This file has the
 following columns:
-
-.. |ang| unicode:: U+212B
-   :trim:
 
 ======================= ==============================================================
 Element                 Corresponding element of this line.
