@@ -423,7 +423,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         palette = QtWidgets.QApplication.instance().palette()
         curr_color = palette.color(palette.ColorRole.Window).lightness()
 
-        rtd_icon = git_icon = Path("images")
+        rtd_icon = git_icon = Path(os.path.dirname(__file__)).joinpath("images")
         if curr_color > 128:
             rtd_icon = rtd_icon.joinpath("logo-dark-rtd.svg")
             git_icon = git_icon.joinpath("github-mark.svg")
