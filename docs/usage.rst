@@ -23,9 +23,15 @@ Or:
 
 .. code-block:: bash
 
-   python -m meafs
+   python -m meafs_code
 
 For the command line option, do not forget to activate the Anaconda environment if you are using it. For the menu entry, this is done automatically if necessary.
+
+Since MEAFS is a Python library, you can always import it in your own program and run specific functions (see :ref:`pack_overview`):
+
+.. code-block:: python
+
+   import meafs_code as meafs
 
 .. _without_installation:
 

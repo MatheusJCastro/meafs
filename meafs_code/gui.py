@@ -17,6 +17,7 @@ import astropy.units as u
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import webbrowser
 import dill
 import sys
 import os
@@ -382,6 +383,19 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.saveas.triggered.connect(lambda: self.save_session(saveas=True))
         self.quit.triggered.connect(self.quitbtn)
 
+        self.new_2.setShortcut(QtGui.QKeySequence("Ctrl+N"))
+        self.new_2.setShortcutVisibleInContextMenu(True)
+        self.open.setShortcut(QtGui.QKeySequence("Ctrl+O"))
+        self.open.setShortcutVisibleInContextMenu(True)
+        self.openabundances.setShortcut(QtGui.QKeySequence("Ctrl+Shift+O"))
+        self.openabundances.setShortcutVisibleInContextMenu(True)
+        self.save.setShortcut(QtGui.QKeySequence("Ctrl+S"))
+        self.save.setShortcutVisibleInContextMenu(True)
+        self.saveas.setShortcut(QtGui.QKeySequence("Ctrl+Shift+S"))
+        self.saveas.setShortcutVisibleInContextMenu(True)
+        self.quit.setShortcut(QtGui.QKeySequence("Ctrl+Q"))
+        self.quit.setShortcutVisibleInContextMenu(True)
+
         # Edit Submenu Configuration
         self.fitpar.triggered.connect(self.fitparWindow)
         self.repfit = 2
@@ -399,6 +413,34 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.erasecontinuumplot.triggered.connect(self.run_erase_continuum)
         self.clearfinalplotsscale.triggered.connect(self.clear_scale)
 
+        self.fullspec.setShortcut(QtGui.QKeySequence("Ctrl+Shift+V"))
+        self.fullspec.setShortcutVisibleInContextMenu(True)
+        self.clearfinalplotsscale.setShortcut(QtGui.QKeySequence("Ctrl+C"))
+        self.clearfinalplotsscale.setShortcutVisibleInContextMenu(True)
+
+        # Help Submenu Configuration
+        # noinspection PyUnresolvedReferences
+        palette = QtWidgets.QApplication.instance().palette()
+        curr_color = palette.color(palette.ColorRole.Window).lightness()
+
+        rtd_icon = git_icon = Path("images")
+        if curr_color > 128:
+            rtd_icon = rtd_icon.joinpath("logo-dark-rtd.svg")
+            git_icon = git_icon.joinpath("github-mark.svg")
+        else:
+            rtd_icon = rtd_icon.joinpath("logo-light-rtd.svg")
+            git_icon = git_icon.joinpath("github-mark-white.svg")
+        rtd_icon = QtGui.QIcon(str(rtd_icon))
+        git_icon = QtGui.QIcon(str(git_icon))
+
+        self.readthedocsopen.setIcon(rtd_icon)
+        self.guthubopen.setIcon(git_icon)
+        self.aboutopen.setIcon(QtGui.QIcon.fromTheme('help-about'))
+
+        self.readthedocsopen.triggered.connect(lambda: webbrowser.open("https://meafs.readthedocs.io/"))
+        self.guthubopen.triggered.connect(lambda: webbrowser.open("https://github.com/MatheusJCastro/meafs"))
+        self.aboutopen.triggered.connect(self.show_about)
+
         # Auto Save Configuration
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.auto_save)
@@ -411,46 +453,25 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Arguments Configuration 2
         self.argument_resolve()
 
-        # TEMPORARY
-        # self.repfit = 1
-        # self.linelistname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/LinesALL.csv")
-        # self.refername.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/temp/refer_values.csv")
-        # self.delimitertype.setCurrentIndex(2)
-        # self.turbospectrumconfigname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
-        #                                      "Turbospectrum2019/COM-v19.1/CS31.com")
-        # self.turbospectrumoutputname.setText("/home/castro/Desktop/Sync/MEAFS GUI/meafs_code/modules/"
-        #                                      "Turbospectrum2019/COM-v19.1/syntspec/CS31-HFS-Vtest.spec")
-        # self.dataloadtable.item(0, 1).setText("aaa")
-        # self.dataloadtable.item(0, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, "/home/castro/Desktop/Sync/"
-        #                                                                           "MEAFS GUI/"
-        #                                                                           "meafs_code/temp/cs340n.dat")
-        # self.methodbox.setCurrentIndex(0)
-        # self.max_iter = [1000, 1000, 1]
-        # self.tabplotshels.setCurrentIndex(1)
-        # self.dataloadtable.item(0, 1).setToolTip("/full/path/to/spectrum/data.dat")
-        # self.settings.loc[self.settings.variable == "turbospectrum_config", "value"] = ""
-        # self.settings.loc[self.settings.variable == "turbospectrum_output", "value"] = ""
-        # noinspection PyTypeChecker
-        # self.settings.to_csv(self.sett_path, index=None)
-
-    def keyPressEvent(self, event):
-        """
-        Catches keyboard events to create shortcuts used.
-
-        Available shortcuts are:
-            | Ctrl+S: Save the session;
-            | Ctrl+Shift+V: Show the entire spectrum.
-
-        :param event: the event itself.
-        """
-
-        if isinstance(event, QtGui.QKeyEvent):
-            if event.modifiers() == (QtCore.Qt.KeyboardModifier.ControlModifier |
-                                     QtCore.Qt.KeyboardModifier.ShiftModifier):
-                if event.key() == QtCore.Qt.Key.Key_S:
-                    self.save_session()
-                if event.key() == QtCore.Qt.Key.Key_V:
-                    self.full_spec_plot_range()
+    # def keyPressEvent(self, event):
+    #     """
+    #     Catches keyboard events to create shortcuts used.
+    #
+    #     Available shortcuts are:
+    #         | Ctrl+S: Save the session;
+    #         | Ctrl+Shift+V: Show the entire spectrum.
+    #
+    #     :param event: the event itself.
+    #     """
+    #
+    #     if isinstance(event, QtGui.QKeyEvent):
+    #         if event.modifiers() == (QtCore.Qt.KeyboardModifier.ControlModifier |
+    #                                  QtCore.Qt.KeyboardModifier.ShiftModifier):
+    #             if event.key() == QtCore.Qt.Key.Key_V:
+    #                 self.full_spec_plot_range()
+    #         elif event.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+    #             if event.key() == QtCore.Qt.Key.Key_S:
+    #                 self.save_session()
 
     def closeEvent(self, event):
         """
@@ -592,6 +613,54 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         self.stdtext.clear()
+
+    @staticmethod
+    def show_about():
+        about_dialog = QtWidgets.QDialog()
+        about_dialog.setWindowTitle("About MEAFS v{}".format(__version__))
+
+        about_widget = QtWidgets.QVBoxLayout()
+
+        image_widget = QtWidgets.QLabel()
+        text_widget = QtWidgets.QLabel()
+        btt_widget = QtWidgets.QDialogButtonBox()
+
+        img_resize = 2.5
+        scale = QtCore.QSize(int(1000 / img_resize), int(325 / img_resize))
+        pixmap = QtGui.QPixmap(str(Path("images").joinpath("Meafs_Logo.png"))).scaled(scale)
+
+        about_msg = "This is MEAFS, Multiple Element Abundance Fitting Software<br>" \
+                    "<br>" \
+                    "<i>Version {}<br><br>".format(__version__) + \
+                    "Written by: Matheus J. Castro<br>" \
+                    "Under MIT License</i><br>" \
+                    "<br>" \
+                    "The MEAFS is a fitting tool software for spectra abundance analysis.<br>" \
+                    "The aims is to provide a medium to high analysis for each individual " \
+                    "absorption line in a given spectrum.<br>" \
+                    "The software also fits the wavelength shift, continuum and convolution " \
+                    "of the spectrum.<br>" \
+                    "<br>" \
+                    "Find more at:<br>" \
+                    "<a href='https://meafs.readthedocs.io/'>Read the Docs</a><br>" \
+                    "<a href='https://github.com/MatheusJCastro/meafs'>GitHub</a>"
+
+        image_widget.setPixmap(pixmap)
+
+        text_widget.setText(about_msg)
+        text_widget.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
+        text_widget.setOpenExternalLinks(True)
+
+        btt_widget.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        # noinspection PyUnresolvedReferences
+        btt_widget.accepted.connect(about_dialog.accept)
+
+        about_widget.addWidget(image_widget, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
+        about_widget.addWidget(text_widget)
+        about_widget.addWidget(btt_widget)
+
+        about_dialog.setLayout(about_widget)
+        about_dialog.exec()
 
     @staticmethod
     def make_jupyter_widget_with_kernel():

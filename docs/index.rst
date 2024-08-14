@@ -18,6 +18,9 @@ Multiple Element Abundance Fitting Software - MEAFS
 
 | Here you can find how to install, run and read the results from MEAFS v\ |release|.
 
+| *Written by: Matheus J. Castro*  
+| *Under MIT License*  
+
 Aims
 ----
 
