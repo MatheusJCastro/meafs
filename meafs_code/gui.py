@@ -637,7 +637,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                     "Under MIT License</i><br>" \
                     "<br>" \
                     "The MEAFS is a fitting tool software for spectra abundance analysis.<br>" \
-                    "The aims is to provide a medium to high analysis for each individual " \
+                    "The aim is to provide a medium to high quality analysis for each individual " \
                     "absorption line in a given spectrum.<br>" \
                     "The software also fits the wavelength shift, continuum and convolution " \
                     "of the spectrum.<br>" \
