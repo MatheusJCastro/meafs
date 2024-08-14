@@ -257,7 +257,7 @@ one using the results of the previous one as a start point. That is why
 the default value is 2.
 
 Interaction range (\ |ang|\ ) for each fit
-+++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++
 
 For each fit, the spectrum will be restrained to a certain range. The 
 parameters here determine this range. 
@@ -283,7 +283,7 @@ and if it will actually be fitted or the method will be ended before it
 achieves a satisfactory result.
 
 Wave. Shift (\ |ang|\ ) Boundaries
-+++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++
 
 The wavelength shift fit sometimes can try to fit a line that is next to 
 the desired one, especially for crowded regions. To prevent this of 
@@ -688,3 +688,19 @@ Open old results
   inside of it.
 | Note that the *CSV* file is mandatory, while the folder containing the
   old plots, is not
+
+Help Section
+------------
+
+.. image:: _static/meafs_gui_20.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+
+There is an Help menu in the Menu Bar with links to this Read the Docs and the GitHub page.
+
+If the information you need or a bug you are facing is not listed in this manual, you can
+open an issue or ask for help in `GitHub Issues <https://github.com/MatheusJCastro/meafs/issues>`_.

@@ -627,7 +627,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         img_resize = 2.5
         scale = QtCore.QSize(int(1000 / img_resize), int(325 / img_resize))
-        pixmap = QtGui.QPixmap(str(Path("images").joinpath("Meafs_Logo.png"))).scaled(scale)
+        pixmap = QtGui.QPixmap(str(Path(os.path.dirname(__file__)).joinpath("images",
+                                                                            "Meafs_Logo.png"))).scaled(scale)
 
         about_msg = "This is MEAFS, Multiple Element Abundance Fitting Software<br>" \
                     "<br>" \
