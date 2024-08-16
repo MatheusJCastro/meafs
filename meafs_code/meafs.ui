@@ -1345,6 +1345,7 @@
     <addaction name="fullspec"/>
     <addaction name="checkcontinuumplot"/>
     <addaction name="erasecontinuumplot"/>
+    <addaction name="clearspectrumplot"/>
     <addaction name="clearfinalplotsscale"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -1461,6 +1462,11 @@
   <action name="aboutopen">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="clearspectrumplot">
+   <property name="text">
+    <string>Clear Spectrum Plot</string>
    </property>
   </action>
  </widget>

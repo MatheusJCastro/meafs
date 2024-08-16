@@ -235,11 +235,22 @@ def check_order(elem):
     :return: the element without the order and the order itself.
     """
 
+    if len(elem) == 1:
+        return elem, ""
+
     if elem[1].isdigit() or elem[1] == "I" or elem[1] == "V" or elem[1] == "X" or elem[1] == " ":
-        order = elem[1:]
+        if elem[1] == " ":
+            order = elem[2:]
+        else:
+            order = elem[1:]
         elem = elem[0]
     else:
-        order = elem[2:]
+        if len(elem) == 2:
+            return elem, ""
+        if elem[2] == " ":
+            order = elem[3:]
+        else:
+            order = elem[2:]
         elem = elem[0:2]
 
     return elem, order
@@ -407,10 +418,14 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
     else:
         continuum = None
 
+    input_opt_pars = opt_pars
+
     # For each line in the linelist file
     for i in range(len(linelist)):
         elem = linelist.iloc[i][0]
         lamb = float(linelist.iloc[i][1])
+
+        opt_pars = input_opt_pars
 
         if ui is not None:
             ui.linedefvalue.setText("Element {}, line {}".format(elem, lamb))

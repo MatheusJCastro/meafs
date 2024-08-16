@@ -411,6 +411,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.fullspec.triggered.connect(self.full_spec_plot_range)
         self.checkcontinuumplot.triggered.connect(self.run_check_continuum)
         self.erasecontinuumplot.triggered.connect(self.run_erase_continuum)
+        self.clearspectrumplot.triggered.connect(self.clear_spectrum_plot)
         self.clearfinalplotsscale.triggered.connect(self.clear_scale)
 
         self.fullspec.setShortcut(QtGui.QKeySequence("Ctrl+Shift+V"))
@@ -616,6 +617,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     @staticmethod
     def show_about():
+        """
+        Create a new window to show info about MEAFS.
+        """
+
         about_dialog = QtWidgets.QDialog()
         about_dialog.setWindowTitle("About MEAFS v{}".format(__version__))
 
@@ -1291,7 +1296,38 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         self.canvas.draw()
 
+    def clear_spectrum_plot(self):
+        """
+        Clear all plots in the Spectrum Plot tab, except the spectra themselves.
+        """
+
+        self.fig = plt.figure(tight_layout=True)
+        self.canvas = FigureCanvasQTAgg(self.fig)
+        self.canvas.figure.supxlabel("Wavelength [\u212B]")
+        self.canvas.figure.supylabel("Flux")
+        self.ax = self.canvas.figure.add_subplot(111)
+        self.ax.grid()
+
+        plot_widget = self.plot.itemAt(1).widget()
+        plot_widget.deleteLater()
+        self.plot.replaceWidget(plot_widget, self.canvas)
+
+        toolbar_widget = self.plot.itemAt(0).widget()
+        toolbar_widget.deleteLater()
+        self.plot.replaceWidget(toolbar_widget, VerticalNavigationToolbar2QT(self.canvas))
+
+        self.loadData()
+
+
+
     def clear_scale(self, show_msg=True):
+        """
+        Resets the fixed scale to show images in the final plots area, allowing resizing the GUI
+        into smaller sizes.
+
+        :param show_msg: Option to pop up a message saying that the scale was cleared.
+        """
+
         def reset_image(widget):
             sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
                                                QtWidgets.QSizePolicy.Policy.Preferred)
@@ -1318,6 +1354,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.show_error("Scale cleared.")
 
     def stop_func(self):
+        """
+        Define if the stop button was precessed during a run.
+        """
+
         self.stop_state = True
 
     def save_cur_abund(self):

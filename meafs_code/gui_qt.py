@@ -756,6 +756,8 @@ class Ui_MEAFS(object):
         self.guthubopen.setObjectName("guthubopen")
         self.aboutopen = QtGui.QAction(parent=MEAFS)
         self.aboutopen.setObjectName("aboutopen")
+        self.clearspectrumplot = QtGui.QAction(parent=MEAFS)
+        self.clearspectrumplot.setObjectName("clearspectrumplot")
         self.menuFile.addAction(self.new_2)
         self.menuFile.addAction(self.open)
         self.menuFile.addSeparator()
@@ -769,6 +771,7 @@ class Ui_MEAFS(object):
         self.menuView.addAction(self.fullspec)
         self.menuView.addAction(self.checkcontinuumplot)
         self.menuView.addAction(self.erasecontinuumplot)
+        self.menuView.addAction(self.clearspectrumplot)
         self.menuView.addAction(self.clearfinalplotsscale)
         self.menuEdit.addAction(self.fitpar)
         self.menuEdit.addAction(self.errorguireset)
@@ -922,6 +925,7 @@ class Ui_MEAFS(object):
         self.readthedocsopen.setText(_translate("MEAFS", "Read the Docs"))
         self.guthubopen.setText(_translate("MEAFS", "GitHub"))
         self.aboutopen.setText(_translate("MEAFS", "About"))
+        self.clearspectrumplot.setText(_translate("MEAFS", "Clear Spectrum Plot"))
 
 
 if __name__ == "__main__":

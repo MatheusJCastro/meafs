@@ -14,7 +14,7 @@
 #include<stdio.h>
 #include<time.h>
 #include<math.h>
-#include<omp.h>
+//#include<omp.h>
 
 /**
 Function that applies the bisection method.

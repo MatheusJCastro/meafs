@@ -213,9 +213,11 @@ def fit_continuum(spec, contpars=None, iterac=1000):
 
 # Compile C files
 if not os.path.isfile(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so")):
+    print("C module not found. Compiling...")
     currdir = os.getcwd()
     os.chdir(Path(os.path.dirname(__file__)))
     subprocess.run("gcc -Wall -pedantic -O3 bisec_interpol.c -o bisec_interpol.so -shared", shell=True)
     os.chdir(currdir)
+    print("Done.")
 
 c_lib = c_init(Path(os.path.dirname(__file__)).joinpath("bisec_interpol.so"))  # initialize the C library

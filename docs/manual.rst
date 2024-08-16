@@ -8,7 +8,6 @@ Starting MEAFS
 --------------
 
 
-
 View mode
 ---------
 
@@ -386,6 +385,14 @@ toolbar, like in the image bellow:
    
 | 
 
+Cleaning the Plot
+"""""""""""""""""
+
+Sometimes the plot can be very crowded, you may want to clean the lines fit and other draws. 
+It is possible to this by clicking in the menu *View* > *Clear Spectrum Plot*.
+
+Then, you can use the option :ref:`open_old_results` to load again only the last fitted lines.
+
 .. _check_cont:
 
 Check continuum fit
@@ -675,6 +682,8 @@ And to open the last closed session, type:
 .. code-block:: bash
 
    meafs -l
+
+.. _open_old_results:
 
 Open old results
 ^^^^^^^^^^^^^^^^
