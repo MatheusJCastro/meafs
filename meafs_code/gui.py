@@ -292,6 +292,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.turbospectrumconfigbrowse.clicked.connect(lambda: self.turbospec_config_path(init=False, tp="config"))
         self.turbospectrumoutputbrowse.clicked.connect(lambda: self.turbospec_config_path(init=False, tp="output"))
 
+        self.turbospectrumconfigname.textChanged.connect(lambda: self.turbospec_config_path(init=False,
+                                                                                            tp="config",
+                                                                                            onlytext=True))
+        self.turbospectrumoutputname.textChanged.connect(lambda: self.turbospec_config_path(init=False,
+                                                                                            tp="output",
+                                                                                            onlytext=True))
+
         # Plot Configuration
         self.tabplotshels.setCurrentIndex(0)
         self.tabplotshels.currentChanged.connect(self.checktabshels)
@@ -961,6 +968,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.pfanttab.setEnabled(metharray[2])
         self.synthetab.setEnabled(metharray[3])
 
+        for i,j in enumerate(metharray):
+            self.methodstab.setTabEnabled(i, j)
+
     def checkmethod(self):
         """
         Check which methods tab is selected and disable the other ones.
@@ -979,7 +989,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.graymethods([False, False, False, True])
             self.methodstab.setCurrentIndex(3)
 
-    def turbospec_config_path(self, init=True, tp=None):
+    def turbospec_config_path(self, init=True, tp=None, onlytext=False):
         """
         Check, select and write into the settings the path to the configuration and output files
         of TurboSpectrum
@@ -1003,26 +1013,88 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.turbospectrumoutputname.setText(str(self.pathoutput))
 
             if not os.path.exists(self.pathconfig):
-                self.pathconfig = mainpath
+                self.pathconfig = Path(mainpath[0]).joinpath(*mainpath[1:])
             if not os.path.exists(self.pathoutput):
-                self.pathoutput = mainpath
+                self.pathoutput = Path(mainpath[0]).joinpath(*mainpath[1:])
 
         else:
             if tp == "config":
-                self.browse(self.turbospectrumconfigname,
-                            "Select TurboSpectrum Configuration File",
-                            direc=str(self.pathconfig))
-                self.settings.loc[
-                    self.settings.variable == "turbospectrum_config", "value"] = self.turbospectrumconfigname.text()
+                if not onlytext:
+                    self.browse(self.turbospectrumconfigname,
+                                "Select TurboSpectrum Configuration File",
+                                direc=str(self.pathconfig))
+                if os.path.isfile(self.turbospectrumconfigname.text()):
+                    self.settings.loc[
+                        self.settings.variable == "turbospectrum_config", "value"] = self.turbospectrumconfigname.text()
+                try:
+                    mainpath = Path(self.turbospectrumconfigname.text()).parts[:-1]
+                    self.pathconfig = Path(mainpath[0]).joinpath(*mainpath[1:])
+                except IndexError:
+                    pass
+                self.auto_set_output()
             elif tp == "output":
-                self.browse(self.turbospectrumoutputname,
-                            "Select TurboSpectrum Output File",
-                            direc=str(self.pathoutput))
-                self.settings.loc[
-                    self.settings.variable == "turbospectrum_output", "value"] = self.turbospectrumoutputname.text()
+                if not onlytext:
+                    self.browse(self.turbospectrumoutputname,
+                                "Select TurboSpectrum Output File",
+                                direc=str(self.pathoutput))
+                if os.path.isfile(self.turbospectrumoutputname.text()):
+                    self.settings.loc[
+                        self.settings.variable == "turbospectrum_output", "value"] = self.turbospectrumoutputname.text()
+                try:
+                    mainpath = Path(self.turbospectrumoutputname.text()).parts[:-1]
+                    self.pathoutput = Path(mainpath[0]).joinpath(*mainpath[1:])
+                except IndexError:
+                    pass
 
             # noinspection PyTypeChecker
             self.settings.to_csv(self.sett_path, index=None)
+
+    def auto_set_output(self):
+        """
+        Try to find the synthetic spectrum output file name automatic by looking
+        in the configuration file
+        """
+        pathfile = self.turbospectrumconfigname.text()
+        if os.path.isfile(pathfile):
+            with open(pathfile, 'r') as file:
+                fl = file.read()
+        else:
+            return
+
+        pos = fl.find("RESULTFILE")
+        pos_end = pos + fl[pos:].find("\n")
+        var_ini = fl[pos:pos_end]
+        var_ini = var_ini.split("\'")[-2]
+
+        while var_ini.count("${") != 0:
+            pos = var_ini.find("${")
+            pos_end = pos + var_ini[pos:].find("}")
+            var = var_ini[pos+2:pos_end]
+
+            pos_global = fl.find("set {}".format(var))
+
+            if pos_global == -1:
+                pos_global = fl.find("foreach {}".format(var))
+
+                if pos_global == -1:
+                    print("Turbospectrum config file name variable not found.")
+                    return
+
+                pos_end_global = pos_global + fl[pos_global:].find(")")
+                var_value = fl[pos_global:pos_end_global].split(" (")[1]
+                var_value = var_value.replace("\n", "").replace("\\", "")
+            else:
+                pos_end_global = pos_global + fl[pos_global:].find("\n")
+                var_value = fl[pos_global:pos_end_global].split("=")[1]
+                var_value = var_value.replace(" ", "").replace("\'", "")
+
+            var_ini = var_ini.replace(var_ini[pos:pos_end+1], var_value)
+
+        pathfinal = self.pathconfig.joinpath(var_ini)
+        self.turbospectrumoutputname.setText(str(pathfinal))
+        mainpath = Path(pathfinal).parts[:-1]
+        self.pathoutput = Path(mainpath[0]).joinpath(*mainpath[1:])
+
 
     def datatableconfig(self, load=False, loaddata=None):
         """

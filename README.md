@@ -26,6 +26,7 @@ More information at: [https://meafs.readthedocs.io/](https://meafs.readthedocs.i
       - [GCC](#gcc)
   - [Installation](#installation)
     - [Getting the pip version (recommended)](#getting-the-pip-version-recommended)
+      - [Updates](#updates)
     - [Cloning from GitHub](#cloning-from-github)
   - [Post Installation](#post-installation)
     - [Adding the PATH (for non Anaconda installations)](#adding-the-path-for-non-anaconda-installations)
@@ -111,6 +112,14 @@ The pip version can easily be acquired by typing in the terminal:
 pip install meafs
 ```
 
+#### Updates
+
+Updates when using the pip version are handle by pip itself. To force an update, type in the terminal:
+
+```bash
+pip install meafs --upgrade
+```
+
 ### Cloning from GitHub
 
 Or you can directly clone from the GitHub page with:
@@ -133,6 +142,8 @@ Then go to the MEAFS source code directory and type:
 python3 -m build
 pip install .
 ```
+
+Updates need to be handle by the user by cloning new versions and building it again.
 
 ## Post Installation
 

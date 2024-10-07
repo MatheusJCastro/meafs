@@ -186,11 +186,15 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
 
     # noinspection PySimplifyBooleanCheck
     if spec_fit_arr != []:
-        min_all_old = min(spec_fit_arr[0].iloc[:, 0])
-        max_all_old = max(spec_fit_arr[0].iloc[:, 0])
+        min_all_old_x = min(spec_fit_arr[0].iloc[:, 0])
+        max_all_old_x = max(spec_fit_arr[0].iloc[:, 0])
+        min_all_old_y = min(spec_fit_arr[0].iloc[:, 1])
+        max_all_old_y = max(spec_fit_arr[0].iloc[:, 1])
     else:
-        min_all_old = 0
-        max_all_old = 1
+        min_all_old_x = 0
+        max_all_old_x = 1
+        min_all_old_y = 0
+        max_all_old_y = 1
 
     for j, sp in enumerate(spec_fit_arr):
         ind = plot_line_refer[(plot_line_refer["elem"] == elem + order) &
@@ -201,12 +205,19 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
 
         lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
 
-        min_all = min(sp.iloc[:, 0])
-        max_all = max(sp.iloc[:, 0])
-        if min_all < min_all_old:
-            min_all_old = min_all
-        if max_all > max_all_old:
-            max_all_old = max_all
+        min_all_x = min(sp.iloc[:, 0])
+        max_all_x = max(sp.iloc[:, 0])
+        if min_all_x < min_all_old_x:
+            min_all_old_x = min_all_x
+        if max_all_x > max_all_old_x:
+            max_all_old_x = max_all_x
+
+        min_all_y = min(sp.iloc[:, 1])
+        max_all_y = max(sp.iloc[:, 1])
+        if min_all_y < min_all_old_y:
+            min_all_old_y = min_all_y
+        if max_all_y > max_all_old_y:
+            max_all_old_y = max_all_y
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": lineplot[0]}
 
@@ -220,7 +231,8 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
                   float_format="%.4f",
                   header=None)
 
-    ax.set_xlim(min_all_old, max_all_old)
+    ax.set_xlim(min_all_old_x, max_all_old_x)
+    ax.set_ylim(min_all_old_y, max_all_old_y)
     canvas.draw()
 
     return plot_line_refer

@@ -171,7 +171,7 @@ The first guess for the method fit can also be defined:
 
 =========== ===================
 Convolution Parameter :math:`c`
-Depth      Parameter :math:`a`
+Depth       Parameter :math:`a`
 =========== ===================
 
 TurboSpectrum

@@ -78,6 +78,15 @@ The pip version can easily be acquired by typing in the terminal:
 
    pip install meafs
 
+Updates
++++++++
+
+Updates when using the pip version are handle by pip itself. To force an update, type in the terminal:
+
+.. code-block:: bash
+   
+   pip install meafs --upgrade
+
 
 Cloning from GitHub
 ^^^^^^^^^^^^^^^^^^^
@@ -102,6 +111,8 @@ Then go to the MEAFS source code directory and type:
    
    python3 -m build
    pip install .
+
+Updates need to be handle by the user by cloning new versions and building it again.
 
 Post Installation
 -----------------
