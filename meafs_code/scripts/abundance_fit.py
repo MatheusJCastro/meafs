@@ -486,7 +486,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                                                iterac=max_iter[1], convovbound=convovbound,
                                                                wavebound=wavebound)
                 if ui is not None:
-                    ui.abundancelabel.setText("Deepth")
+                    ui.abundancelabel.setText("Depth")
             elif type_synth[0] == "TurboSpectrum":
                 tf.change_spec_range_configfl(config_fl, lamb, cut_val[0])
                 tf.run_configfl(config_fl)
@@ -720,7 +720,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
         methodconfig = [ui.methodbox.currentText(),
                         ui.ewfuncbox.currentText(),
                         ui.convinitguessvalue.value(),
-                        ui.deepthinitguessvalue.value()]
+                        ui.depthinitguessvalue.value()]
     elif ui.methodbox.currentText() == "TurboSpectrum":
         methodconfig = [ui.methodbox.currentText(),
                         ui.turbospectrumoutputname.text(),

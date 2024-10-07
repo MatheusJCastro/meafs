@@ -282,7 +282,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Eq. Width Configuration
         self.convinitguessvalue.setValue(0.001)
-        self.deepthinitguessvalue.setValue(-1)
+        self.depthinitguessvalue.setValue(-1)
 
         # TurboSpectrum Configuration
         self.pathconfig = self.settings[self.settings.variable == "turbospectrum_config"].value.iloc[0]
@@ -1714,7 +1714,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.methodbox.currentIndex(),
                      self.ewfuncbox.currentIndex(),
                      self.convinitguessvalue.value(),
-                     self.deepthinitguessvalue.value(),
+                     self.depthinitguessvalue.value(),
                      self.turbospectrumconfigname.text(),
                      self.turbospectrumoutputname.text(),
                      self.repfit,
@@ -1791,7 +1791,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.methodbox.setCurrentIndex(list_save[16])
             self.ewfuncbox.setCurrentIndex(list_save[17]),
             self.convinitguessvalue.setValue(list_save[18]),
-            self.deepthinitguessvalue.setValue(list_save[19]),
+            self.depthinitguessvalue.setValue(list_save[19]),
             self.turbospectrumconfigname.setText(list_save[20])
             self.turbospectrumoutputname.setText(list_save[21])
             self.repfit = list_save[22]
@@ -1889,7 +1889,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          0,
                          # convinitguessvalue
                          0.001,
-                         # deepthinitguessvalue
+                         # depthinitguessvalue
                          -1,
                          # turbospectrumconfigname
                          "",

@@ -47,7 +47,7 @@ Analyze    A checkbox if this wavelength should or should not
 | The table can be manually filled or a *CSV* file with two columns can be imported.
 | For the first one, simply write it in the table values, and click 
   *Add Line* or *Remove Line* buttons to match the number of rows desired.
-| For the Second one, click *Browse* and select the line-list file, then 
+| For the second one, click *Browse* and select the line-list file, then 
   click *Load* to load the data in the table.
 
 Obs: rows beginning with ``#`` in the *CSV* file are ignored.
@@ -171,7 +171,7 @@ The first guess for the method fit can also be defined:
 
 =========== ===================
 Convolution Parameter :math:`c`
-Deepth      Parameter :math:`a`
+Depth      Parameter :math:`a`
 =========== ===================
 
 TurboSpectrum
@@ -195,7 +195,7 @@ TurboSpectrum
 - TurboSpectrum_NLTE (not tested) can be found here: 
   `<https://github.com/bertrandplez/Turbospectrum_NLTE>`_
 
-In the first run of MEAFS, it will be created a folder called *modules* at 
+In the first run of MEAFS, it will be created a folder called *modules* in 
 the root directory of MEAFS (this directory can be found by typing in a
 terminal ``meafs -h``). It is advised (but not mandatory) to add the 
 TurboSpectrum module in this folder.
@@ -224,11 +224,12 @@ Obs: the *Stop* button will finish the current line before it takes effect.
 
 While running, the GUI will be frozen, being actualized only few times 
 after each line. At each actualization, the plot area and the tab *Fit 
-Parameters* will show the last successful fit.
+Results* will show the last successful fit.
 
 At the end of each line, MEAFS save the results. In case of an unwanted 
 interruption, open MEAFS again and use the menu option *File* > *Open 
-Abundances...* and it will populate the plot and the results table.
+Abundances...* and it will populate the plot and the results table (see 
+:ref:`open_old_results`).
 
 Fit parameters
 ^^^^^^^^^^^^^^
@@ -240,7 +241,7 @@ Fit parameters
 
 | 
 
-There are several options to change how the fit is done. This menu are 
+There are several options to change how the fit is done. This menu is 
 located in *Edit* > *Fit Parameters*. 
 
 Change it with caution, since this can drastically modify the results. 
@@ -269,7 +270,7 @@ range for the plot can be set for :math:`3 Å`.
 
 For the abundance, if a wide range is used, the :math:`\chi^2` may not
 be fully minimized, since the abundance in the synthetic spectrum only 
-changes the lines os that specific element. Therefore, a smaller range 
+changes the lines of that specific element. Therefore, a smaller range 
 may benefit the minimization. The resolution of the spectrum can have a 
 huge impact on this. 
 
@@ -301,12 +302,12 @@ Continuum Fit Parameters
 ++++++++++++++++++++++++
 
 The fit of the continuum uses the *Sigma-clipping continuum level* 
-method described at Sánchez-Monge, 2018: *STATCONT: A statistical 
+method described in Sánchez-Monge, 2018: *STATCONT: A statistical 
 continuum level determination method for line-rich sources*.
 
 To summarize it, it is a iteration method that exclude outliers to find 
 the median and the standard deviation of the flux axis and uses these 
-values for the continuum and it's errors, respectively.
+values for the continuum and its errors, respectively.
 
 The process involves two parameters that determine how the method will 
 be handled:
@@ -365,7 +366,7 @@ Also, all the results are saved in the *found_values.csv* file (see :ref:`analyz
 The plot
 ++++++++
 
-The plot area shows all the loaded spectra and all the fitted lines. Once one 
+The plot area shows all loaded spectra and all fitted lines. Once one 
 line is clicked in the results table, the plot will focus on that specific line.
 
 It is possible to modify the range, pam, save, zoom in and out using the 
@@ -419,12 +420,12 @@ Fit only abundance run
 
 After a full run, the lines selected will appear in the results table and can be 
 selected. As showed in :ref:`analyzing_results`, the fit results can be found in 
-the "Fit Results" tab.
+the *Fit Results* tab.
 
 In this tab, it is possible to manually change the *Lamb Shift*, *Continuum* and 
 *Convolution* values and press the *Manual fit* button. Every time this button is 
 pressed, it will run a fit only for the abundance using the values that are written
-in the three parameters above.
+in these three parameters above.
 
 After this run, the new abundance and the modified parameters will be written in the 
 *found_values.csv* file. To restore the originals values, it is needed to run the fit 
@@ -486,7 +487,7 @@ Resizing GUI upon viewing images
 
 When any image is added into MEAFS, the software will block the scale of the image. This
 blocks resizing the GUI into smaller sizes. If necessary, to unlock the scale go to 
-*View* > *Clear Final Plots Scale* to unblock it.
+*View* > *Clear Final Plots Scale*.
 
 Lines Plot
 ^^^^^^^^^^
@@ -503,19 +504,18 @@ in the abundances table.
 
 The plot lines are:
 
-================== ===============================================================
+================== =====================================================================================================================================
 Data Points        Spectrum data.
 Best Fit           Synthetic Spectrum with best fit abundance.
-Abundance Increase Synthetic Spectrum with abundance increased by a defined value.
-Abundance Decrease Synthetic Spectrum with abundance decreased by a defined value.
+Abundance Shift    Synthetic Spectrum with abundance increased and decreased by a defined value to create a shaded light blue area around the best fit.
 Zero Abundance     Synthetic Spectrum with no abundance.
 Residuals          Absolute residuals of data points and best fit abundance.
-================== ===============================================================
+================== =====================================================================================================================================
 
-The value of the abundance Increase and decrease can be set 
+The region of the abundance shift can be set 
 in the *Final Plots* tab.
 
-It is possible to create the plots for all lines in the 
+It is possible to create plots for all lines at once in the 
 *All Lines* button, or select one line in the table and 
 click *Single Line* button.
 
@@ -600,7 +600,7 @@ Jupyter Shell
 
 | 
 
-The Jupyter Shell provides access to the MEAFS session with all the 
+The *Jupyter Shell* tab provides access to the MEAFS session with all the 
 variables and functions available. It can be useful for more advanced
 user or for debug. See :ref:`pack_overview` for the list of variables 
 and functions.
@@ -616,9 +616,9 @@ Stdout and Stderr
 | 
 
 All print functions and errors of the code are redirected to the 
-Stdout/Stderr tab. Use it for debug and/or follow up the fit process.
+*Stdout/Stderr* tab. Use it for debug and/or follow up the fit process.
 
-It is possible to clear the Stdout/Stderr bt pressing the *Clear* button.
+It is possible to clear the *Stdout/Stderr* text area by pressing the *Clear* button.
 
 Errors while running the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -645,8 +645,8 @@ Save and open sessions
 
 MEAFS uses the *dill* library to create sessions of the current loaded
 values. Sessions can be saved and opened, or a new empty one can be created. 
-Note that creating a new session will erase all the values, 
-save the current one before doing this.
+Note that creating a new session will erase all current values, 
+save them before doing this.
 
 
 .. _auto_save_manual:
@@ -656,13 +656,13 @@ Auto Save
 
 There is an *Auto Save* function that will save a session every 5 seconds. 
 Not only that, every time the MEAFS is closed, it will trigger to save the
-session if the auto save is on.
+session if this feature is on.
 
 To enable or disable this function, go to *File* > *Auto Save*.
 
-The files are created at the root MEAFS directory (this directory can be 
-found by typing in a terminal ``meafs -h``). The two types of auto save
-are saved under these names:
+These sessions are saved at the MEAFS root directory (this directory can be 
+found by typing in a terminal ``meafs -h``). The file names for each type of 
+auto save can be checked bellow:
 
 ==================== ===================================
 File Name            Description
@@ -685,18 +685,18 @@ And to open the last closed session, type:
 
 .. _open_old_results:
 
-Open old results
-^^^^^^^^^^^^^^^^
+Open old results (not sessions)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 | If there are results from a previous run (*.csv* file) and the folder 
   *On_time_plots*, it is possible to go to the menu option *File* > *Open 
   Abundances...* and select the *CSV* file.
-| MEAFS will read the file and populate te results tab with the 
-  information there. Also, it will look for a folder called *On_time_plots*
-  in the same directory of the file to plot all lines that it finds 
+| MEAFS will read the file and populate the results tab with the 
+  information there. Also, it will look for the folder called *On_time_plots*
+  in the same directory of the *CSV* file to plot all lines that it finds 
   inside of it.
 | Note that the *CSV* file is mandatory, while the folder containing the
-  old plots, is not
+  old plots, is not.
 
 Help Section
 ------------
@@ -709,7 +709,7 @@ Help Section
 | 
 
 
-There is an Help menu in the Menu Bar with links to this Read the Docs and the GitHub page.
+There is a *Help* menu in the menu bar with links to this Read the Docs and the GitHub page.
 
 If the information you need or a bug you are facing is not listed in this manual, you can
 open an issue or ask for help in `GitHub Issues <https://github.com/MatheusJCastro/meafs/issues>`_.

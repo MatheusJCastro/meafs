@@ -42,7 +42,7 @@ More information at: [https://meafs.readthedocs.io/](https://meafs.readthedocs.i
 
 ## Aims
 
-The MEAFS is a fitting tool software for spectra abundance analysis. The aim is to provide a medium to high quality analysis for each individual absorption line in a given spectrum.  
+The MEAFS is a fitting tool software for spectra abundance analysis. The aim is to provide a medium to high precision analysis for each individual absorption line in a given spectrum in a short time.
 The software also fits the wavelength shift, continuum and convolution of the spectrum.
 
 ![Meafs GUI](meafs_code/images/Meafs_Gui.png)
@@ -63,9 +63,9 @@ The software also fits the wavelength shift, continuum and convolution of the sp
 
     - For Linux users, if needed, export anaconda to your path by adding the line `export PATH="/home/USERNAME/anaconda3/bin:$PATH"` (changing the `USERNAME` to your user) to the `~/.bashrc` file. Close and open a new terminal to update the path.
 
-    - If desirable, disable autoactivation of anaconda with `conda config --set auto_activate_base false`.
+    - If desirable, disable auto activation of anaconda with `conda config --set auto_activate_base false`.
 
-- Create MEAFS enviroment with `conda create python -n meafs`;
+- Create MEAFS environment with `conda create python -n meafs`;
 
 - Then, to activate the environment, type `conda activate meafs`;
 
@@ -78,10 +78,10 @@ Obs: this step-by-step guide was made using a fresh new install of Windows 10.
 
 #### Python
 
-Go to [Python Windows Releases](https://www.python.org/downloads/windows/) and download an stable release by clicking on it and downloading the *Windows installer (64-bit) Recommended*. After downloading, exectue the files and follow the installation process.
+Go to [Python Windows Releases](https://www.python.org/downloads/windows/) and download a stable release by clicking on it and downloading the *Windows installer (64-bit) Recommended*. After downloading, execute the files and follow the installation process.
 
 - Add the Python folder to the path.
-    - Open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add two new lines:
+    - Open the menu and search for *path*, click *Edit the system environment variables*, at the bottom right click *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click *Edit*. Add two new lines:
         - `C:\Users\USERNAME\AppData\Local\Programs\Python\Python311`
         - `C:\Users\USERNAME\AppData\Local\Programs\Python\Python311\Scripts`
         - Change `USERNAME` with your username and `Python311` to the actual version that you installed.
@@ -99,7 +99,7 @@ Download the *x64* version of [Winlibs](https://winlibs.com).
 ## Installation
 
 There are many options to run MEAFS. We strongly recommend the use of Anaconda environment, but it is not mandatory.  
-You can install it from pip or run directly the source code from the repository.  
+You can install it with pip or run directly the source code from the repository.  
 
 All the methods listed below work in Linux, Windows or MacOS **if you have python and gcc installed** (step-by-step to install for Windows users [bellow](<#step-by-step-for-windows-python--gcc>)).
 
@@ -147,11 +147,11 @@ For Linux users, you can add the following line in the end of the file `~/.bashr
 export PATH="${PATH}:/home/USER/.local/bin/"
 ```
 
-For some Linux distributions and Python installations, the locale of the executables can slightly change. If this does not work out, you can try differents paths such as `/usr/local/bin` and others.
+For some Linux distributions and Python installations, the location of the executables can slightly change. If this does not work out, you can try different paths such as `/usr/local/bin` and others.
 
 #### Windows
 
-For Windows users, you need to open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add a new line with one of the followings (check the python location first):
+For Windows users, use the sames steps as in [Step-by-Step for Windows](<#step-by-step-for-windows-python--gcc>) for the path only, but now check if those lines are already there, if not, add them:
 
 ```bat
 C:\Users\Windows\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts
@@ -167,7 +167,7 @@ C:\Users\USERNAME\AppData\Local\Programs\Python\Python311\Scripts
 
 ### Compilation
 
-There is one file written in C Language (`meafs/meafs_code/scripts/bisec_interpol.c`), **in the first run, MEAFS will compile the C library using GCC**. Otherwise, the compilation directives can be found in the `meafs/meafs_code/scripts/comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
+There is one file written in C Language (`meafs/meafs_code/scripts/bisec_interpol.c`), **in the first run, MEAFS will compile the C library using GCC**. Otherwise, the compilation directives can be found in `meafs/meafs_code/scripts/comp.sh`. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the `-shared` flag.
 
 If the auto compilation fails, for Linux users, just add execution privileges at the `comp.sh` file and execute it in a terminal to create the binary. For that, open a terminal in the `meafs/meafs_code/scripts/` folder and type:
 
@@ -239,7 +239,7 @@ There are some flags that can be passed with the command-line.
 - `-l`, `--last`: Load the last closed session. Default location is `meafs_code/auto_save_last.pkl`;
 - `-s`, `--load-auto-save`: Load the auto saved session. Default location is: `meafs_code/auto_save.pkl`.
 
-Also, any saved section can be passed as an argument and meafs will power the GUI with it:
+Also, any saved section can be passed as an argument and MEAFS will power the GUI with it:
 
 ```bash
 meafs path/to/session.pkl
@@ -250,7 +250,7 @@ If no argument is given, the GUI will power with a new empty session.
 ### Auto Save
 In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 5 seconds in a file named `auto_save.pkl`.  
 Also, if auto save is enabled, when MEAFS is closed, it will save the session in the `auto_save_last.pkl` file.  
-These files are located under the MEAFS directory and the `-h` [flag](<#flags-and-arguments>) will show the location.  
-To load any of these files, simply use the [flags](<#flags-and-arguments>) or load them in the *File* - *Open...* menu.
+These files are located under the MEAFS directory and the `-h` [flag](<#flags-and-arguments>) will show their location.  
+To load any of these files, simply use the [flags](<#flags-and-arguments>) or load them in the *File* > *Open...* menu.
 
 <hr/>

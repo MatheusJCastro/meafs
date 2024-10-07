@@ -53,7 +53,7 @@ There are some flags that can be passed with the command-line.
 -l, --last              Load the last closed session. Default location is ``meafs_code/auto_save_last.pkl``.
 -s, --load-auto-save    Load the auto saved session. Default location is: ``meafs_code/auto_save.pkl``.
 
-Also, any saved section can be passed as an argument and meafs will power the GUI with it:
+Also, any saved section can be passed as an argument and MEAFS will power the GUI with it:
 
 .. code-block:: bash
    
@@ -69,8 +69,8 @@ Auto Save Capability
 | Also, if auto save is enabled, when MEAFS is closed, it will save the session in 
   the ``auto_save_last.pkl`` file.  
 | These files are located under the MEAFS directory and the ``-h`` :ref:`flag <flags>` 
-  will show the location.  
+  will show their location.  
 | To load any of these files, simply use the :ref:`flags <flags>` or load them in the 
-  *File* - *Open...* menu.
+  *File* > *Open...* menu.
 
 See more at :ref:`auto_save_manual`.

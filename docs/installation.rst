@@ -22,9 +22,9 @@ Creating Anaconda Environment (recommended)
 
     - For Linux users, if needed, export anaconda to your path by adding the line ``export PATH="/home/USERNAME/anaconda3/bin:$PATH"`` (changing the ``USERNAME`` to your user) to the ``~/.bashrc`` file. Close and open a new terminal to update the path.
 
-    - If desirable, disable autoactivation of anaconda with ``conda config --set auto_activate_base false``.
+    - If desirable, disable auto activation of anaconda with ``conda config --set auto_activate_base false``.
 
-- Create MEAFS enviroment with ``conda create python -n meafs``;
+- Create MEAFS environment with ``conda create python -n meafs``;
 
 - Then, to activate the environment, type ``conda activate meafs``.
 
@@ -41,10 +41,10 @@ Step-by-Step for Windows (Python + GCC)
 Python
 ++++++
 
-Go to `Python Windows Releases <https://www.python.org/downloads/windows/>`_ and download an stable release by clicking on it and downloading the *Windows installer (64-bit) Recommended*. After downloading, exectue the files and follow the installation process.
+Go to `Python Windows Releases <https://www.python.org/downloads/windows/>`_ and download a stable release by clicking on it and downloading the *Windows installer (64-bit) Recommended*. After downloading, execute the files and follow the installation process.
 
 - Add the Python folder to the path.
-    - Open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add two new lines:
+    - Open the menu and search for *path*, click *Edit the system environment variables*, at the bottom right click *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click *Edit*. Add two new lines:
         - ``C:\Users\USERNAME\AppData\Local\Programs\Python\Python311``
         - ``C:\Users\USERNAME\AppData\Local\Programs\Python\Python311\Scripts``
         - Change ``USERNAME`` with your username and ``Python311`` to the actual version that you installed.
@@ -64,7 +64,7 @@ Installation
 ------------
 
 | There are many options to run MEAFS. We strongly recommend the use of Anaconda environment, but it is not mandatory.
-| You can install it from pip or run directly the source code from the repository.  
+| You can install it with pip or run directly the source code from the repository.  
 
 | All the methods listed below work in Linux, Windows or MacOS **if you have python and gcc installed** (step-by-step to install for Windows users :ref:`above <step_by_step_windows>`).
 
@@ -122,12 +122,12 @@ For Linux users, you can add the following line in the end of the file ``~/.bash
    export PATH="${PATH}:/home/USER/.local/bin/"
 
 
-For some Linux distributions and Python installations, the locale of the executables can slightly change. If this does not work out, you can try differents paths such as ``/usr/local/bin`` and others.
+For some Linux distributions and Python installations, the location of the executables can slightly change. If this does not work out, you can try different paths such as ``/usr/local/bin`` and others.
 
 Windows
 +++++++
 
-For Windows users, you need to open the menu and search for *path*, click in *Edit the system environment variables*, at the bottom right click in *Environment Variables...*, in the tab *System variables* (attention: not the *User variables for Username*), look for the variable *Path* and click on *Edit*. Add a new line with one of the followings (check the python location first):
+For Windows users, use the sames steps as in :ref:`Step-by-Step for Windows <step_by_step_windows>` for the path only, but now check if those lines are already there, if not, add them:
 
 .. code-block:: bat
 
@@ -144,7 +144,7 @@ Or:
 Compilation
 ^^^^^^^^^^^
 
-There is one file written in C Language (``meafs/meafs_code/scripts/bisec_interpol.c``), **in the first run, MEAFS will compile the C library using GCC**. Otherwise, the compilation directives can be found in the ``meafs/meafs_code/scripts/comp.sh``. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the ``-shared`` flag.
+There is one file written in C Language (``meafs/meafs_code/scripts/bisec_interpol.c``), **in the first run, MEAFS will compile the C library using GCC**. Otherwise, the compilation directives can be found in ``meafs/meafs_code/scripts/comp.sh``. The C file needs to be compiled as a shared library, when using *GCC Compiler*, this can be achieved by adding the ``-shared`` flag.
 
 If the auto compilation fails, for Linux users, just add execution privileges at the ``comp.sh`` file and execute it in a terminal to create the binary. For that, open a terminal in the ``meafs/meafs_code/scripts/`` folder and type:
 

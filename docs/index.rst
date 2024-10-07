@@ -24,7 +24,7 @@ Multiple Element Abundance Fitting Software - MEAFS
 Aims
 ----
 
-The MEAFS is a fitting tool software for spectra abundance analysis. The aim is to provide a medium to high quality analysis for each individual absorption line in a given spectrum.  
+The MEAFS is a fitting tool software for spectra abundance analysis. The aim is to provide a medium to high precision analysis for each individual absorption line in a given spectrum in a short time.  
 The software also fits the wavelength shift, continuum and convolution of the spectrum.
 
 .. image:: ../meafs_code/images/Meafs_Gui.png
