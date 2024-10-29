@@ -116,6 +116,8 @@ Loading spectra data
    - Tab/Multiple spaces
    - Comma
 
+Obs: rows beginning with ``#`` in the *CSV* file are ignored.
+
 **Attention:** For overlapping spectra, the fit will be processed only for the first spectrum in the *Data* table order. Moreover, it is advised not to upload spectra with edge effects (e.g., zero flux; see image below). Otherwise, if allocated first in the *Data* table, MEAFS will attempt to fit the non-existing data in the first spectrum instead of the one with real data.
 
 .. image:: _static/overlapping_spectra_example.png
@@ -124,8 +126,6 @@ Loading spectra data
    :alt: GUI method select
 
 | 
-
-Obs: rows beginning with ``#`` in the *CSV* file are ignored.
 
 Selecting the method
 --------------------
