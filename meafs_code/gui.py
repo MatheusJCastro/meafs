@@ -6,11 +6,12 @@
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
 
+from PyQt6 import QtWidgets, QtGui, QtCore
+
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from specutils.analysis import equivalent_width
-from PyQt6 import QtWidgets, QtGui, QtCore
 from specutils import Spectrum1D
 import matplotlib.pyplot as plt
 import astropy.units as u
@@ -18,6 +19,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import webbrowser
+import time
 import dill
 import sys
 import os
@@ -221,7 +223,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Load Gui
         super(MEAFS, self).__init__(parent)
         self.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon(str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))))
+        ico_path = None
+        if "linux" in sys.platform:
+            ico_path = str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.png"))
+        elif "win" in sys.platform and "darwin" not in sys.platform:
+            ico_path = str(Path(os.path.dirname(__file__)).joinpath("images", "Meafs_Icon.ico"))
+        self.setWindowIcon(QtGui.QIcon(ico_path))
 
         self.run.setStyleSheet("QWidget { font-weight: 750 }")
         self.stop.setStyleSheet("font-weight: 750")
@@ -1066,15 +1073,32 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         var_ini = fl[pos:pos_end]
         var_ini = var_ini.split("\'")[-2]
 
-        while var_ini.count("${") != 0:
-            pos = var_ini.find("${")
-            pos_end = pos + var_ini[pos:].find("}")
-            var = var_ini[pos+2:pos_end]
+        while var_ini.count("$") != 0:
+            pos = var_ini.find("$")
+            if var_ini[pos+1] == "{":
+                pos_end = pos + var_ini[pos:].find("}")
+                var = var_ini[pos+2:pos_end]
+            else:
+                pos_end_t1 = var_ini[pos:].find("/")
+                pos_end_t2 = var_ini[pos+1:].find("$")
+                if pos_end_t1 <= pos_end_t2 and pos_end_t1 != -1:
+                    pos_end = pos_end_t1
+                elif pos_end_t2 != -1:
+                    pos_end = pos_end_t2 + 1
+                else:
+                    pos_end = len(var_ini[pos:])
+                pos_end += pos
+                var = var_ini[pos+1:pos_end]
 
-            pos_global = fl.find("set {}".format(var))
+            if pos == pos_end or var == "" or var == " ":
+                print("Turbospectrum config file name variable not found.")
+                return
 
+            pos_global = fl.find("set {} ".format(var))
             if pos_global == -1:
-                pos_global = fl.find("foreach {}".format(var))
+                pos_global = fl.find("set {}=".format(var))
+            if pos_global == -1:
+                pos_global = fl.find("foreach {} ".format(var))
 
                 if pos_global == -1:
                     print("Turbospectrum config file name variable not found.")
@@ -1088,7 +1112,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 var_value = fl[pos_global:pos_end_global].split("=")[1]
                 var_value = var_value.replace(" ", "").replace("\'", "")
 
-            var_ini = var_ini.replace(var_ini[pos:pos_end+1], var_value)
+            if var_ini[pos+1] == "{":
+                pos_end += 1
+            var_ini = var_ini.replace(var_ini[pos:pos_end], var_value, 1)
 
         pathfinal = self.pathconfig.joinpath(var_ini)
         self.turbospectrumoutputname.setText(str(pathfinal))
@@ -1810,7 +1836,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 pathfinal = flname
 
             with open(pathfinal, "wb") as file:
+                self.setWindowTitle("MEAFS - Saving")
                 dill.dump(list_save, file)
+                time.sleep(0.2)
+                self.setWindowTitle("MEAFS")
             return True
         else:
             self.filepath = None

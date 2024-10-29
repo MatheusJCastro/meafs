@@ -100,7 +100,7 @@ Loading spectra data
   file.
 | Only the name of the file will be showed. But, the full path of the file can 
   always be checked by holding the mouse on top of the button, like the
-  image bellow.
+  image below.
 
 .. image:: _static/meafs_gui_04.1.png
    :width: 80%
@@ -115,6 +115,15 @@ Loading spectra data
 
    - Tab/Multiple spaces
    - Comma
+
+**Attention:** For overlapping spectra, the fit will be processed only for the first spectrum in the *Data* table order. Moreover, it is advised not to upload spectra with edge effects (e.g., zero flux; see image below). Otherwise, if allocated first in the *Data* table, MEAFS will attempt to fit the non-existing data in the first spectrum instead of the one with real data.
+
+.. image:: _static/overlapping_spectra_example.png
+   :width: 80%
+   :align: center
+   :alt: GUI method select
+
+| 
 
 Obs: rows beginning with ``#`` in the *CSV* file are ignored.
 
@@ -377,7 +386,7 @@ To show the full spectrum range, there is a button in the menu option *View* >
 that: **Ctrl+Shift+V**.
 
 When the mouse pointer is on top of the plot, the axis values appear in the 
-toolbar, like in the image bellow:
+toolbar, like in the image below:
 
 .. image:: _static/meafs_gui_03.1.png
    :width: 80%
@@ -662,7 +671,7 @@ To enable or disable this function, go to *File* > *Auto Save*.
 
 These sessions are saved at the MEAFS root directory (this directory can be 
 found by typing in a terminal ``meafs -h``). The file names for each type of 
-auto save can be checked bellow:
+auto save can be checked below:
 
 ==================== ===================================
 File Name            Description

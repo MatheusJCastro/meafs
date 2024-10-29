@@ -400,7 +400,7 @@ def plot_lines(obs_specs, abund, refer_fl, type_synth, folder, cut_val=.5, abund
         plt.plot(spec_fit[0], spec_fit[1], "-", label="A({}) {:.2f}".format(elem, abundance), linewidth=1.8,
                  color="blue")
         plt.fill_between(spec_fit[0], spec_fit_above[1], spec_fit_under[1], alpha=0.8, color="lightblue",
-                         label="A({}) {:.2f} \u00b1 {:.1f}".format(elem, abundance, abundance_shift))
+                         label="A({}) {:.2f} \u00b1 {:.2f}".format(elem, abundance, abundance_shift))
         plt.plot(spec_no[0], spec_no[1], "--", label="No {}".format(elem), linewidth=1.5, color="gray")
 
         plt.grid(zorder=1)

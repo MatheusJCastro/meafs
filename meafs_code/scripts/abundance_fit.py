@@ -231,6 +231,9 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
                   float_format="%.4f",
                   header=None)
 
+    min_all_old_y = 0.9*min_all_old_y if min_all_old_y > 0 else 1.1*min_all_old_y
+    max_all_old_y = 1.1*max_all_old_y if max_all_old_y > 0 else 0.9*max_all_old_y
+
     ax.set_xlim(min_all_old_x, max_all_old_x)
     ax.set_ylim(min_all_old_y, max_all_old_y)
     canvas.draw()
@@ -334,7 +337,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                   abund_lim_df=1., restart=False, save_name="found_values.csv",
                   ui=None, canvas=None, ax=None, plot_line_refer=None,
                   opt_pars=None, repfit=2, max_iter=None, convovbound=None,
-                  contpars=None, wavebound=None, only_abund_ind=None):
+                  contpars=None, wavebound=None, only_abund_ind=None,
+                  spec_count=None, spec_iter=None):
     """
     Main function to analyse the spectrum and find the fit values for it
 
@@ -358,6 +362,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
     :param contpars: the calibration values of the overall continuum fit method.
     :param wavebound: range to fit the wavelength shift.
     :param only_abund_ind: change only abundance without fitting other parameters at this index.
+    :param spec_count: defines the total number of spectra to be analysed.
+    :param spec_iter: defines the current spectrum index.
     :return: dataframe with the results of the fit, the actualized
              ``ax`` array and the actualized ``plot_line_refer`` array.
     """
@@ -390,16 +396,16 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                found_val.loc[only_abund_ind, "Lambda (A)"]]
 
         if ui is not None:
-            rowpos = ui.abundancetable.rowCount()
+            ui.abundancetable.setRowCount(0)
             for i in range(len(found_val)):
                 elem = found_val.iloc[i, 0]
                 lamb = float(found_val.iloc[i, 1])
 
                 elem, order = check_order(elem)
 
-                ui.abundancetable.insertRow(rowpos+i)
-                ui.abundancetable.setItem(rowpos+i, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
-                ui.abundancetable.setItem(rowpos+i, 1, QtWidgets.QTableWidgetItem(str(lamb)))
+                ui.abundancetable.insertRow(i)
+                ui.abundancetable.setItem(i, 0, QtWidgets.QTableWidgetItem(str(elem)+str(order)))
+                ui.abundancetable.setItem(i, 1, QtWidgets.QTableWidgetItem(str(lamb)))
                 path = Path(folder).joinpath("On_time_Plots")
                 count = 0
                 while True:
@@ -447,7 +453,9 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 ui.stop_state = False
                 return found_val, ax, plot_line_refer
 
-        print("Analysing the element {} for lambda {}. Line {} of {}.".format(elem, lamb, i+1, len(linelist)))
+        print("Analysing the element {} for lambda {}. Line {} out of {}"
+              " for spectrum {} out of {}.".format(elem, lamb, i+1, len(linelist),
+                                                   spec_iter+1, spec_count))
 
         elem, order = check_order(elem)
 
@@ -467,19 +475,19 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
         if not spec_obs.iloc[0][0] <= lamb <= spec_obs.iloc[-1][0]:
             print("Wavelength not in the range of the spectrum.")
             continue
-        # If continuum, conv, abund or plot range to fit is smaller than 0, stop fitting
+        # If continuum, conv, abund or plot range to fit is smaller than 0, skip the iteration
         if len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[0])) <= 1:
             print("Continuum range smaller than 0.")
-            break
+            continue
         elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[1])) <= 1:
             print("Convolution range smaller than 0.")
-            break
+            continue
         elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[2])) <= 1:
             print("Abundance range smaller than 0.")
-            break
+            continue
         elif len(ff.cut_spec(spec_obs, lamb, cut_val=cut_val[3])) <= 1:
             print("Plot range smaller than 0.")
-            break
+            continue
 
         if max_iter is None:
             max_iter = [100, 10]
@@ -766,13 +774,16 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     QtCore.QCoreApplication.processEvents()
 
     if abundplot is None and not final_plot:
-        for spec in spec_obs:
+        spec_count = len(spec_obs)
+        for spec_iter, spec in enumerate(spec_obs):
             results_array, ax, plot_line_refer = fit_abundance(linelist, spec, refer_fl, folder, methodconfig,
                                                                restart=restart, ui=ui, canvas=canvas, ax=ax,
                                                                cut_val=cut_val, plot_line_refer=plot_line_refer,
                                                                opt_pars=opt_pars, repfit=repfit, max_iter=max_iter,
                                                                convovbound=convovbound, contpars=contpars,
-                                                               wavebound=wavebound, only_abund_ind=only_abund_ind)
+                                                               wavebound=wavebound, only_abund_ind=only_abund_ind,
+                                                               spec_count=spec_count, spec_iter=spec_iter)
+            restart = False
     elif not final_plot:
         currow = ui.abundancetable.currentRow()
         currow = ui.abundancetable.rowCount() - 1 if currow == -1 else currow

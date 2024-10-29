@@ -72,15 +72,18 @@ def create():
         shortcut.save()
 
     conda, dir = get_curr_dir()
-    icon_path = str(Path(dir).joinpath("images", "Meafs_Icon.ico"))
+    icon_path = None
 
     # Get the actual Python version
     vers = str(sys.version_info.major) + "." + str(sys.version_info.minor)
 
     if "linux" in sys.platform:
+        icon_path = str(Path(dir).joinpath("images", "Meafs_Icon.png"))
         module_create(df.getMenuPath())
     elif "win" in sys.platform and "darwin" not in sys.platform:
         import win32com.client
+
+        icon_path = str(Path(dir).joinpath("images", "Meafs_Icon.ico"))
 
         fls = os.listdir(dir)
         for fl in fls:
