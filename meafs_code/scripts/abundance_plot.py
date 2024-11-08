@@ -324,7 +324,7 @@ def plot_lines(obs_specs, abund, refer_fl, type_synth, folder, cut_val=.5, abund
 
         spec_obs = obs_specs[0]
         count = 1
-        while lamb > spec_obs[0].iloc[-1]:
+        while lamb+cut_val > spec_obs[0].iloc[-1]:
             spec_obs = obs_specs[count]
             count += 1
 
@@ -337,7 +337,7 @@ def plot_lines(obs_specs, abund, refer_fl, type_synth, folder, cut_val=.5, abund
             spec_fit_above = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem,
                                           abundance_shift=-abundance_shift)
             spec_no = get_spectrum(abund.iloc[i], type_synth[1], type_synth[2], elem,
-                                   abundance_shift=-99999)
+                                   abundance_shift=-50)
 
             # Write the refer value back
             try:

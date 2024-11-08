@@ -1463,6 +1463,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         Save the results of the fit in a CSV file.
         """
 
+        self.setWindowTitle("MEAFS - Saving")
+
         currow = self.abundancetable.currentRow()
         currow = self.abundancetable.rowCount() - 1 if currow == -1 else currow
         elem = self.abundancetable.item(currow, 0).text()
@@ -1504,6 +1506,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         save_name = "found_values.csv"
         # Write the line result to the csv file
         self.results_array.to_csv(Path(folder).joinpath(save_name), index=False, float_format="%.4f")
+
+        time.sleep(0.2)
+        self.setWindowTitle("MEAFS")
 
     def open_prev_results(self):
         """

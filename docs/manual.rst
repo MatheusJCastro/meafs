@@ -436,6 +436,8 @@ In this tab, it is possible to manually change the *Lamb Shift*, *Continuum* and
 pressed, it will run a fit only for the abundance using the values that are written
 in these three parameters above.
 
+The *Lamb Shift* is given in \ |ang|\ ngstroms, the *Continuum* is given in the spectrum Flux unit and the *Convolution* in given in the line FWHM.
+
 After this run, the new abundance and the modified parameters will be written in the 
 *found_values.csv* file. To restore the originals values, it is needed to run the fit 
 again (only for the desired line) with the *Restart* option enabled.
@@ -462,8 +464,8 @@ following columns:
 Element                 Corresponding element of this line.
 Lambda (|ang|)          Wavelength in \ |ang|\ ngstroms.
 Lamb Shift              Wavelength shift in \ |ang|\ ngstroms for this line.
-Continuum               Continuum value for this line.
-Convolution             Convolution value for this line.
+Continuum               Continuum value for this line in the spectrum Flux unit.
+Convolution             Convolution value for this line the line FWHM.
 Refer Abundance         Reference abundance of the element.
 Fit Abundance           Found abundance for this line.
 Differ                  Absolute difference of the reference and the fitted abundance.

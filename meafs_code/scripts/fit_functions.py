@@ -145,7 +145,7 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
     :param spec: the spectrum to be changed.
     :param lamb_desloc: the shift in wavelength to be applied.
     :param continuum: the continuum to be applied.
-    :param convol: the convolution to be applied.
+    :param convol: the convolution in FWHM to be applied.
     :return: the modified spectrum.
     """
 
@@ -154,6 +154,9 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
 
     if convol != 0:
         try:
+            # Change the convolution parameter from FWHM to STD
+            # FWHM = 2 * sqrt[2 * ln(2)] * STD
+            convol = convol / (2*np.sqrt(2*np.log(2)))
             # Apply the convolution using the Gaussian1DKernel function
             g = Gaussian1DKernel(stddev=convol)
             spec[1] = convolve(spec[1], g)  # convolution between the spectrum and the function above
