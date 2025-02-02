@@ -502,7 +502,9 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             if type_synth[0] == "Equivalent Width":
                 if opt_pars is None:
-                    opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum,
+                    continuum_local, cont_err_local = ff.fit_continuum(spec_obs_cut, contpars=contpars,
+                                                                       iterac=max_iter[0])
+                    opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum_local,
                                                                iterac=max_iter[1], convovbound=convovbound,
                                                                wavebound=wavebound)
                 if ui is not None:
