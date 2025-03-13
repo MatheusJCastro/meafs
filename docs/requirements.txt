@@ -2,3 +2,4 @@ sphinx-rtd-theme
 sphinx-c-autodoc
 libclang
 myst-parser
+clang==18.1.8
