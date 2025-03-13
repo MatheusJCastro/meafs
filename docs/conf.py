@@ -77,6 +77,6 @@ from clang.cindex import Config
 
 if ossystem == "Ubuntu":
     Config.set_library_file("/home/docs/checkouts/readthedocs.org/user_builds/meafs/envs/latest/lib/"
-                            "python3.13/site-packages/clang/native/libclang.so")
+                            "python3.12/site-packages/clang/native/libclang.so")
 else:
     Config.set_library_file(libclang_path)
