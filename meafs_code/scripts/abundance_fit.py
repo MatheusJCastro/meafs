@@ -9,7 +9,7 @@
 
 from specutils.analysis import equivalent_width
 from PyQt6 import QtWidgets, QtCore
-from specutils import Spectrum1D
+from specutils import Spectrum1D, SpectralRegion
 import matplotlib.pyplot as plt
 import astropy.units as u
 from pathlib import Path
@@ -557,17 +557,35 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             # Fit of Equivalent Width Observed Spectrum
             # noinspection PyUnresolvedReferences
+            cont_level = ff.fit_continuum(spec_obs_cut, contpars=contpars, iterac=max_iter[0])[0]
+            spec_obs_cut_norm = spec_obs_cut[1] / cont_level
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
-                                flux=np.asarray(spec_obs_cut[1]) * u.Jy)
-            equiv_width_obs = equivalent_width(spec1d)
+                                flux=np.asarray(spec_obs_cut_norm) * u.Jy)
+
+            # Get the minimum and maximum range of the line to apply the equivalent width function
+            min_line, max_line = ff.line_boundaries(spec_obs_cut, lamb, threshold=0.98, contpars=contpars,
+                                                    iterac=max_iter[0])
+            region = SpectralRegion(spec_obs_cut.iloc[min_line-10][0] * u.AA,
+                                    spec_obs_cut.iloc[max_line+10][0] * u.AA)
+
+            equiv_width_obs = equivalent_width(spec1d, regions=region)
             # noinspection PyUnresolvedReferences
             equiv_width_obs = np.float16(equiv_width_obs / u.AA)
 
             # Fit of Equivalent Width Fitted Spectrum
             # noinspection PyUnresolvedReferences
+            cont_level = ff.fit_continuum(spec_fit, contpars=contpars, iterac=max_iter[0])[0]
+            spec_fit_norm = spec_fit[1] / cont_level
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
-                                flux=np.asarray(spec_fit[1]) * u.Jy)
-            equiv_width_fit = equivalent_width(spec1d)
+                                flux=np.asarray(spec_fit_norm) * u.Jy)
+
+            # Get the minimum and maximum range of the line to apply the equivalent width function
+            min_line, max_line = ff.line_boundaries(spec_fit, lamb, threshold=0.98, contpars=contpars,
+                                                    iterac=max_iter[0])
+            region = SpectralRegion(spec_fit.iloc[min_line - 10][0] * u.AA,
+                                    spec_fit.iloc[max_line + 10][0] * u.AA)
+
+            equiv_width_fit = equivalent_width(spec1d, regions=region)
             # noinspection PyUnresolvedReferences
             equiv_width_fit = np.float16(equiv_width_fit / u.AA)
 

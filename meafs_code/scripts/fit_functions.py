@@ -138,9 +138,37 @@ def cut_spec(spc, lamb, cut_val=1.):
     return spc.iloc[val0:val1]
 
 
+def line_boundaries(spec, lamb, threshold=0.98, contpars=None, iterac=10000):
+    """
+    Function to retrieve the width position of an absorption line in a spectrum.
+
+    :param spec: 2D spectrum.
+    :param lamb: central wavelength of the line.
+    :param threshold: threshold in percentage of the continuum to define line limits.
+    :param contpars: the calibration values for the continuum method.
+    :param iterac: maximum number of iterations for the continuum method.
+    :return: min ax max position values in the array for the line.
+    """
+
+    lamb_pos = bisec(spec, lamb)
+    cont_level = fit_continuum(spec, contpars=contpars, iterac=iterac)[0]
+    min_line = lamb_pos
+    max_line = lamb_pos
+    while True:
+        min_line -= 1
+        if spec.iloc[min_line][1] >= cont_level * threshold:
+            break
+    while True:
+        max_line += 1
+        if spec.iloc[max_line][1] >= cont_level * threshold:
+            break
+
+    return min_line, max_line
+
+
 def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
     """
-    Function to apply lambda shift, continuum fit and convolution to the spectrum
+    Function to apply lambda shift, continuum fit and convolution to the spectrum.
 
     :param spec: the spectrum to be changed.
     :param lamb_desloc: the shift in wavelength to be applied.

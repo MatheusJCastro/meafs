@@ -184,7 +184,7 @@ class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
         :param s: the message to write (coordinates)
         """
 
-        self._message.emit(s)
+        # self.message.emit(s)  # deprecated in matplotlib>=3.8
         if self.coordinates:
             if "(x, y)" in s:
                 s = s.split(" = ")
