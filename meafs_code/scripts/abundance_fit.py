@@ -565,6 +565,17 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
             # Get the minimum and maximum range of the line to apply the equivalent width function
             min_line, max_line = ff.line_boundaries(spec_obs_cut, lamb, threshold=0.98, contpars=contpars,
                                                     iterac=max_iter[0])
+
+            if max_line < len(spec_obs_cut)-10:
+                max_line += 10
+            else:
+                max_line = len(spec_obs_cut) - 1
+
+            if min_line > 10:
+                min_line -= 10
+            else:
+                min_line = 0
+
             region = SpectralRegion(spec_obs_cut.iloc[min_line-10][0] * u.AA,
                                     spec_obs_cut.iloc[max_line+10][0] * u.AA)
 
