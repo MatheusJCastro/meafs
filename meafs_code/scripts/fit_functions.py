@@ -156,11 +156,11 @@ def line_boundaries(spec, lamb, threshold=0.98, contpars=None, iterac=10000):
     max_line = lamb_pos
     while True:
         min_line -= 1
-        if spec.iloc[min_line][1] >= cont_level * threshold:
+        if spec.iloc[min_line][1] >= cont_level * threshold or min_line <= 0:
             break
     while True:
         max_line += 1
-        if spec.iloc[max_line][1] >= cont_level * threshold:
+        if spec.iloc[max_line][1] >= cont_level * threshold or max_line >= len(spec)-1:
             break
 
     return min_line, max_line
