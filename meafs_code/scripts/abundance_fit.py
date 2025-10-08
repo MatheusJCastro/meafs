@@ -184,6 +184,12 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
     :return: the actualized ``plot_line_refer`` array.
     """
 
+    # Create necessary folders
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+    if not os.path.exists(Path(folder).joinpath("On_time_Plots")):
+        os.mkdir(Path(folder).joinpath("On_time_Plots"))
+
     # noinspection PySimplifyBooleanCheck
     if spec_fit_arr != []:
         min_all_old_x = min(spec_fit_arr[0].iloc[:, 0])
@@ -231,8 +237,18 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
                   float_format="%.4f",
                   header=None)
 
-    min_all_old_y = 0.9*min_all_old_y if min_all_old_y > 0 else 1.1*min_all_old_y
-    max_all_old_y = 1.1*max_all_old_y if max_all_old_y > 0 else 0.9*max_all_old_y
+    if min_all_old_y > 0:
+        min_all_old_y = 0.9*min_all_old_y
+    elif min_all_old_y == 0:
+        min_all_old_y = 0.9
+    else:
+        min_all_old_y = 1.1*min_all_old_y
+    if max_all_old_y > 0:
+        max_all_old_y = 1.1*max_all_old_y
+    elif max_all_old_y == 0:
+        max_all_old_y = 1.1
+    else:
+        max_all_old_y = 0.9*max_all_old_y
 
     ax.set_xlim(min_all_old_x, max_all_old_x)
     ax.set_ylim(min_all_old_y, max_all_old_y)

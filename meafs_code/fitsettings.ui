@@ -293,6 +293,11 @@
        <string>Sigma-clipping</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>Simple Average</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item row="5" column="3">
@@ -327,9 +332,9 @@
     <widget class="QDoubleSpinBox" name="contfitparalphavalue"/>
    </item>
    <item row="8" column="4">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="contfitparepsbox">
      <item>
-      <widget class="QLabel" name="label">
+      <widget class="QLabel" name="contfitparepslabel1">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -350,7 +355,7 @@
       <widget class="QSpinBox" name="contfitparepsvalue"/>
      </item>
      <item>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="contfitparepslabel2">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
          <horstretch>0</horstretch>

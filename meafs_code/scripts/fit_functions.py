@@ -9,6 +9,7 @@ from astropy.convolution import Gaussian1DKernel, convolve
 from pathlib import Path
 import numpy as np
 import subprocess
+import specutils
 import ctypes
 import os
 
@@ -194,52 +195,79 @@ def spec_operations(spec, lamb_desloc=0., continuum=1., convol=0.):
     return spec
 
 
-def fit_continuum(spec, contpars=None, iterac=1000):
+def fit_continuum(spec, contpars=None, iterac=1000, method=0, contdisabled=False,
+                  medianwindow=3, hardvalue=1.0):
     """
     Fit the overall continuum in the entire spectrum.
 
     :param spec: spectrum data.
-    :param contpars: the calibration values of the method.
+    :param contpars: the calibration values of the Sigma-clipping method.
     :param iterac: maximum number of iterations.
+    :param method: method to fit the continuum: 0-Chebyshev; 1-Sigma-clipping; 2-Simple Average.
+    :param contdisabled: disable the continuum fit and use a fixed value.
+    :param medianwindow: median window for the Chebyshev method.
+    :param hardvalue: fixed value when not continuum fit.
     :return: the mean and the standard deviation (continuum and errors).
     """
 
-    if contpars is None:
-        alpha = .5
-        eps = 20
-    else:
-        alpha = contpars[0]
-        eps = contpars[1]
+    def chebyshev():
+        return 1, 0
 
-    eps = np.float16(10)**(-np.float16(eps))
+    def sigma_clipping():
+        if contpars is None:
+            alpha = .5
+            eps = 20
+        else:
+            alpha = contpars[0]
+            eps = contpars[1]
 
-    new_spec = spec.iloc[:, 1].values.tolist()
-    median = np.median(new_spec)
-    std = np.std(new_spec)
-    std_old = std
-    count = 0
+        eps = np.float16(10)**(-np.float16(eps))
 
-    while True:
-        for i in reversed(range(len(new_spec))):
-            value = new_spec[i]
-            if value > median + alpha * std or value < median - alpha * std:
-                del new_spec[i]
+        new_spec = spec.iloc[:, 1].values.tolist()
+        median = np.median(new_spec)
+        std = np.std(new_spec)
+        std_old = std
+        count = 0
+
+        while True:
+            for i in reversed(range(len(new_spec))):
+                value = new_spec[i]
+                if value > median + alpha * std or value < median - alpha * std:
+                    del new_spec[i]
+
+            median = np.median(new_spec)
+            std = np.std(new_spec)
+
+            count += 1
+            if count >= iterac:
+                print("Maximum Iterations for Continuum fit reached. iter_max = ", iterac)
+                break
+            elif (std_old - std) / std <= eps:
+                break
+            std_old = std
 
         median = np.median(new_spec)
         std = np.std(new_spec)
 
-        count += 1
-        if count >= iterac:
-            print("Maximum Iterations for Continuum fit reached. iter_max = ", iterac)
-            break
-        elif (std_old - std) / std <= eps:
-            break
-        std_old = std
+        return median, std
 
-    median = np.median(new_spec)
-    std = np.std(new_spec)
+    def simple_average():
+        new_spec = spec.iloc[:, 1].values.tolist()
+        mean = np.mean(new_spec)
+        std = np.std(new_spec)
+        return mean, std
 
-    return median, std
+    if contdisabled:
+        return hardvalue, 0
+
+    if method == 0:
+        cont, cont_err = chebyshev()
+    elif method == 1:
+        cont, cont_err = sigma_clipping()
+    else:
+        cont, cont_err = simple_average()
+
+    return cont, cont_err
 
 
 # Compile C files

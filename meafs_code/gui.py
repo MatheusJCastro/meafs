@@ -192,14 +192,15 @@ class VerticalNavigationToolbar2QT(NavigationToolbar2QT):
                 s = s[1:-1]
                 s = s.split(", ")
 
-                # Check if the value is negative, the negative sign string used by the toolbar
-                # is not recognized in the function float()
-                if ord(s[0][0]) == 8722:
-                    s = ["-"+s[0][1:], s[1]]
-                if ord(s[1][0]) == 8722:
-                    s = [s[0], "-"+s[1][1:]]
+                # Change the minus sign, if present, to the ASCII minus sign
+                # in order to be float convertible
+                # if ord(s[0][0]) == 8722:
+                #     s = ["-"+s[0][1:], s[1]]
+                # if ord(s[1][0]) == 8722:
+                #     s = [s[0], "-"+s[1][1:]]
+                s = [s[0].replace("−", "-"), s[1].replace("−", "-")]
 
-                s = "Wave\n{:.0f}\nFlux\n{:.2f}".format(float(s[0]),
+                s = "Wave\n{:.0f}\nFlux\n{:.2g}".format(float(s[0]),
                                                         float(s[1]))
             self.locLabel.setText(s)
 
@@ -377,6 +378,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         # Abundance Table Configuration
         self.abundancetable.clicked.connect(self.results_show_tab)
+        self.abundancetable.currentCellChanged.connect(self.results_show_tab)
 
         # File Submenu Configuration
         self.new_2.setIcon(QtGui.QIcon.fromTheme('document-new'))
@@ -418,8 +420,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.convovbound = [0, 5]
         self.wavebound = .2
         self.continuumpars = [2, 8]
+        self.medianwindow = 3
+        self.contdisabled = QtCore.Qt.CheckState.Unchecked
+        self.contfixedvalue = 1.0
+        self.contmethodind = 0
 
         self.errorguireset.triggered.connect(lambda: self.gui_hold(False))
+        self.normspec.triggered.connect(self.normalize_spectrum)
 
         # View Submenu Configuration
         self.fullspec.triggered.connect(self.full_spec_plot_range)
@@ -1367,9 +1374,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         folder = self.outputname.text()
         elem, order, lamb = "continuum", "", "all"
 
+        contdisbool = False if self.contdisabled == QtCore.Qt.CheckState.Unchecked else True
+
         for i, spec_obs in enumerate(self.specs_data):
-            continuum, cont_err = ff.fit_continuum(spec_obs, contpars=self.continuumpars,
-                                                   iterac=self.max_iter[0])
+            continuum, cont_err = ff.fit_continuum(spec_obs,
+                                                   contpars=self.continuumpars,
+                                                   iterac=self.max_iter[0],
+                                                   method=self.contmethodind,
+                                                   contdisabled=contdisbool,
+                                                   medianwindow=self.medianwindow,
+                                                   hardvalue=self.contfixedvalue)
 
             x = np.linspace(min(spec_obs.iloc[:, 0]), max(spec_obs.iloc[:, 0]), 1000)
             y = np.zeros(1000) + continuum
@@ -1673,13 +1687,65 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.continuumpars = [uifitset.contfitparalphavalue.value(),
                                   uifitset.contfitparepsvalue.value()]
             self.wavebound = uifitset.waveboundmaxshiftvalue.value()
+            self.medianwindow = uifitset.contfitmedwindvalue.value()
+            self.contdisabled = uifitset.disablecontfit.checkState()
+            self.contfixedvalue = uifitset.conthardvalue.value()
+            self.contmethodind = uifitset.contmethod.currentIndex()
 
         def check_convov(showerror=False):
-            """Check if the convolution respect the limits"""
+            """Check if the convolution respect the limits."""
             if uifitset.convovcutvalue.value() > uifitset.wavecutvalue.value():
                 uifitset.convovcutvalue.setValue(uifitset.wavecutvalue.value())
                 if showerror:
                     self.show_error("Convolution Fit Range can not be higher than Continuum/Wave. Shit range.")
+
+        def check_medwindow():
+            """"Check whether the Median window value is odd or even. Only odds are accepted."""
+            if uifitset.contfitmedwindvalue.value() % 2 == 0:
+                uifitset.contfitmedwindvalue.setValue(uifitset.contfitmedwindvalue.value()-1)
+                self.show_error("Only odd number are accepted.")
+
+        def check_cont_method():
+            """Check the selected continuum method."""
+            if uifitset.disablecontfit.checkState() == QtCore.Qt.CheckState.Checked:
+                uifitset.contmethodlabel.setEnabled(False)
+                uifitset.contmethod.setEnabled(False)
+                uifitset.conthardvaluelabel.setEnabled(True)
+                uifitset.conthardvalue.setEnabled(True)
+            else:
+                uifitset.contmethodlabel.setEnabled(True)
+                uifitset.contmethod.setEnabled(True)
+                uifitset.conthardvaluelabel.setEnabled(False)
+                uifitset.conthardvalue.setEnabled(False)
+
+            if uifitset.contmethod.currentIndex() == 0:
+                uifitset.contfitmedwindlabel.setEnabled(True)
+                uifitset.contfitmedwindvalue.setEnabled(True)
+                uifitset.contfitparalphalabel.setEnabled(False)
+                uifitset.contfitparalphavalue.setEnabled(False)
+                uifitset.contfitparepslabel.setEnabled(False)
+                uifitset.contfitparepslabel1.setEnabled(False)
+                uifitset.contfitparepsvalue.setEnabled(False)
+                uifitset.contfitparepslabel2.setEnabled(False)
+            elif uifitset.contmethod.currentIndex() == 1:
+                uifitset.contfitmedwindlabel.setEnabled(False)
+                uifitset.contfitmedwindvalue.setEnabled(False)
+                uifitset.contfitparalphalabel.setEnabled(True)
+                uifitset.contfitparalphavalue.setEnabled(True)
+                uifitset.contfitparepslabel.setEnabled(True)
+                uifitset.contfitparepslabel1.setEnabled(True)
+                uifitset.contfitparepsvalue.setEnabled(True)
+                uifitset.contfitparepslabel2.setEnabled(True)
+            if (uifitset.contmethod.currentIndex() == 2 or
+                  uifitset.disablecontfit.checkState() == QtCore.Qt.CheckState.Checked):
+                uifitset.contfitmedwindlabel.setEnabled(False)
+                uifitset.contfitmedwindvalue.setEnabled(False)
+                uifitset.contfitparalphalabel.setEnabled(False)
+                uifitset.contfitparalphavalue.setEnabled(False)
+                uifitset.contfitparepslabel.setEnabled(False)
+                uifitset.contfitparepslabel1.setEnabled(False)
+                uifitset.contfitparepsvalue.setEnabled(False)
+                uifitset.contfitparepslabel2.setEnabled(False)
 
         fitparbox = QtWidgets.QDialog()
         uifitset = Ui_fitparbox()
@@ -1695,15 +1761,28 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         uifitset.abunditervalue.setValue(self.max_iter[2])
         uifitset.convboundminvalue.setValue(self.convovbound[0])
         uifitset.convboundmaxvalue.setValue(self.convovbound[1])
+        uifitset.contfitmedwindvalue.setValue(self.medianwindow)
         uifitset.contfitparalphavalue.setValue(self.continuumpars[0])
         uifitset.contfitparepsvalue.setValue(self.continuumpars[1])
+        uifitset.disablecontfit.setCheckState(self.contdisabled)
+        uifitset.conthardvalue.setValue(self.contfixedvalue)
+        uifitset.contmethod.setCurrentIndex(self.contmethodind)
         uifitset.waveboundmaxshiftvalue.setValue(self.wavebound)
         uifitset.okcancelbutton.accepted.connect(accept)
 
-        uifitset.wavecutvalue.valueChanged.connect(lambda: check_convov(showerror=False))
-        uifitset.convovcutvalue.valueChanged.connect(lambda: check_convov(showerror=True))
+        uifitset.wavecutvalue.editingFinished.connect(lambda: check_convov(showerror=False))
+        uifitset.convovcutvalue.editingFinished.connect(lambda: check_convov(showerror=True))
+        uifitset.contfitmedwindvalue.editingFinished.connect(lambda: check_medwindow())
+
+        uifitset.contmethod.currentIndexChanged.connect(lambda: check_cont_method())
+        uifitset.disablecontfit.checkStateChanged.connect(lambda: check_cont_method())
+
+        check_cont_method()
 
         fitparbox.exec()
+
+    def normalize_spectrum(self):
+        self.show_error("Coming soon...")
 
     @staticmethod
     def qtable_to_dict(qtable, checkboxes=None, tooltip=False):
@@ -1826,6 +1905,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.convovbound,
                      self.wavebound,
                      self.continuumpars,
+                     self.medianwindow,
+                     self.contdisabled,
+                     self.contfixedvalue,
+                     self.contmethodind,
                      self.tabplotshels.currentIndex(),
                      self.stdtext.toHtml(),
                      self.plotstab.currentIndex(),
@@ -1906,12 +1989,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.convovbound = list_save[25]
             self.wavebound = list_save[26]
             self.continuumpars = list_save[27]
-            self.tabplotshels.setCurrentIndex(list_save[28])
+            self.medianwindow = list_save[28]
+            self.contdisabled = list_save[29]
+            self.contfixedvalue = list_save[30]
+            self.contmethodind = list_save[31]
+            self.tabplotshels.setCurrentIndex(list_save[32])
             self.stdtext.clear()
-            self.stdtext.insertHtml(list_save[29])
-            self.plotstab.setCurrentIndex(list_save[30])
-            self.abundshift.setValue(list_save[31])
-            self.histbinsvalue.setValue(list_save[32])
+            self.stdtext.insertHtml(list_save[33])
+            self.plotstab.setCurrentIndex(list_save[34])
+            self.abundshift.setValue(list_save[35])
+            self.histbinsvalue.setValue(list_save[36])
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]
