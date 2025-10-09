@@ -1715,8 +1715,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             else:
                 uifitset.contmethodlabel.setEnabled(True)
                 uifitset.contmethod.setEnabled(True)
-                uifitset.conthardvaluelabel.setEnabled(False)
-                uifitset.conthardvalue.setEnabled(False)
+                uifitset.conthardvaluelabel.setEnabled(True)
+                uifitset.conthardvalue.setEnabled(True)
 
             if uifitset.contmethod.currentIndex() == 0:
                 uifitset.contfitmedwindlabel.setEnabled(True)
@@ -1728,8 +1728,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 uifitset.contfitparepsvalue.setEnabled(False)
                 uifitset.contfitparepslabel2.setEnabled(False)
             elif uifitset.contmethod.currentIndex() == 1:
-                uifitset.contfitmedwindlabel.setEnabled(False)
-                uifitset.contfitmedwindvalue.setEnabled(False)
+                uifitset.contfitmedwindlabel.setEnabled(True)
+                uifitset.contfitmedwindvalue.setEnabled(True)
                 uifitset.contfitparalphalabel.setEnabled(True)
                 uifitset.contfitparalphavalue.setEnabled(True)
                 uifitset.contfitparepslabel.setEnabled(True)

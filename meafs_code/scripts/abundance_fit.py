@@ -401,6 +401,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                      "Refer Abundance", "Fit Abundance", "Differ", "Chi", "Equiv Width Obs (A)",
                      "Equiv Width Fit (A)"]
 
+    contdisbool = False if ui.contdisabled == QtCore.Qt.CheckState.Unchecked else True
+
     if restart:
         found_val = pd.DataFrame(columns=columns_names)
     else:
@@ -448,7 +450,14 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 canvas.draw()
 
     if opt_pars is None:
-        continuum, cont_err = ff.fit_continuum(spec_obs, contpars=contpars, iterac=max_iter[0])
+        continuum, cont_err = ff.fit_continuum(spec_obs,
+                                               contpars=contpars,
+                                               iterac=max_iter[0],
+                                               method=ui.contmethodind,
+                                               contdisabled=contdisbool,
+                                               medianwindow=ui.medianwindow,
+                                               hardvalue=ui.contfixedvalue
+                                               )
     else:
         continuum = None
 
@@ -518,8 +527,13 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             if type_synth[0] == "Equivalent Width":
                 if opt_pars is None:
-                    continuum_local, cont_err_local = ff.fit_continuum(spec_obs_cut, contpars=contpars,
-                                                                       iterac=max_iter[0])
+                    continuum_local, cont_err_local = ff.fit_continuum(spec_obs_cut,
+                                                                       contpars=contpars,
+                                                                       iterac=max_iter[0],
+                                                                       method=ui.contmethodind,
+                                                                       contdisabled=contdisbool,
+                                                                       medianwindow=ui.medianwindow,
+                                                                       hardvalue=ui.contfixedvalue)
                     opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum_local,
                                                                iterac=max_iter[1], convovbound=convovbound,
                                                                wavebound=wavebound)
@@ -573,7 +587,13 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             # Fit of Equivalent Width Observed Spectrum
             # noinspection PyUnresolvedReferences
-            cont_level = ff.fit_continuum(spec_obs_cut, contpars=contpars, iterac=max_iter[0])[0]
+            cont_level = ff.fit_continuum(spec_obs_cut,
+                                          contpars=contpars,
+                                          iterac=max_iter[0],
+                                          method=ui.contmethodind,
+                                          contdisabled=contdisbool,
+                                          medianwindow=ui.medianwindow,
+                                          hardvalue=ui.contfixedvalue)[0]
             spec_obs_cut_norm = spec_obs_cut[1] / cont_level
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
                                 flux=np.asarray(spec_obs_cut_norm) * u.Jy)
@@ -601,7 +621,13 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             # Fit of Equivalent Width Fitted Spectrum
             # noinspection PyUnresolvedReferences
-            cont_level = ff.fit_continuum(spec_fit, contpars=contpars, iterac=max_iter[0])[0]
+            cont_level = ff.fit_continuum(spec_fit,
+                                          contpars=contpars,
+                                          iterac=max_iter[0],
+                                          method=ui.contmethodind,
+                                          contdisabled=contdisbool,
+                                          medianwindow=ui.medianwindow,
+                                          hardvalue=ui.contfixedvalue)[0]
             spec_fit_norm = spec_fit[1] / cont_level
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
                                 flux=np.asarray(spec_fit_norm) * u.Jy)

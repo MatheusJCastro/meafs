@@ -310,9 +310,40 @@ fixed.
 Continuum Fit Parameters
 ++++++++++++++++++++++++
 
-The fit of the continuum uses the *Sigma-clipping continuum level* 
-method described in Sánchez-Monge, 2018: *STATCONT: A statistical 
-continuum level determination method for line-rich sources*.
+There are 3 different methods to fit the continuum:
+
+- Chebyshev
+- Sigma-clipping
+- Simple Average
+
+And also an option to disable the fit at all and use a fixed value for the 
+continuum. The default behavior is to use the Chebyshev method.
+
+See :ref:`check_cont` for a way to verify if the chosen method and its 
+parameters are satisfactory or not.
+
+Chebyshev
+#########
+
+The Chebyshev method is as described in `Astropy Chebyshev1D <https://docs
+.astropy.org/en/stable/api/astropy.modeling.polynomial.Chebyshev1D.html>`_.
+It is an univariate Chebyshev series defined as:
+
+.. math::
+   P(x) = \sum^{i=n}_{i=0} C_i \times T_i (x)
+
+With :math:`T_i (x)` being the corresponding Chebyshev polynomial of the 1st 
+kind.
+
+The input parameter is the *Median Window*, which is defined `here <https://
+docs.astropy.org/en/stable/modeling/polynomial_models.html#domain-window-note>`_.
+
+Sigma-clipping
+##############
+
+The *Sigma-clipping continuum level* method described in Sánchez-Monge, 
+2018: *STATCONT: A statistical continuum level determination method for 
+line-rich sources*.
 
 To summarize it, it is a iteration method that exclude outliers to find 
 the median and the standard deviation of the flux axis and uses these 
@@ -347,8 +378,19 @@ be handled:
                  previous iteration.
 ================ ======================================================
 
-See :ref:`check_cont` for a way to verify if these parameters are good 
-or not.
+Simple Average
+##############
+
+This method simply calculates the mean of the flux, no input parameters are 
+necessary. It has poor performance with metal-rich stars.
+
+Disable Continuum Fit
+#####################
+
+It is also possible to completely disable the fit of the continuum and 
+replace it by a fixed linear value. Note that this value will be applied for 
+all lines, and no individual line fit will be made.
+
 
 .. _analyzing_results:
 
