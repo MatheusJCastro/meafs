@@ -312,31 +312,19 @@ Continuum Fit Parameters
 
 There are 3 different methods to fit the continuum:
 
-- Chebyshev
 - Sigma-clipping
+- Chebyshev
 - Simple Average
 
 And also an option to disable the fit at all and use a fixed value for the 
-continuum. The default behavior is to use the Chebyshev method.
+continuum. The default behavior is to use the Sigma-clipping method.
+
+The Sigma-clipping is expected to provide the best performance for a 
+normalized and metal-rich spectrum. Thus, it is advised to normalize all 
+spectra before running the fit. See :ref:`spec_normalization`.
 
 See :ref:`check_cont` for a way to verify if the chosen method and its 
 parameters are satisfactory or not.
-
-Chebyshev
-#########
-
-The Chebyshev method is as described in `Astropy Chebyshev1D <https://docs
-.astropy.org/en/stable/api/astropy.modeling.polynomial.Chebyshev1D.html>`_.
-It is an univariate Chebyshev series defined as:
-
-.. math::
-   P(x) = \sum^{i=n}_{i=0} C_i \times T_i (x)
-
-With :math:`T_i (x)` being the corresponding Chebyshev polynomial of the 1st 
-kind.
-
-The input parameter is the *Median Window*, which is defined `here <https://
-docs.astropy.org/en/stable/modeling/polynomial_models.html#domain-window-note>`_.
 
 Sigma-clipping
 ##############
@@ -377,6 +365,22 @@ be handled:
                  of the array and the :math:`\sigma_{old}` is from the 
                  previous iteration.
 ================ ======================================================
+
+Chebyshev
+#########
+
+The Chebyshev method is as described in `Astropy Chebyshev1D <https://docs
+.astropy.org/en/stable/api/astropy.modeling.polynomial.Chebyshev1D.html>`_.
+It is an univariate Chebyshev series defined as:
+
+.. math::
+   P(x) = \sum^{i=n}_{i=0} C_i \times T_i (x)
+
+With :math:`T_i (x)` being the corresponding Chebyshev polynomial of the 1st 
+kind.
+
+The input parameter is the *Median Window*, which is defined `here <https://
+docs.astropy.org/en/stable/modeling/polynomial_models.html#domain-window-note>`_.
 
 Simple Average
 ##############
@@ -460,9 +464,11 @@ Check continuum fit
 It is possible to plot the continuum in the menu option *View* > *Check Continuum* 
 and erase it with *Erase Continuum* button in the same submenu. Note 
 that it is **not** needed to have the continuum plotted in the figure to
-proceed with the fit, this is just to check if the :math:`\alpha` and 
-:math:`\epsilon` parameters are good or not as described in 
-:ref:`continuum_fit_param`.
+proceed with the fit, this is just to check if the method and its parameters are 
+good or not as described in :ref:`continuum_fit_param`.
+
+Although it is possible to check and adjust the continuum parameters in a global 
+scale, each line will have its own local continuum fit (with the selected parameters).
 
 .. _fit_only_abund:
 

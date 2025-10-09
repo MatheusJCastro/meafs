@@ -285,12 +285,12 @@
     <widget class="QComboBox" name="contmethod">
      <item>
       <property name="text">
-       <string>Chebyshev</string>
+       <string>Sigma-clipping</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Sigma-clipping</string>
+       <string>Chebyshev</string>
       </property>
      </item>
      <item>

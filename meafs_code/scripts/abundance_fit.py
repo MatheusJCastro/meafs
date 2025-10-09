@@ -450,14 +450,13 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 canvas.draw()
 
     if opt_pars is None:
-        continuum, cont_err = ff.fit_continuum(spec_obs,
-                                               contpars=contpars,
-                                               iterac=max_iter[0],
-                                               method=ui.contmethodind,
-                                               contdisabled=contdisbool,
-                                               medianwindow=ui.medianwindow,
-                                               hardvalue=ui.contfixedvalue
-                                               )
+        continuum, cont_err, cont_func = ff.fit_continuum(spec_obs,
+                                                          contpars=contpars,
+                                                          iterac=max_iter[0],
+                                                          method=ui.contmethodind,
+                                                          contdisabled=contdisbool,
+                                                          medianwindow=ui.medianwindow,
+                                                          hardvalue=ui.contfixedvalue)
     else:
         continuum = None
 
@@ -527,13 +526,13 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
 
             if type_synth[0] == "Equivalent Width":
                 if opt_pars is None:
-                    continuum_local, cont_err_local = ff.fit_continuum(spec_obs_cut,
-                                                                       contpars=contpars,
-                                                                       iterac=max_iter[0],
-                                                                       method=ui.contmethodind,
-                                                                       contdisabled=contdisbool,
-                                                                       medianwindow=ui.medianwindow,
-                                                                       hardvalue=ui.contfixedvalue)
+                    continuum_local, cont_err_local, cont_func_local = ff.fit_continuum(spec_obs_cut,
+                                                                                        contpars=contpars,
+                                                                                        iterac=max_iter[0],
+                                                                                        method=ui.contmethodind,
+                                                                                        contdisabled=contdisbool,
+                                                                                        medianwindow=ui.medianwindow,
+                                                                                        hardvalue=ui.contfixedvalue)
                     opt_pars, chi, spec_fit = vf.optimize_spec(spec_obs_cut, type_synth, lamb, continuum_local,
                                                                iterac=max_iter[1], convovbound=convovbound,
                                                                wavebound=wavebound)
@@ -593,10 +592,10 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                           method=ui.contmethodind,
                                           contdisabled=contdisbool,
                                           medianwindow=ui.medianwindow,
-                                          hardvalue=ui.contfixedvalue)[0]
-            spec_obs_cut_norm = spec_obs_cut[1] / cont_level
+                                          hardvalue=ui.contfixedvalue)[2]
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
-                                flux=np.asarray(spec_obs_cut_norm) * u.Jy)
+                                flux=np.asarray(spec_obs_cut[1]) * u.dimensionless_unscaled)
+            spec1d = spec1d / cont_level
 
             # Get the minimum and maximum range of the line to apply the equivalent width function
             min_line, max_line = ff.line_boundaries(spec_obs_cut, lamb, threshold=0.98, contpars=contpars,
@@ -627,10 +626,10 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                           method=ui.contmethodind,
                                           contdisabled=contdisbool,
                                           medianwindow=ui.medianwindow,
-                                          hardvalue=ui.contfixedvalue)[0]
-            spec_fit_norm = spec_fit[1] / cont_level
+                                          hardvalue=ui.contfixedvalue)[2]
             spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
-                                flux=np.asarray(spec_fit_norm) * u.Jy)
+                                flux=np.asarray(spec_fit[1]) * u.dimensionless_unscaled)
+            spec1d = spec1d / cont_level
 
             # Get the minimum and maximum range of the line to apply the equivalent width function
             min_line, max_line = ff.line_boundaries(spec_fit, lamb, threshold=0.98, contpars=contpars,

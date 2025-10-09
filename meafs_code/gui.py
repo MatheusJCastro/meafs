@@ -1377,16 +1377,16 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         contdisbool = False if self.contdisabled == QtCore.Qt.CheckState.Unchecked else True
 
         for i, spec_obs in enumerate(self.specs_data):
-            continuum, cont_err = ff.fit_continuum(spec_obs,
-                                                   contpars=self.continuumpars,
-                                                   iterac=self.max_iter[0],
-                                                   method=self.contmethodind,
-                                                   contdisabled=contdisbool,
-                                                   medianwindow=self.medianwindow,
-                                                   hardvalue=self.contfixedvalue)
+            continuum, cont_err, cont_func = ff.fit_continuum(spec_obs,
+                                                              contpars=self.continuumpars,
+                                                              iterac=self.max_iter[0],
+                                                              method=self.contmethodind,
+                                                              contdisabled=contdisbool,
+                                                              medianwindow=self.medianwindow,
+                                                              hardvalue=self.contfixedvalue)
 
-            x = np.linspace(min(spec_obs.iloc[:, 0]), max(spec_obs.iloc[:, 0]), 1000)
-            y = np.zeros(1000) + continuum
+            x = spec_obs.iloc[:, 0].values.tolist()
+            y = cont_func
             spec_plot = pd.DataFrame({0: x, 1: y})
 
             spec_fit_arr = [spec_plot]
@@ -1429,8 +1429,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.plot.replaceWidget(toolbar_widget, VerticalNavigationToolbar2QT(self.canvas))
 
         self.loadData()
-
-
 
     def clear_scale(self, show_msg=True):
         """
@@ -1715,8 +1713,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             else:
                 uifitset.contmethodlabel.setEnabled(True)
                 uifitset.contmethod.setEnabled(True)
-                uifitset.conthardvaluelabel.setEnabled(True)
-                uifitset.conthardvalue.setEnabled(True)
+                uifitset.conthardvaluelabel.setEnabled(False)
+                uifitset.conthardvalue.setEnabled(False)
 
             if uifitset.contmethod.currentIndex() == 0:
                 uifitset.contfitmedwindlabel.setEnabled(True)
@@ -1728,8 +1726,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 uifitset.contfitparepsvalue.setEnabled(False)
                 uifitset.contfitparepslabel2.setEnabled(False)
             elif uifitset.contmethod.currentIndex() == 1:
-                uifitset.contfitmedwindlabel.setEnabled(True)
-                uifitset.contfitmedwindvalue.setEnabled(True)
+                uifitset.contfitmedwindlabel.setEnabled(False)
+                uifitset.contfitmedwindvalue.setEnabled(False)
                 uifitset.contfitparalphalabel.setEnabled(True)
                 uifitset.contfitparalphavalue.setEnabled(True)
                 uifitset.contfitparepslabel.setEnabled(True)

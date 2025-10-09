@@ -6,10 +6,13 @@
 """
 
 from astropy.convolution import Gaussian1DKernel, convolve
+from specutils.fitting import fit_generic_continuum
+from specutils.spectra import Spectrum1D
+from astropy import units as u
 from pathlib import Path
 import numpy as np
 import subprocess
-import specutils
+import warnings
 import ctypes
 import os
 
@@ -210,9 +213,6 @@ def fit_continuum(spec, contpars=None, iterac=1000, method=0, contdisabled=False
     :return: the mean and the standard deviation (continuum and errors).
     """
 
-    def chebyshev():
-        return 1, 0
-
     def sigma_clipping():
         if contpars is None:
             alpha = .5
@@ -249,25 +249,35 @@ def fit_continuum(spec, contpars=None, iterac=1000, method=0, contdisabled=False
         median = np.median(new_spec)
         std = np.std(new_spec)
 
-        return median, std
+        return median, std, np.zeros(len(spec)) + median
+
+    def chebyshev():
+        spec1d = Spectrum1D(spectral_axis=spec.iloc[:, 0].values.tolist() * u.AA,
+                            flux=spec.iloc[:, 1].values.tolist() * u.dimensionless_unscaled)
+        with warnings.catch_warnings():  # Ignore warnings
+            warnings.simplefilter('ignore')
+            g1_fit = fit_generic_continuum(spec1d)
+        continuum_fitted = g1_fit(spec1d.spectral_axis)
+
+        return float(np.median(continuum_fitted)), 0, continuum_fitted
 
     def simple_average():
         new_spec = spec.iloc[:, 1].values.tolist()
         mean = np.mean(new_spec)
         std = np.std(new_spec)
-        return mean, std
+        return mean, std, np.zeros(len(spec)) + mean
 
     if contdisabled:
         return hardvalue, 0
 
     if method == 0:
-        cont, cont_err = chebyshev()
+        cont, cont_err, func = sigma_clipping()
     elif method == 1:
-        cont, cont_err = sigma_clipping()
+        cont, cont_err, func = chebyshev()
     else:
-        cont, cont_err = simple_average()
+        cont, cont_err, func = simple_average()
 
-    return cont, cont_err
+    return cont, cont_err, func
 
 
 # Compile C files
