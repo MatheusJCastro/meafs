@@ -39,6 +39,11 @@ except ModuleNotFoundError:
     from .fitsettings_qt import Ui_fitparbox
 
 try:
+    from normalize_qt import Ui_normbox
+except ModuleNotFoundError:
+    from .normalize_qt import Ui_normbox
+
+try:
     from scripts import *
 except ModuleNotFoundError:
     from .scripts import *
@@ -343,6 +348,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.delimitertype.setToolTip("Delimiter Type")
 
         self.specs_data = []
+        self.loadDatacheck = False
         self.loaddata.clicked.connect(self.loadData)
 
         # Output Configuration
@@ -509,6 +515,18 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         else:
             event.ignore()
 
+    def centralize_child_window(self, wind):
+        """
+        Centralize child windows in respect of the main window.
+
+        :param wind: the new window widget to be centralized.
+        """
+
+        parent_geom = self.frameGeometry()
+        new_window_geom = wind.frameGeometry()
+        new_window_geom.moveCenter(parent_geom.center())
+        wind.move(new_window_geom.topLeft())
+
     def quitbtn(self):
         """
         Create an alias to the close button event.
@@ -541,6 +559,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         if not self.autosave.isChecked():
             close_dialog.addButton(QtWidgets.QMessageBox.StandardButton.Save)
             close_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Save)
+
+        QtCore.QTimer.singleShot(0, lambda: self.centralize_child_window(close_dialog))
 
         action_close = close_dialog.exec()
 
@@ -636,8 +656,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         self.stdtext.clear()
 
-    @staticmethod
-    def show_about():
+    def show_about(self):
         """
         Create a new window to show info about MEAFS.
         """
@@ -687,6 +706,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         about_widget.addWidget(btt_widget)
 
         about_dialog.setLayout(about_widget)
+
+        self.centralize_child_window(about_dialog)
+
         about_dialog.exec()
 
     @staticmethod
@@ -711,8 +733,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         ipython_widget.kernel_client = kernel_client
         return ipython_widget
 
-    @staticmethod
-    def show_error(msg):
+    def show_error(self, msg):
         """
         Show a QT window for some user-input-error message.
 
@@ -729,6 +750,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         font.setBold(True)
         font.setPointSize(10)
         error_dialog.setFont(font)
+
+        QtCore.QTimer.singleShot(0, lambda: self.centralize_child_window(error_dialog))
 
         error_dialog.exec()
 
@@ -1186,6 +1209,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         if fname[0] != "":
             fname = fname[0]
             showname = str(Path(fname).parts[-1])
+            self.loadDatacheck = False
         else:
             if self.dataloadtable.currentColumn() == 0:
                 fname = "Data {}".format(row + 1)
@@ -1232,7 +1256,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.specs_data = []
 
         if self.specs_data:  # check if the list is not empty
-            self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer)
+            self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
+                                                     overlim_y=True)
+            self.loadDatacheck = True
 
     def check_output_folder(self):
         """
@@ -1427,6 +1453,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         toolbar_widget = self.plot.itemAt(0).widget()
         toolbar_widget.deleteLater()
         self.plot.replaceWidget(toolbar_widget, VerticalNavigationToolbar2QT(self.canvas))
+
+        self.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
 
         self.loadData()
 
@@ -1630,38 +1658,13 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
     def full_spec_plot_range(self):
         """
-        Find the total maximum and minimum values of the current plot and
+        Apply the total maximum and minimum values of the current plot and
         change the range to it.
         """
 
-        if self.specs_data != []:
-            xmin_all_old = min(self.specs_data[0].iloc[:, 0])
-            xmax_all_old = max(self.specs_data[0].iloc[:, 0])
-            ymin_all_old = min(self.specs_data[0].iloc[:, 1])
-            ymax_all_old = max(self.specs_data[0].iloc[:, 1])
-        else:
-            xmin_all_old = 0
-            xmax_all_old = 1
-            ymin_all_old = 0
-            ymax_all_old = 1
-
-        for spec in self.specs_data:
-            xmin_all = min(spec.iloc[:, 0])
-            xmax_all = max(spec.iloc[:, 0])
-            if xmin_all < xmin_all_old:
-                xmin_all_old = xmin_all
-            if xmax_all > xmax_all_old:
-                xmax_all_old = xmax_all
-
-            ymin_all = min(spec.iloc[:, 1])
-            ymax_all = max(spec.iloc[:, 1])
-            if ymin_all < ymin_all_old:
-                ymin_all_old = ymin_all
-            if ymax_all > ymax_all_old:
-                ymax_all_old = ymax_all
-
-        self.ax.set_xlim(xmin_all_old, xmax_all_old)
-        self.ax.set_ylim(ymin_all_old, ymax_all_old*1.05)
+        lims_x, lims_y = fit.get_specs_lims(self.specs_data, overlim_y=True)
+        self.ax.set_xlim(lims_x[0], lims_x[1])
+        self.ax.set_ylim(lims_y[0], lims_y[1])
         self.canvas.draw()
 
     def fitparWindow(self):
@@ -1713,10 +1716,19 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             else:
                 uifitset.contmethodlabel.setEnabled(True)
                 uifitset.contmethod.setEnabled(True)
-                uifitset.conthardvaluelabel.setEnabled(False)
-                uifitset.conthardvalue.setEnabled(False)
+                uifitset.conthardvaluelabel.setEnabled(True)
+                uifitset.conthardvalue.setEnabled(True)
 
             if uifitset.contmethod.currentIndex() == 0:
+                uifitset.contfitmedwindlabel.setEnabled(True)
+                uifitset.contfitmedwindvalue.setEnabled(True)
+                uifitset.contfitparalphalabel.setEnabled(True)
+                uifitset.contfitparalphavalue.setEnabled(True)
+                uifitset.contfitparepslabel.setEnabled(True)
+                uifitset.contfitparepslabel1.setEnabled(True)
+                uifitset.contfitparepsvalue.setEnabled(True)
+                uifitset.contfitparepslabel2.setEnabled(True)
+            elif uifitset.contmethod.currentIndex() == 1:
                 uifitset.contfitmedwindlabel.setEnabled(True)
                 uifitset.contfitmedwindvalue.setEnabled(True)
                 uifitset.contfitparalphalabel.setEnabled(False)
@@ -1725,15 +1737,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 uifitset.contfitparepslabel1.setEnabled(False)
                 uifitset.contfitparepsvalue.setEnabled(False)
                 uifitset.contfitparepslabel2.setEnabled(False)
-            elif uifitset.contmethod.currentIndex() == 1:
-                uifitset.contfitmedwindlabel.setEnabled(False)
-                uifitset.contfitmedwindvalue.setEnabled(False)
-                uifitset.contfitparalphalabel.setEnabled(True)
-                uifitset.contfitparalphavalue.setEnabled(True)
-                uifitset.contfitparepslabel.setEnabled(True)
-                uifitset.contfitparepslabel1.setEnabled(True)
-                uifitset.contfitparepsvalue.setEnabled(True)
-                uifitset.contfitparepslabel2.setEnabled(True)
             if (uifitset.contmethod.currentIndex() == 2 or
                   uifitset.disablecontfit.checkState() == QtCore.Qt.CheckState.Checked):
                 uifitset.contfitmedwindlabel.setEnabled(False)
@@ -1777,10 +1780,118 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         check_cont_method()
 
+        self.centralize_child_window(fitparbox)
+
         fitparbox.exec()
 
     def normalize_spectrum(self):
-        self.show_error("Coming soon...")
+        """
+        Call the *Normalize Spectrum* window
+        """
+
+        def buttons_status(value):
+            for i in range(normwind.buttonsgrid.count()):
+                widget = normwind.buttonsgrid.itemAt(i).widget()
+                if widget is not None:
+                    widget.setEnabled(value)
+            normwind.spectrumselect.setEnabled(True)
+            normwind.okcancelbutton.setEnabled(True)
+
+        def plot_spec_norm():
+            ind = normwind.spectrumselect.currentIndex()
+
+            if ind == 0:
+                for line in normwind.plot_line_refer.loc[:, "refer"]: line.remove()
+                normwind.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
+                normwind.canvas.draw()
+
+                normwind.truncleftvalue.setValue(0)
+                normwind.truncrightvalue.setValue(0)
+                buttons_status(False)
+
+                return
+            else:
+                ind -= 1
+                buttons_status(True)
+
+            normwind.plot_line_refer = fit.plot_spec_gui([new_specs_data[ind]], normwind.canvas,
+                                                         normwind.ax, normwind.plot_line_refer,
+                                                         color="blue", overlim_x=True, overlim_y=True)
+
+            normwind.truncleftvalue.setValue(min(new_specs_data[ind].iloc[:, 0]))
+            normwind.truncrightvalue.setValue(max(new_specs_data[ind].iloc[:, 0]))
+
+            if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
+                    np.all(new_specs_data[ind] == self.specs_data[ind])):
+                normwind.undo.setDisabled(True)
+            else:
+                normwind.undo.setDisabled(False)
+
+        def undo():
+            ind = normwind.spectrumselect.currentIndex() - 1
+            new_specs_data[ind] = self.specs_data[ind]
+            plot_spec_norm()
+
+        def truncate():
+            ind = normwind.spectrumselect.currentIndex() - 1
+            left = normwind.truncleftvalue.value()
+            right = normwind.truncrightvalue.value()
+
+            val0 = ff.bisec(new_specs_data[ind], left)
+            val1 = ff.bisec(new_specs_data[ind], right)
+
+            if val0 == -1 or val1 == -1:
+                self.show_error("Invalid range.")
+                return
+
+            new_specs_data[ind] = new_specs_data[ind].iloc[val0:val1+1]
+            plot_spec_norm()
+
+        def load():
+            self.specs_data = new_specs_data.copy()
+            self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
+                                                     overlim_y=True)
+
+        normbox = QtWidgets.QDialog()
+        normwind = Ui_normbox()
+        normwind.setupUi(normbox)
+
+        normwind.fig = plt.figure(tight_layout=True)
+        normwind.canvas = FigureCanvasQTAgg(normwind.fig)
+        normwind.canvas.figure.supxlabel("Wavelength [\u212B]")
+        normwind.canvas.figure.supylabel("Flux")
+        normwind.ax = normwind.canvas.figure.add_subplot(111)
+        normwind.ax.grid()
+        normwind.canvas.draw()
+
+        # First add ToolBar
+        normwind.plot.addWidget(VerticalNavigationToolbar2QT(normwind.canvas))
+
+        # Second add the plot
+        normwind.plot.addWidget(normwind.canvas)
+
+        normwind.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
+
+        for row in range(10):
+            if "Data" not in self.dataloadtable.cellWidget(row, 1).text():
+                normwind.spectrumselect.addItem(self.dataloadtable.cellWidget(row, 1).text())
+
+        if not self.loadDatacheck:
+            self.show_error("Not all selected spectra have been loaded.")
+            return
+
+        buttons_status(False)
+
+        new_specs_data = self.specs_data.copy()
+
+        normwind.spectrumselect.currentIndexChanged.connect(lambda: plot_spec_norm())
+        normwind.truncate.clicked.connect(truncate)
+        normwind.undo.clicked.connect(undo)
+        normwind.load.clicked.connect(load)
+
+        self.centralize_child_window(normbox)
+
+        normbox.exec()
 
     @staticmethod
     def qtable_to_dict(qtable, checkboxes=None, tooltip=False):
@@ -1911,7 +2022,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                      self.stdtext.toHtml(),
                      self.plotstab.currentIndex(),
                      self.abundshift.value(),
-                     self.histbinsvalue.value()]
+                     self.histbinsvalue.value(),
+                     self.loadDatacheck]
 
         if getdill:
             return list_save
@@ -1997,6 +2109,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.plotstab.setCurrentIndex(list_save[34])
             self.abundshift.setValue(list_save[35])
             self.histbinsvalue.setValue(list_save[36])
+            self.loadDatacheck = list_save[37]
 
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.ax = self.fig.axes[0]

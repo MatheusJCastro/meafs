@@ -127,6 +127,13 @@ Obs: rows beginning with ``#`` in the *CSV* file are ignored.
 
 | 
 
+.. _spec_normalization:
+
+Spectrum Normalization
+----------------------
+
+Coming soon...
+
 Selecting the method
 --------------------
 

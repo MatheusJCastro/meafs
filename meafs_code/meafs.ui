@@ -18,7 +18,7 @@
     <item row="4" column="2">
      <widget class="QTabWidget" name="methodsdatafittab">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="datatab">
        <attribute name="title">

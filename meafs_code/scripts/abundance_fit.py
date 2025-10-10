@@ -93,7 +93,51 @@ def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
     return new_linelist, prev
 
 
-def plot_spec_gui(specs, canvas, ax, plot_line_refer):
+def get_specs_lims(specs, overlim_x=False, overlim_y=False, margin=0.02):
+    """
+    Get the full spectra array upper and down limits for x and y for a full plot.
+
+    :param specs: list of spectra.
+    :param overlim_x: if extrapolate the x limits by margin or not.
+    :param overlim_y: if extrapolate the y limits by margin or not.
+    :param margin: the relative extrapolation value (0.02 = 2% margin on each side).
+    :return: the limits in two tuples (x and y).
+    """
+
+    if specs:
+        all_x = np.concatenate([spec.iloc[:, 0].values for spec in specs])
+        all_y = np.concatenate([spec.iloc[:, 1].values for spec in specs])
+
+        min_all_old_x, max_all_old_x = np.min(all_x), np.max(all_x)
+        min_all_old_y, max_all_old_y = np.min(all_y), np.max(all_y)
+    else:
+        min_all_old_x, max_all_old_x = 0, 1
+        min_all_old_y, max_all_old_y = 0, 1
+
+    if overlim_x:
+        x_range = max_all_old_x - min_all_old_x
+
+        if x_range == 0:
+            min_all_old_x -= 1
+            max_all_old_x += 1
+        else:
+            min_all_old_x -= margin * x_range
+            max_all_old_x += margin * x_range
+
+    if overlim_y:
+        y_range = max_all_old_y - min_all_old_y
+
+        if y_range == 0:
+            min_all_old_y -= 1
+            max_all_old_y += 1
+        else:
+            min_all_old_y -= margin * y_range
+            max_all_old_y += margin * y_range
+
+    return (min_all_old_x, max_all_old_x), (min_all_old_y, max_all_old_y)
+
+
+def plot_spec_gui(specs, canvas, ax, plot_line_refer, color=None, overlim_x=False, overlim_y=False):
     """
     Plot the spectrum in the GUI.
 
@@ -101,15 +145,11 @@ def plot_spec_gui(specs, canvas, ax, plot_line_refer):
     :param canvas: canvas to plot.
     :param ax: ax to plot.
     :param plot_line_refer: array to save the reference label of the plots.
+    :param color: color to plot the lines.
+    :param overlim_x: if extrapolate the x limits by 10% or not.
+    :param overlim_y: if extrapolate the y limits by 10% or not.
     :return: the actualized ``plot_line_refer`` array.
     """
-
-    if specs != []:
-        min_all_old = min(specs[0].iloc[:, 0])
-        max_all_old = max(specs[0].iloc[:, 0])
-    else:
-        min_all_old = 0
-        max_all_old = 1
 
     same_line_plots = plot_line_refer[plot_line_refer["elem"] == "spec"]
     for line in range(len(same_line_plots)):
@@ -119,17 +159,14 @@ def plot_spec_gui(specs, canvas, ax, plot_line_refer):
     plot_line_refer.reset_index(drop=True, inplace=True)
 
     for spec in specs:
-        lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1])
-        min_all = min(spec.iloc[:, 0])
-        max_all = max(spec.iloc[:, 0])
-        if min_all < min_all_old:
-            min_all_old = min_all
-        if max_all > max_all_old:
-            max_all_old = max_all
+        lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1], color=color)
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": "spec", "wave": "all", "refer": lineplot[0]}
 
-    ax.set_xlim(min_all_old, max_all_old)
+    lims_x, lims_y = get_specs_lims(specs, overlim_x=overlim_x, overlim_y=overlim_y)
+    ax.set_xlim(lims_x[0], lims_x[1])
+    ax.set_ylim(lims_y[0], lims_y[1])
+
     canvas.draw()
 
     return plot_line_refer
@@ -168,7 +205,8 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
     plt.close()
 
 
-def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True):
+def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True,
+                 save=True):
     """
     Plot the current line results in the GUI.
 
@@ -181,6 +219,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
     :param canvas: canvas to plot.
     :param plot_line_refer: array to save the reference label of the plots.
     :param vline: if it also plots a vertical line or not.
+    :param save: whether to save or not the plot in csv format.
     :return: the actualized ``plot_line_refer`` array.
     """
 
@@ -189,18 +228,6 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         os.mkdir(folder)
     if not os.path.exists(Path(folder).joinpath("On_time_Plots")):
         os.mkdir(Path(folder).joinpath("On_time_Plots"))
-
-    # noinspection PySimplifyBooleanCheck
-    if spec_fit_arr != []:
-        min_all_old_x = min(spec_fit_arr[0].iloc[:, 0])
-        max_all_old_x = max(spec_fit_arr[0].iloc[:, 0])
-        min_all_old_y = min(spec_fit_arr[0].iloc[:, 1])
-        max_all_old_y = max(spec_fit_arr[0].iloc[:, 1])
-    else:
-        min_all_old_x = 0
-        max_all_old_x = 1
-        min_all_old_y = 0
-        max_all_old_y = 1
 
     for j, sp in enumerate(spec_fit_arr):
         ind = plot_line_refer[(plot_line_refer["elem"] == elem + order) &
@@ -211,47 +238,23 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
 
         lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
 
-        min_all_x = min(sp.iloc[:, 0])
-        max_all_x = max(sp.iloc[:, 0])
-        if min_all_x < min_all_old_x:
-            min_all_old_x = min_all_x
-        if max_all_x > max_all_old_x:
-            max_all_old_x = max_all_x
-
-        min_all_y = min(sp.iloc[:, 1])
-        max_all_y = max(sp.iloc[:, 1])
-        if min_all_y < min_all_old_y:
-            min_all_old_y = min_all_y
-        if max_all_y > max_all_old_y:
-            max_all_old_y = max_all_y
-
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": lineplot[0]}
 
         if vline:
             axvlineplot = ax.axvline(lamb, ls="-.", c="red", linewidth=.5)
             plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": axvlineplot}
 
-        sp.to_csv(Path(folder).joinpath("On_time_Plots",
-                                        "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, j + 1)),
-                  index=False,
-                  float_format="%.4f",
-                  header=None)
+        if save:
+            sp.to_csv(Path(folder).joinpath("On_time_Plots",
+                                            "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, j + 1)),
+                      index=False,
+                      float_format="%.4f",
+                      header=None)
 
-    if min_all_old_y > 0:
-        min_all_old_y = 0.9*min_all_old_y
-    elif min_all_old_y == 0:
-        min_all_old_y = 0.9
-    else:
-        min_all_old_y = 1.1*min_all_old_y
-    if max_all_old_y > 0:
-        max_all_old_y = 1.1*max_all_old_y
-    elif max_all_old_y == 0:
-        max_all_old_y = 1.1
-    else:
-        max_all_old_y = 0.9*max_all_old_y
+    lims_x, lims_y = get_specs_lims(spec_fit_arr, overlim_y=True)
+    ax.set_xlim(lims_x[0], lims_x[1])
+    ax.set_ylim(lims_y[0], lims_y[1])
 
-    ax.set_xlim(min_all_old_x, max_all_old_x)
-    ax.set_ylim(min_all_old_y, max_all_old_y)
     canvas.draw()
 
     return plot_line_refer
@@ -262,7 +265,7 @@ def check_order(elem):
     | Check if the current element has any type of order written in the end of the string.
     | Supported types are: roman numbers *(I, II, III...)* and western digits *(1, 2, 3...)*.
 
-    :param elem:
+    :param elem: the element string
     :return: the element without the order and the order itself.
     """
 

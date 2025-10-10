@@ -771,7 +771,7 @@ class Ui_MEAFS(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MEAFS)
-        self.methodsdatafittab.setCurrentIndex(1)
+        self.methodsdatafittab.setCurrentIndex(0)
         self.methodstab.setCurrentIndex(0)
         self.tabplotshels.setCurrentIndex(0)
         self.plotstab.setCurrentIndex(2)

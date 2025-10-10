@@ -111,6 +111,10 @@ def bisec(spec, lamb):
         return -1
     elif lamb > spec.iloc[-1][0]:
         return -1
+    elif lamb == spec.iloc[0][0]:
+        return 0
+    elif lamb == spec.iloc[-1][0]:
+        return len(spec) - 1
     else:
         gap = [0, len(spec) - 1]
 
@@ -133,7 +137,7 @@ def cut_spec(spc, lamb, cut_val=1.):
     :param spc: the array.
     :param lamb: the central position.
     :param cut_val: the range to be restricted.
-    :return: the restricted array.
+    :return: the truncated array.
     """
 
     val0 = bisec(spc, lamb - cut_val)
