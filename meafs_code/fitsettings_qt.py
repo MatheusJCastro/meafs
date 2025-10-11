@@ -220,6 +220,22 @@ class Ui_fitparbox(object):
         self.okcancelbutton.accepted.connect(fitparbox.accept) # type: ignore
         self.okcancelbutton.rejected.connect(fitparbox.reject) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(fitparbox)
+        fitparbox.setTabOrder(self.repfitvalue, self.wavecutvalue)
+        fitparbox.setTabOrder(self.wavecutvalue, self.convovcutvalue)
+        fitparbox.setTabOrder(self.convovcutvalue, self.abundcutvalue)
+        fitparbox.setTabOrder(self.abundcutvalue, self.plotcutvalue)
+        fitparbox.setTabOrder(self.plotcutvalue, self.contitervalue)
+        fitparbox.setTabOrder(self.contitervalue, self.waveconvitervalue)
+        fitparbox.setTabOrder(self.waveconvitervalue, self.abunditervalue)
+        fitparbox.setTabOrder(self.abunditervalue, self.waveboundmaxshiftvalue)
+        fitparbox.setTabOrder(self.waveboundmaxshiftvalue, self.convboundminvalue)
+        fitparbox.setTabOrder(self.convboundminvalue, self.convboundmaxvalue)
+        fitparbox.setTabOrder(self.convboundmaxvalue, self.contmethod)
+        fitparbox.setTabOrder(self.contmethod, self.contfitparalphavalue)
+        fitparbox.setTabOrder(self.contfitparalphavalue, self.contfitparepsvalue)
+        fitparbox.setTabOrder(self.contfitparepsvalue, self.contfitmedwindvalue)
+        fitparbox.setTabOrder(self.contfitmedwindvalue, self.disablecontfit)
+        fitparbox.setTabOrder(self.disablecontfit, self.conthardvalue)
 
     def retranslateUi(self, fitparbox):
         _translate = QtCore.QCoreApplication.translate

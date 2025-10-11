@@ -429,6 +429,25 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>repfitvalue</tabstop>
+  <tabstop>wavecutvalue</tabstop>
+  <tabstop>convovcutvalue</tabstop>
+  <tabstop>abundcutvalue</tabstop>
+  <tabstop>plotcutvalue</tabstop>
+  <tabstop>contitervalue</tabstop>
+  <tabstop>waveconvitervalue</tabstop>
+  <tabstop>abunditervalue</tabstop>
+  <tabstop>waveboundmaxshiftvalue</tabstop>
+  <tabstop>convboundminvalue</tabstop>
+  <tabstop>convboundmaxvalue</tabstop>
+  <tabstop>contmethod</tabstop>
+  <tabstop>contfitparalphavalue</tabstop>
+  <tabstop>contfitparepsvalue</tabstop>
+  <tabstop>contfitmedwindvalue</tabstop>
+  <tabstop>disablecontfit</tabstop>
+  <tabstop>conthardvalue</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

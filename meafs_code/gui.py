@@ -5,6 +5,7 @@
 
 | This is the main file. Here it is included all MEAFS features and the GUI.
 """
+from tkinter.messagebox import showerror
 
 from PyQt6 import QtWidgets, QtGui, QtCore
 
@@ -23,6 +24,8 @@ import time
 import dill
 import sys
 import os
+
+from sphinx.search.no import norwegian_stopwords
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # noinspection PyUnresolvedReferences
@@ -1789,6 +1792,23 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         Call the *Normalize Spectrum* window
         """
 
+        def event_filter(obj, widget, event):
+            if event.type() == QtCore.QEvent.Type.FocusIn:
+                if widget.objectName() == "truncleftvalue" or \
+                   widget.objectName() == "truncrightvalue":
+                    normwind.truncate.setAutoDefault(True)
+                    normwind.truncate.setDefault(True)
+                elif widget.objectName() == "multfactvalue":
+                    normwind.plotcont.setAutoDefault(True)
+                    normwind.plotcont.setDefault(True)
+            elif event.type() == QtCore.QEvent.Type.FocusOut:
+                cancelbtt.setAutoDefault(True)
+                cancelbtt.setDefault(True)
+            # elif event.type() == QtCore.QEvent.Type.KeyPress:
+            #     if event.key() == QtCore.Qt.Key.Key_Return:
+            #         print("Enter pressed.")
+            return False
+
         def buttons_status(value):
             for i in range(normwind.buttonsgrid.count()):
                 widget = normwind.buttonsgrid.itemAt(i).widget()
@@ -1840,21 +1860,96 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             val0 = ff.bisec(new_specs_data[ind], left)
             val1 = ff.bisec(new_specs_data[ind], right)
 
-            if val0 == -1 or val1 == -1:
+            if val0 == -1 or val1 == -1 or left >= right:
                 self.show_error("Invalid range.")
                 return
 
             new_specs_data[ind] = new_specs_data[ind].iloc[val0:val1+1]
             plot_spec_norm()
 
-        def load():
+        def reload():
+            normwind.reload.setStyleSheet("background-color: green")
+            normwind.loadlabel.setText("Loading...")
+
+            ind = normwind.spectrumselect.currentIndex() - 1
+            data_dir = self.dataloadtable.item(ind, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
+
+            if self.delimitertype.currentText() == "Comma":
+                sep = ","
+            elif self.delimitertype.currentText() == "Tab":
+                sep = r"\s+"
+            else:
+                self.show_error("Delimiter not selected.\n"
+                                "Return to the main window and change it.")
+                return
+
+            try:
+                new_specs_data[ind] = fit.open_spec_obs([data_dir], delimiter=sep)[0]
+            except FileNotFoundError:
+                self.show_error("File not Found.")
+                normwind.reload.setStyleSheet("background-color: none")
+                normwind.loadlabel.setText("")
+                return
+
+            plot_spec_norm()
+
+            QtCore.QTimer.singleShot(btt_timer, lambda: normwind.reload.setStyleSheet("background-color: none"))
+            QtCore.QTimer.singleShot(btt_timer, lambda: normwind.loadlabel.setText(""))
+
+        def load(btt_color=True):
+            if btt_color:
+                normwind.load.setStyleSheet("background-color: green")
+
             self.specs_data = new_specs_data.copy()
             self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
                                                      overlim_y=True)
+            normwind.undo.setEnabled(False)
+
+            QtCore.QTimer.singleShot(btt_timer, lambda: normwind.load.setStyleSheet("background-color: none"))
+
+        def save():
+            normwind.save.setStyleSheet("background-color: green")
+
+            load(btt_color=False)
+
+            QtCore.QTimer.singleShot(btt_timer, lambda: normwind.save.setStyleSheet("background-color: none"))
+
+        def on_close_event(event):
+            change_exist, reply = False, None
+            for ind in range(len(self.specs_data)):
+                if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
+                        np.all(new_specs_data[ind] == self.specs_data[ind])):
+                    pass
+                else:
+                    change_exist = True
+            if change_exist:
+                reply = QtWidgets.QMessageBox.question(
+                    normbox,
+                    "Exit",
+                    "There are non commited changes.\n"
+                    "Are you sure you want to exit?",
+                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                    QtWidgets.QMessageBox.StandardButton.No)
+
+            if not change_exist or reply == QtWidgets.QMessageBox.StandardButton.Yes:
+                event.accept()
+            else:
+                event.ignore()
+
+        def on_reject():
+            normbox.close()
+
+        btt_timer = 200
 
         normbox = QtWidgets.QDialog()
         normwind = Ui_normbox()
         normwind.setupUi(normbox)
+        cancelbtt = normwind.okcancelbutton.button(QtWidgets.QDialogButtonBox.StandardButton.Close)
+        cancelbtt.setAutoDefault(True)
+        cancelbtt.setDefault(True)
+        normbox.closeEvent = on_close_event
+        normwind.okcancelbutton.blockSignals(True)
+        cancelbtt.clicked.connect(on_reject)
 
         normwind.fig = plt.figure(tight_layout=True)
         normwind.canvas = FigureCanvasQTAgg(normwind.fig)
@@ -1887,7 +1982,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         normwind.spectrumselect.currentIndexChanged.connect(lambda: plot_spec_norm())
         normwind.truncate.clicked.connect(truncate)
         normwind.undo.clicked.connect(undo)
-        normwind.load.clicked.connect(load)
+        normwind.reload.clicked.connect(reload)
+        normwind.load.clicked.connect(lambda: load(btt_color=True))
+        normwind.save.clicked.connect(save)
+
+        filter_obj = QtCore.QObject(normbox)
+        filter_obj.eventFilter = event_filter.__get__(filter_obj, QtCore.QObject)
+        normwind.truncleftvalue.installEventFilter(filter_obj)
+        normwind.truncrightvalue.installEventFilter(filter_obj)
+        normwind.multfactvalue.installEventFilter(filter_obj)
 
         self.centralize_child_window(normbox)
 

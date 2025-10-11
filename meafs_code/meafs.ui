@@ -18,7 +18,7 @@
     <item row="4" column="2">
      <widget class="QTabWidget" name="methodsdatafittab">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="datatab">
        <attribute name="title">
@@ -153,7 +153,7 @@
              <string/>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <widget class="QWidget" name="eqwidthtab">
              <attribute name="title">
@@ -172,7 +172,7 @@
                 <item row="3" column="0">
                  <widget class="QLabel" name="depthinitguesslabel">
                   <property name="text">
-                   <string>Deepth</string>
+                   <string>Depth</string>
                   </property>
                  </widget>
                 </item>
@@ -703,7 +703,7 @@
     <item row="3" column="1" colspan="2">
      <widget class="QTabWidget" name="tabplotshels">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tabplot">
        <attribute name="title">
@@ -1462,6 +1462,59 @@
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>tabplotshels</tabstop>
+  <tabstop>linelistname</tabstop>
+  <tabstop>linelistbrowse</tabstop>
+  <tabstop>linelistload</tabstop>
+  <tabstop>linelistcontent</tabstop>
+  <tabstop>linelistcheckbox</tabstop>
+  <tabstop>linelistaddline</tabstop>
+  <tabstop>linelistremoveline</tabstop>
+  <tabstop>restart</tabstop>
+  <tabstop>refername</tabstop>
+  <tabstop>referbrowse</tabstop>
+  <tabstop>referload</tabstop>
+  <tabstop>refercontent</tabstop>
+  <tabstop>referaddline</tabstop>
+  <tabstop>referremoveline</tabstop>
+  <tabstop>methodsdatafittab</tabstop>
+  <tabstop>dataloadtable</tabstop>
+  <tabstop>delimitertype</tabstop>
+  <tabstop>loaddata</tabstop>
+  <tabstop>methodbox</tabstop>
+  <tabstop>methodstab</tabstop>
+  <tabstop>ewfuncbox</tabstop>
+  <tabstop>convinitguessvalue</tabstop>
+  <tabstop>depthinitguessvalue</tabstop>
+  <tabstop>turbospectrumconfigname</tabstop>
+  <tabstop>turbospectrumconfigbrowse</tabstop>
+  <tabstop>turbospectrumoutputname</tabstop>
+  <tabstop>turbospectrumoutputbrowse</tabstop>
+  <tabstop>outputname</tabstop>
+  <tabstop>outputbrowse</tabstop>
+  <tabstop>run</tabstop>
+  <tabstop>stop</tabstop>
+  <tabstop>abundancetable</tabstop>
+  <tabstop>lambshifvalue</tabstop>
+  <tabstop>continuumvalue</tabstop>
+  <tabstop>convolutionvalue</tabstop>
+  <tabstop>manualfitbutton</tabstop>
+  <tabstop>abundancevalue</tabstop>
+  <tabstop>currentvaluesplotbutton</tabstop>
+  <tabstop>currentvaluessavebutton</tabstop>
+  <tabstop>abundshift</tabstop>
+  <tabstop>linesplotall</tabstop>
+  <tabstop>linesplotsingle</tabstop>
+  <tabstop>boxplotcreate</tabstop>
+  <tabstop>histbinsvalue</tabstop>
+  <tabstop>hitsplotall</tabstop>
+  <tabstop>histplotsingle</tabstop>
+  <tabstop>histplottab</tabstop>
+  <tabstop>plotstab</tabstop>
+  <tabstop>stdtext</tabstop>
+  <tabstop>clearstdbutton</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
