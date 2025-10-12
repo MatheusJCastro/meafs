@@ -16,6 +16,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import time
+import csv
 import sys
 import os
 
@@ -62,15 +63,32 @@ def log_write(folder, msg):
     print(cur_time() + msg)
 
 
+def get_sep(file):
+    """
+    Get the delimiter automatically from an ASCII file using Sniffer.
+
+    :param file: file name to read.
+    :return: the delimiter.
+    """
+    with open(file, "r", encoding="utf-8") as f:
+        amostra = f.read(2048)
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(amostra)
+        delimiter = dialect.delimiter
+        if delimiter == " ":
+            delimiter = r"\s+"
+    return delimiter
+
+
 def open_linelist_refer_fl(list_name):
     """
-    Open the Linelist using PANDAS.
+    Open the Linelist and reference abundance file using PANDAS.
 
     :param list_name: file name of the linelist.
     :return: the pandas dataframe with the linelist.
     """
 
-    return pd.read_csv(list_name, header=None, comment="#")
+    return pd.read_csv(list_name, header=None, comment="#", sep=get_sep(list_name))
 
 
 def open_spec_obs(observed_name, delimiter=None, increment=1):
@@ -89,7 +107,13 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
     for i in range(0, len(observed_name), increment):
         if increment == 2:
             delimiter = observed_name[i + 1]
-        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delimiter, comment="#"))
+
+        if delimiter is None:
+            delim = get_sep(observed_name[i])
+        else:
+            delim = delimiter
+
+        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delim, comment="#"))
     return spec_obs
 
 

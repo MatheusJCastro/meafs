@@ -1264,10 +1264,19 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             if data_dir != "Data {}".format(i + 1):
                 specs.append(data_dir)
 
-        if self.delimitertype.currentText() == "Comma":
+        if len(specs) == 0:
+            return
+
+        if (self.delimitertype.currentText() == "Delimiter Type" or
+                self.delimitertype.currentText() == "Auto"):
+            self.delimitertype.setCurrentIndex(1)
+            sep = None
+        elif self.delimitertype.currentText() == "Comma":
             sep = ","
         elif self.delimitertype.currentText() == "Tab":
             sep = r"\s+"
+        elif self.delimitertype.currentText() == "FITS File":
+            sep = "fits"
         else:
             self.show_error("Delimiter not selected.")
             return
@@ -1828,18 +1837,18 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             :param event: QT event.
             """
 
-            change_exist, reply = False, None
+            change_exist, rep = False, None
             for ind in range(len(self.specs_data)):
                 if not check_modifications():
                     change_exist = True
             if change_exist:
-                reply = self.show_question(
+                rep = self.show_question(
                     normbox,
                     "Exit",
                     "There are non commited changes.\n"
                     "Are you sure you want to exit this window?")
 
-            if not change_exist or reply:
+            if not change_exist or rep:
                 event.accept()
             else:
                 event.ignore()
@@ -2102,6 +2111,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             if "Data" not in self.dataloadtable.cellWidget(row, 1).text():
                 normwind.spectrumselect.addItem(self.dataloadtable.cellWidget(row, 1).text())
                 actual_fl_index.append(row)
+
+        if len(self.specs_data) == 0:
+            self.show_error("Load Spectrum files first.")
+            return
 
         if not self.loadDatacheck:
             reply = self.show_question(self,
