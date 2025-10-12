@@ -720,7 +720,7 @@ save them before doing this.
 Auto Save
 ^^^^^^^^^
 
-There is an *Auto Save* function that will save a session every 5 seconds. 
+There is an *Auto Save* function that will save a session every 60 seconds. 
 Not only that, every time the MEAFS is closed, it will trigger to save the
 session if this feature is on.
 
@@ -733,11 +733,11 @@ auto save can be checked below:
 ==================== ===================================
 File Name            Description
 ==================== ===================================
-*auto_save.pkl*      Session saved every 5 seconds.
+*auto_save.pkl*      Session saved every 60 seconds.
 *auto_save_last.pkl* Session saved when MEAFS is closed.
 ==================== ===================================
 
-To open the last *5 seconds auto save* file, go to a terminal and type:
+To open the last *60 seconds auto save* file, go to a terminal and type:
 
 .. code-block:: bash
 

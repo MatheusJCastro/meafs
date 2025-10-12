@@ -29,6 +29,39 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from meafs_code import __version__
 
 
+def cur_time():
+    """
+    Function to return the formated local current time.
+
+    :return: the local formated time
+    """
+    init_local = time.localtime()
+    local = ("{:04d}.{:02d}.{:02d} "
+             "{:02d}:{:02d}:{:02d}: ").format(init_local.tm_year,
+                                              init_local.tm_mon,
+                                              init_local.tm_mday,
+                                              init_local.tm_hour,
+                                              init_local.tm_min,
+                                              init_local.tm_sec)
+    return local
+
+
+def log_write(folder, msg):
+    """
+    Function to write a message in the log and print on the GUI/terminal.
+
+    :param folder: folder path of the log file.
+    :param msg: the message to be written.
+    """
+    # noinspection PyTypeChecker
+    with open(str(Path(folder).joinpath("log.txt")), "a") as f:
+        f.write(cur_time())
+        f.write(msg)
+        f.write("\n")
+        f.close()
+    print(cur_time() + msg)
+
+
 def open_linelist_refer_fl(list_name):
     """
     Open the Linelist using PANDAS.
@@ -58,6 +91,25 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
             delimiter = observed_name[i + 1]
         spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delimiter, comment="#"))
     return spec_obs
+
+
+def save_spec(spec, fl_name, delimiter=","):
+    """
+    Save spectrum in ASCII of FITS.
+
+    :param fl_name: file name to use.
+    :param spec: spectrum data.
+    :param delimiter: delimiter to use in ASCII formats.
+    """
+
+    if fl_name[-5:] == ".fits":
+        CD1 = None
+        head = ("CRVAL_1, {}\nCD1_1, {}\n" 
+                "CDELT1, {}\nData").format(spec[0][0], CD1, CD1)
+        np.savetxt("{}_norm.csv".format(fl_name[:-5]), spec[1], header=head, comments="")
+    else:
+        np.savetxt(fl_name, spec, header="wave{}flux".format(delimiter),
+                   fmt="%.8f", delimiter=delimiter)
 
 
 def open_previous(linelist, columns_names, fl_name=Path("found_values.csv")):
@@ -159,7 +211,7 @@ def plot_spec_gui(specs, canvas, ax, plot_line_refer, color=None, overlim_x=Fals
     plot_line_refer.reset_index(drop=True, inplace=True)
 
     for spec in specs:
-        lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1], color=color)
+        lineplot = ax.plot(spec.iloc[:, 0], spec.iloc[:, 1], color=color, zorder=-10)
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": "spec", "wave": "all", "refer": lineplot[0]}
 
@@ -480,9 +532,10 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 ui.stop_state = False
                 return found_val, ax, plot_line_refer
 
-        print("Analysing the element {} for lambda {}. Line {} out of {}"
-              " for spectrum {} out of {}.".format(elem, lamb, i+1, len(linelist),
-                                                   spec_iter+1, spec_count))
+        msg = ("Analysing the element {} for lambda {}. Line {} out of {} "
+               "for spectrum {} out of {}.").format(elem, lamb, i+1, len(linelist),
+                                                    spec_iter+1, spec_count)
+        log_write(folder, msg)
 
         elem, order = check_order(elem)
 
@@ -554,9 +607,10 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                                 wavebound=wavebound)
             # opt_pars = [0,0,0]
 
-            print("\tLamb Shift:\t\t{:.4f}\n"
-                  "\tContinuum:\t\t{:.4f}\n"
-                  "\tConvolution:\t\t{:.4f}".format(opt_pars[0], opt_pars[1], opt_pars[2]))
+            msg = "\n\tLamb Shift:\t\t{:.4f}\n".format(opt_pars[0])
+            msg += "\tContinuum:\t\t{:.4f}\n".format(opt_pars[1])
+            msg += "\tConvolution:\t\t{:.4f}\n".format(opt_pars[2])
+
             if ui is not None:
                 ui.lambshifvalue.setValue(opt_pars[0])
                 ui.continuumvalue.setValue(opt_pars[1])
@@ -577,7 +631,8 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                 par, chi, spec_fit = tf.optimize_abund(spec_obs_cut, config_fl, conv_name, elem, opt_pars, par,
                                                        abund_lim, iterac=max_iter[2])
 
-            print("\tAbundance:\t\t{:.4f}".format(par[0]))
+            msg += "\tAbundance:\t\t{:.4f}".format(par[0])
+            log_write(folder, msg)
 
             if ui is not None:
                 ui.abundancevalue.setValue(par[0])
@@ -753,6 +808,16 @@ def read_config(config_name):
     return list_name, refer_name, type_synth, config_fl, conv_name, folder, observed_name
 
 
+def create_basic_folder_structure(folder):
+    """
+    Create necessary folders
+
+    :param folder: the path to create the folder.
+    """
+    folder_create = Path(folder).joinpath("On_time_Plots")
+    os.makedirs(folder_create, exist_ok=True)
+
+
 def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer=None, opt_pars=None,
              repfit=2, abundplot=None, results_array=None, only_abund_ind=None, final_plot=False,
              plot_type=None, single=None):
@@ -781,14 +846,8 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
 
     # Time Counter
     init = time.time()
-    init_local = time.localtime()
-    init_time = "Run started at: {} {} {}, {}:{}:{}. ".format(init_local.tm_year,
-                                                              init_local.tm_mon,
-                                                              init_local.tm_mday,
-                                                              init_local.tm_hour,
-                                                              init_local.tm_min,
-                                                              init_local.tm_sec)
-    print(init_time)
+    init_time = "Run started."
+    log_write(ui.outputname.text(), init_time)
 
     ui.gui_hold(True)
 
@@ -799,9 +858,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
 
     folder = ui.outputname.text()
 
-    # Create necessary folders
-    folder_create = Path(folder).joinpath("On_time_Plots")
-    os.makedirs(folder_create, exist_ok=True)
+    create_basic_folder_structure(folder)
 
     linelist = []
     for line in range(ui.linelistcontent.rowCount()):
@@ -836,13 +893,7 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
 
             msg_err = "Error: TurboSpectrum files are not properly set. Run aborted.\n"
 
-            # noinspection PyTypeChecker
-            with open(str(Path(folder).joinpath("log.txt")), "a") as f:
-                f.write(init_time)
-                f.write(msg_err)
-                f.write("\n")
-                f.close()
-            print(msg_err)
+            log_write(folder, msg_err)
 
             ui.show_error("TurboSpectrum files are not properly set. Run aborted.")
 
@@ -931,16 +982,12 @@ def gui_call(spec_obs, ui, checkstate, canvas, ax, cut_val=None, plot_line_refer
     # Time Counter
     end = time.time()
     dif = end - init
-    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s).\n".format(dif // 3600, (dif // 60) % 60,
-                                                                               dif % 60, dif)
+    time_spent = "Time spent: {:.0f} h {:.0f} m {:.0f} s ({:.0f} s).".format(dif // 3600, (dif // 60) % 60,
+                                                                             dif % 60, dif)
+    log_write(folder, time_spent)
 
-    # noinspection PyTypeChecker
-    with open(str(Path(folder).joinpath("log.txt")), "a") as f:
-        f.write(init_time)
-        f.write(time_spent)
-        f.write("\n")
-        f.close()
-    print(time_spent)
+    msg = "Results saved at {}".format(folder)
+    log_write(folder, msg)
 
     return results_array, ax, plot_line_refer
 

@@ -259,7 +259,7 @@ meafs path/to/session.pkl
 If no argument is given, the GUI will power with a new empty session.
 
 ### Auto Save
-In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 5 seconds in a file named `auto_save.pkl`.  
+In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save the session every 60 seconds in a file named `auto_save.pkl`.  
 Also, if auto save is enabled, when MEAFS is closed, it will save the session in the `auto_save_last.pkl` file.  
 These files are located under the MEAFS directory and the `-h` [flag](<#flags-and-arguments>) will show their location.  
 To load any of these files, simply use the [flags](<#flags-and-arguments>) or load them in the *File* > *Open...* menu.

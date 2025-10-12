@@ -435,7 +435,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.contmethodind = 0
 
         self.errorguireset.triggered.connect(lambda: self.gui_hold(False))
-        self.normspec.triggered.connect(self.normalize_spectrum)
+        self.normspec.triggered.connect(self.norm_trunc_spec)
 
         # View Submenu Configuration
         self.fullspec.triggered.connect(self.full_spec_plot_range)
@@ -475,7 +475,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Auto Save Configuration
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.auto_save)
-        self.timer.setInterval(5000)
+        self.timer.setInterval(60000)
         if self.autosave.isChecked():
             self.timer.start()
 
@@ -740,7 +740,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
         Show a QT window for some user-input-error message.
 
-        :param msg: the message to be showed.
+        :param msg: the message to be shown.
         """
 
         error_dialog = QtWidgets.QMessageBox()
@@ -759,6 +759,28 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         error_dialog.exec()
 
     @staticmethod
+    def show_question(parent, title, message):
+        """
+        Pop-up a question message.
+
+        :param parent: the parent window.
+        :param title: the box title.
+        :param message: the message.
+        :return: True or False.
+        """
+
+        reply = QtWidgets.QMessageBox.question(
+            parent,
+            title,
+            message,
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No)
+
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            return True
+        return False
+
+    @staticmethod
     def browse(uiobject, caption, direc=None):
         """
         Show a File Dialog to select some file.
@@ -772,7 +794,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             direc = os.getcwd()
 
         fname = QtWidgets.QFileDialog.getOpenFileName(caption=caption,
-                                                      filter="Text File (*.txt, *.csv, *)",
+                                                      filter="Text Files (*.txt *.csv *.dat);;All Files (*)",
                                                       directory=direc)
         if fname[0] != "":
             uiobject.setText(fname[0])
@@ -1206,7 +1228,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         fname = [""]
         if self.dataloadtable.currentColumn() == 1:
             fname = QtWidgets.QFileDialog.getOpenFileName(caption="Select Spectrum Data File",
-                                                          filter="Text File (*.txt, *.csv, *)",
+                                                          filter="Text Files (*.txt *.csv *.dat);;All Files (*)",
                                                           directory=os.getcwd())
 
         if fname[0] != "":
@@ -1401,6 +1423,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         """
 
         folder = self.outputname.text()
+        fit.create_basic_folder_structure(folder)
         elem, order, lamb = "continuum", "", "all"
 
         contdisbool = False if self.contdisabled == QtCore.Qt.CheckState.Unchecked else True
@@ -1422,6 +1445,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             self.plot_line_refer = fit.plot_spec_ui(spec_fit_arr, folder, elem, lamb+str(i), order,
                                                     self.ax, self.canvas, self.plot_line_refer,
                                                     vline=False)
+            msg = fit.cur_time()
+            msg += ("Spectrum file saved at " +
+                    str(Path(folder).joinpath("On_time_Plots",
+                                              "fit_{}_{}_ang_{}.csv".format(elem + order, lamb, i + 1))))
+            fit.log_write(folder, msg)
 
         self.full_spec_plot_range()
 
@@ -1561,7 +1589,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         init_path = self.outputname.text()
         fname = QtWidgets.QFileDialog.getOpenFileName(caption="Select Previous Results File",
-                                                      filter="Text File (*.txt, *.csv, *)",
+                                                      filter="Text Files (*.txt *.csv *.dat);;All Files (*)",
                                                       directory=init_path)[0]
         line, self.results_array = fit.open_previous([], [], fl_name=fname)
 
@@ -1787,12 +1815,48 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         fitparbox.exec()
 
-    def normalize_spectrum(self):
+    def norm_trunc_spec(self):
         """
-        Call the *Normalize Spectrum* window
+        Call the *Normalize and Truncate* window
         """
 
+        def on_close_event(event):
+            """
+            | Shows a pop-up window when trying to close the *Normalize Spectrum* window.
+            | Pop-up shows up only if there are difference between spectra in MEAFS and in this window.
+
+            :param event: QT event.
+            """
+
+            change_exist, reply = False, None
+            for ind in range(len(self.specs_data)):
+                if not check_modifications():
+                    change_exist = True
+            if change_exist:
+                reply = self.show_question(
+                    normbox,
+                    "Exit",
+                    "There are non commited changes.\n"
+                    "Are you sure you want to exit this window?")
+
+            if not change_exist or reply:
+                event.accept()
+            else:
+                event.ignore()
+
+        def on_reject():
+            """Call the close event on reject event for pop-up window."""
+            normbox.close()
+
         def event_filter(obj, widget, event):
+            """
+            Event filter for changing the default Enter key behaviour.
+
+            :param obj: QT object.
+            :param widget: QT widget.
+            :param event: QT event.
+            """
+
             if event.type() == QtCore.QEvent.Type.FocusIn:
                 if widget.objectName() == "truncleftvalue" or \
                    widget.objectName() == "truncrightvalue":
@@ -1810,6 +1874,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             return False
 
         def buttons_status(value):
+            """
+            Enable or disable buttons in the GUI.
+
+            :param value: boolean to enable or disable buttons.
+            """
+
             for i in range(normwind.buttonsgrid.count()):
                 widget = normwind.buttonsgrid.itemAt(i).widget()
                 if widget is not None:
@@ -1817,7 +1887,36 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             normwind.spectrumselect.setEnabled(True)
             normwind.okcancelbutton.setEnabled(True)
 
+        def check_modifications():
+            """
+            Check whether there are differences between spectra in MEAFS and in this winodw.
+
+            :return: True if they are the same; False if they are different.
+            """
+            ind = normwind.spectrumselect.currentIndex() - 1
+            if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
+                    np.all(new_specs_data[ind] == self.specs_data[ind])):
+                return True
+            else:
+                return False
+
+        def get_delimiter():
+            """
+            Get the current set delimiter type in MEAFS GUI.
+
+            :return: the delimiter or None.
+            """
+            if self.delimitertype.currentText() == "Comma":
+                return ","
+            elif self.delimitertype.currentText() == "Tab":
+                return r"\s+"
+            else:
+                self.show_error("Delimiter not selected.\n"
+                                "Return to the main window and change it.")
+                return None
+
         def plot_spec_norm():
+            """Plot the spectrum selected in the plot area."""
             ind = normwind.spectrumselect.currentIndex()
 
             if ind == 0:
@@ -1841,18 +1940,19 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             normwind.truncleftvalue.setValue(min(new_specs_data[ind].iloc[:, 0]))
             normwind.truncrightvalue.setValue(max(new_specs_data[ind].iloc[:, 0]))
 
-            if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
-                    np.all(new_specs_data[ind] == self.specs_data[ind])):
+            if check_modifications():
                 normwind.undo.setDisabled(True)
             else:
                 normwind.undo.setDisabled(False)
 
         def undo():
+            """Undo the modification not yet loaded in MEAFS."""
             ind = normwind.spectrumselect.currentIndex() - 1
             new_specs_data[ind] = self.specs_data[ind]
             plot_spec_norm()
 
         def truncate():
+            """Function to truncate the current spectrum with the selected values."""
             ind = normwind.spectrumselect.currentIndex() - 1
             left = normwind.truncleftvalue.value()
             right = normwind.truncrightvalue.value()
@@ -1868,19 +1968,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             plot_spec_norm()
 
         def reload():
+            """Reload the current spectrum from its file."""
             normwind.reload.setStyleSheet("background-color: green")
             normwind.loadlabel.setText("Loading...")
 
             ind = normwind.spectrumselect.currentIndex() - 1
             data_dir = self.dataloadtable.item(ind, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
 
-            if self.delimitertype.currentText() == "Comma":
-                sep = ","
-            elif self.delimitertype.currentText() == "Tab":
-                sep = r"\s+"
-            else:
-                self.show_error("Delimiter not selected.\n"
-                                "Return to the main window and change it.")
+            sep = get_delimiter()
+            if sep is None:
                 return
 
             try:
@@ -1897,47 +1993,81 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             QtCore.QTimer.singleShot(btt_timer, lambda: normwind.loadlabel.setText(""))
 
         def load(btt_color=True):
+            """Load the current spectrum into MEAFS."""
             if btt_color:
                 normwind.load.setStyleSheet("background-color: green")
 
-            self.specs_data = new_specs_data.copy()
-            self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
-                                                     overlim_y=True)
-            normwind.undo.setEnabled(False)
+            if not check_modifications():
+                self.specs_data = new_specs_data.copy()
+                self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
+                                                         overlim_y=True)
+                normwind.undo.setEnabled(False)
 
             QtCore.QTimer.singleShot(btt_timer, lambda: normwind.load.setStyleSheet("background-color: none"))
 
         def save():
+            """Save the spectrum into a new file at the same directory of the original file."""
             normwind.save.setStyleSheet("background-color: green")
+            normwind.loadlabel.setText("Saving...")
+
+            ind = normwind.spectrumselect.currentIndex() - 1
+            data_dir = self.dataloadtable.item(ind, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
+            fl_name = normwind.spectrumselect.currentText()
+
+            sep = get_delimiter()
+            if sep is None:
+                return
+            elif sep == r"\s+":
+                sep = "\t"
+
+            def new_name(name_str):
+                """
+                Add the *_new* string at the end of a file name considering its extension.
+
+                :param name_str: string to use.
+                :return: the new string.
+                """
+                new_str = name_str.rsplit(".", 1)
+                if new_str[0][-4:] == "_new":
+                    return name_str
+                new_str[1] = "_new." + new_str[1]
+                return "".join(new_str)
+
+            data_dir = new_name(data_dir)
+            fl_name = new_name(fl_name)
+
+            only_dir = "".join(data_dir.rsplit(fl_name, 1))
+            if not os.path.isdir(only_dir):
+                data_dir = str(Path(self.outputname.text()).joinpath(fl_name))
+                self.show_error("Original spectrum directory does not exist.\n"
+                                "The new spectrum will be saved at:\n{}".format(data_dir))
+            if os.path.isfile(data_dir):
+                rep = self.show_question(
+                    normbox,
+                    "File Exist",
+                    "Overwrite file?\n{}".format(data_dir))
+
+                if not rep:
+                    QtCore.QTimer.singleShot(btt_timer, lambda: normwind.save.setStyleSheet("background-color: none"))
+                    QtCore.QTimer.singleShot(btt_timer, lambda: normwind.loadlabel.setText(""))
+                    return
+
+            fit.create_basic_folder_structure(self.outputname.text())
+
+            fit.save_spec(new_specs_data[ind], data_dir, delimiter=sep)
+
+            msg = fit.cur_time()
+            msg += "New spectrum (Norm + Trunc) saved at {}".format(data_dir)
+            fit.log_write(self.outputname.text(), msg)
+
+            normwind.spectrumselect.setItemText(ind+1, fl_name)
+            self.dataloadtable.cellWidget(actual_fl_index[ind], 1).setText(fl_name)
+            self.dataloadtable.item(actual_fl_index[ind], 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, data_dir)
 
             load(btt_color=False)
 
             QtCore.QTimer.singleShot(btt_timer, lambda: normwind.save.setStyleSheet("background-color: none"))
-
-        def on_close_event(event):
-            change_exist, reply = False, None
-            for ind in range(len(self.specs_data)):
-                if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
-                        np.all(new_specs_data[ind] == self.specs_data[ind])):
-                    pass
-                else:
-                    change_exist = True
-            if change_exist:
-                reply = QtWidgets.QMessageBox.question(
-                    normbox,
-                    "Exit",
-                    "There are non commited changes.\n"
-                    "Are you sure you want to exit?",
-                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-                    QtWidgets.QMessageBox.StandardButton.No)
-
-            if not change_exist or reply == QtWidgets.QMessageBox.StandardButton.Yes:
-                event.accept()
-            else:
-                event.ignore()
-
-        def on_reject():
-            normbox.close()
+            QtCore.QTimer.singleShot(btt_timer, lambda: normwind.loadlabel.setText(""))
 
         btt_timer = 200
 
@@ -1967,13 +2097,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
         normwind.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
 
+        actual_fl_index = []
         for row in range(10):
             if "Data" not in self.dataloadtable.cellWidget(row, 1).text():
                 normwind.spectrumselect.addItem(self.dataloadtable.cellWidget(row, 1).text())
+                actual_fl_index.append(row)
 
         if not self.loadDatacheck:
-            self.show_error("Not all selected spectra have been loaded.")
-            return
+            reply = self.show_question(self,
+                                       "Load Spectra",
+                                       "Not all selected spectra have been loaded.\n"
+                                       "This can cause errors when using the *Normalize and Truncate* window.\n"
+                                       "Proceed?")
+            if not reply:
+                return
 
         buttons_status(False)
 
@@ -2089,7 +2226,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             if self.filepath != "" and self.filepath[-4:] != ".pkl":
                 self.filepath += ".pkl"
 
-        list_save = [self.filepath,
+        flname_to_save = self.filepath if self.filepath is not None and self.filepath != "" else flname
+
+        list_save = [flname_to_save,
                      self.linelistname.text(),
                      self.linelistcheckbox.checkState(),
                      self.restart.checkState(),
@@ -2139,8 +2278,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             with open(pathfinal, "wb") as file:
                 self.setWindowTitle("MEAFS - Saving")
                 dill.dump(list_save, file)
-                time.sleep(0.2)
-                self.setWindowTitle("MEAFS")
+                QtCore.QTimer.singleShot(200, lambda: self.setWindowTitle("MEAFS"))
             return True
         else:
             self.filepath = None
@@ -2235,14 +2373,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         Load a new empty session by overriding all variable to the default values.
         """
 
-        close_dialog = QtWidgets.QMessageBox()
-        close_dialog.setWindowTitle("New Session")
-        close_dialog.setText("Are you sure want to open a new session? All changes not saved will be lost.")
-        close_dialog.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes)
-        close_dialog.addButton(QtWidgets.QMessageBox.StandardButton.No)
-        close_dialog.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+        reply = self.show_question(self,
+                                   "New Session",
+                                   "Are you sure want to open a new session? "
+                                   "All changes not saved will be lost.")
 
-        if close_dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+        if reply:
             self.fig = plt.figure(tight_layout=True)
             self.canvas = FigureCanvasQTAgg(self.fig)
             self.canvas.figure.supxlabel("Wavelength [\u212B]")
@@ -2314,6 +2450,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          .2,
                          # continuumpars
                          [2, 8],
+                         # medianwindow
+                         3,
+                         # contdisabled
+                         QtCore.Qt.CheckState.Unchecked,
+                         # contfixedvalue
+                         1.0,
+                         # contmethodind
+                         0,
                          # tabplotshels
                          0,
                          # stdtext
@@ -2323,7 +2467,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                          # abundshift
                          0.1,
                          # histbinsvalue
-                         20
+                         20,
+                         # loadDatacheck
+                         False
                          ]
 
             self.lambshifvalue.setValue(0.0000)

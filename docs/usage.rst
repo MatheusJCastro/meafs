@@ -65,7 +65,7 @@ Auto Save Capability
 --------------------
 
 | In the *File* menu there is an *Auto Save* option. When checked, MEAFS will save 
-  the session every 5 seconds in a file named ``auto_save.pkl``.  
+  the session every 60 seconds in a file named ``auto_save.pkl``.  
 | Also, if auto save is enabled, when MEAFS is closed, it will save the session in 
   the ``auto_save_last.pkl`` file.  
 | These files are located under the MEAFS directory and the ``-h`` :ref:`flag <flags>` 

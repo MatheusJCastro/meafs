@@ -760,8 +760,9 @@ class Ui_MEAFS(object):
         self.menuView.addAction(self.clearspectrumplot)
         self.menuView.addAction(self.clearfinalplotsscale)
         self.menuEdit.addAction(self.fitpar)
-        self.menuEdit.addAction(self.errorguireset)
         self.menuEdit.addAction(self.normspec)
+        self.menuEdit.addSeparator()
+        self.menuEdit.addAction(self.errorguireset)
         self.menuHelp.addAction(self.readthedocsopen)
         self.menuHelp.addAction(self.guthubopen)
         self.menuHelp.addAction(self.aboutopen)
@@ -963,7 +964,7 @@ class Ui_MEAFS(object):
         self.guthubopen.setText(_translate("MEAFS", "GitHub"))
         self.aboutopen.setText(_translate("MEAFS", "About"))
         self.clearspectrumplot.setText(_translate("MEAFS", "Clear Spectrum Plot"))
-        self.normspec.setText(_translate("MEAFS", "Normalize Spectrum"))
+        self.normspec.setText(_translate("MEAFS", "Normalize and Truncate"))
 
 
 if __name__ == "__main__":

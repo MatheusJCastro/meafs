@@ -68,7 +68,8 @@ def create():
         shortcut.setWorkingDirectory(dir)
         shortcut.setComment("Multiple Element Abundance Fit Software")
         shortcut.setIcon(icon_path)
-        shortcut.setCategories("Science;X-Astrophysics;X-Astronomy;X-Education;")
+        shortcut.setCategories("Science;X-Astrophysics;X-Astronomy;X-Education;\n"
+                               "MimeType=application/x-pickle;")
         shortcut.save()
 
     conda, dir = get_curr_dir()
