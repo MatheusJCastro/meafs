@@ -46,6 +46,7 @@ class Ui_normbox(object):
         self.multfactvalue.setDecimals(4)
         self.multfactvalue.setMinimum(-99.99)
         self.multfactvalue.setSingleStep(0.1)
+        self.multfactvalue.setProperty("value", 1.0)
         self.multfactvalue.setObjectName("multfactvalue")
         self.buttonsgrid.addWidget(self.multfactvalue, 3, 2, 1, 1)
         self.label = QtWidgets.QLabel(parent=normbox)

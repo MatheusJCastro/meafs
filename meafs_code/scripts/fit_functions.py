@@ -7,7 +7,7 @@
 
 from astropy.convolution import Gaussian1DKernel, convolve
 from specutils.fitting import fit_generic_continuum
-from specutils.spectra import Spectrum1D
+from specutils.spectra import Spectrum
 from astropy import units as u
 from pathlib import Path
 import numpy as np
@@ -256,8 +256,8 @@ def fit_continuum(spec, contpars=None, iterac=1000, method=0, contdisabled=False
         return median, std, np.zeros(len(spec)) + median
 
     def chebyshev():
-        spec1d = Spectrum1D(spectral_axis=spec.iloc[:, 0].values.tolist() * u.AA,
-                            flux=spec.iloc[:, 1].values.tolist() * u.dimensionless_unscaled)
+        spec1d = Spectrum(spectral_axis=spec.iloc[:, 0].values.tolist() * u.AA,
+                          flux=spec.iloc[:, 1].values.tolist() * u.dimensionless_unscaled)
         with warnings.catch_warnings():  # Ignore warnings
             warnings.simplefilter('ignore')
             g1_fit = fit_generic_continuum(spec1d)

@@ -288,7 +288,7 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
 
 
 def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True,
-                 save=True):
+                 save=True, overlim_x=False, overlim_y=True, enable_lim=True):
     """
     Plot the current line results in the GUI.
 
@@ -302,6 +302,9 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
     :param plot_line_refer: array to save the reference label of the plots.
     :param vline: if it also plots a vertical line or not.
     :param save: whether to save or not the plot in csv format.
+    :param overlim_x: if extrapolate the x limits by 10% or not.
+    :param overlim_y: if extrapolate the y limits by 10% or not.
+    :param enable_lim: enable or disable to change the plot range.
     :return: the actualized ``plot_line_refer`` array.
     """
 
@@ -333,9 +336,10 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
                       float_format="%.4f",
                       header=None)
 
-    lims_x, lims_y = get_specs_lims(spec_fit_arr, overlim_y=True)
-    ax.set_xlim(lims_x[0], lims_x[1])
-    ax.set_ylim(lims_y[0], lims_y[1])
+    if enable_lim:
+        lims_x, lims_y = get_specs_lims(spec_fit_arr, overlim_x=overlim_x, overlim_y=overlim_y)
+        ax.set_xlim(lims_x[0], lims_x[1])
+        ax.set_ylim(lims_y[0], lims_y[1])
 
     canvas.draw()
 
