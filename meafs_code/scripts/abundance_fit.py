@@ -113,7 +113,13 @@ def open_spec_obs(observed_name, delimiter=None, increment=1):
         else:
             delim = delimiter
 
-        spec_obs.append(pd.read_csv(observed_name[i], header=None, delimiter=delim, comment="#"))
+        try:
+            spec_obs.append(pd.read_csv(observed_name[i], header=None,
+                                        delimiter=delim, comment="#",
+                                        dtype=np.float64))
+        except ValueError:
+            return -1
+
     return spec_obs
 
 

@@ -1223,35 +1223,69 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         Configure the data QT table with the buttons to select spectra or clear them.
         """
 
-        row = self.dataloadtable.currentRow()
+        def table_write(cur_row):
+            item = QtWidgets.QTableWidgetItem()
+            btn = QtWidgets.QPushButton()
+            # noinspection PyUnresolvedReferences
+            btn.clicked.connect(self.datatableselect)
+            btn.setText(showname)
+            self.dataloadtable.setItem(cur_row, 1, item)
+            self.dataloadtable.setCellWidget(cur_row, 1, btn)
+            # self.dataloadtable.item(row, 1).setText(showname)
+            self.dataloadtable.item(cur_row, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, fname)
+            self.dataloadtable.resizeColumnToContents(1)
 
-        fname = [""]
+        row_init = self.dataloadtable.currentRow()
+
+        fnames = [[""]]
         if self.dataloadtable.currentColumn() == 1:
-            fname = QtWidgets.QFileDialog.getOpenFileName(caption="Select Spectrum Data File",
-                                                          filter="Text Files (*.txt *.csv *.dat);;All Files (*)",
-                                                          directory=os.getcwd())
+            fnames = QtWidgets.QFileDialog.getOpenFileNames(caption="Select Spectrum Data File",
+                                                            filter="Text Files (*.txt *.csv *.dat);;All Files (*)",
+                                                            directory=os.getcwd())
+        elif self.dataloadtable.currentColumn() == 0:
+            fname = "Data {}".format(row_init + 1)
+            showname = fname
+            table_write(row_init)
 
-        if fname[0] != "":
-            fname = fname[0]
-            showname = str(Path(fname).parts[-1])
-            self.loadDatacheck = False
-        else:
-            if self.dataloadtable.currentColumn() == 0:
-                fname = "Data {}".format(row + 1)
-                showname = fname
+        if len(fnames[0]) > 10:
+            self.show_error("Please, select up to 10 files.")
+            return
+        for i, row in enumerate(range(row_init, row_init+len(fnames[0]))):
+            if row >= 10:
+                break
+            if fnames[0][i] != "":
+                fname = fnames[0][i]
+                showname = str(Path(fname).parts[-1])
+                self.loadDatacheck = False
             else:
                 return
 
-        item = QtWidgets.QTableWidgetItem()
-        btn = QtWidgets.QPushButton()
-        # noinspection PyUnresolvedReferences
-        btn.clicked.connect(self.datatableselect)
-        btn.setText(showname)
-        self.dataloadtable.setItem(row, 1, item)
-        self.dataloadtable.setCellWidget(row, 1, btn)
-        # self.dataloadtable.item(row, 1).setText(showname)
-        self.dataloadtable.item(row, 1).setData(QtCore.Qt.ItemDataRole.ToolTipRole, fname)
-        self.dataloadtable.resizeColumnToContents(1)
+            table_write(row)
+
+
+    def get_delimiter(self, error_msg=None):
+        """
+        Get the current set delimiter type in MEAFS GUI.
+
+        :param error_msg: Custom error message to show.
+        :return: the delimiter, None (for auto-detect) or -1 (for error).
+        """
+        if error_msg is None:
+            error_msg = "Delimiter not selected."
+        if (self.delimitertype.currentText() == "Delimiter Type" or
+                self.delimitertype.currentText() == "Auto"):
+            self.delimitertype.setCurrentIndex(1)
+            sep = None
+        elif self.delimitertype.currentText() == "Comma":
+            sep = ","
+        elif self.delimitertype.currentText() == "Tab":
+            sep = r"\s+"
+        elif self.delimitertype.currentText() == "FITS File":
+            sep = "fits"
+        else:
+            self.show_error(error_msg)
+            sep = -1
+        return sep
 
     def loadData(self):
         """
@@ -1267,25 +1301,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         if len(specs) == 0:
             return
 
-        if (self.delimitertype.currentText() == "Delimiter Type" or
-                self.delimitertype.currentText() == "Auto"):
-            self.delimitertype.setCurrentIndex(1)
-            sep = None
-        elif self.delimitertype.currentText() == "Comma":
-            sep = ","
-        elif self.delimitertype.currentText() == "Tab":
-            sep = r"\s+"
-        elif self.delimitertype.currentText() == "FITS File":
-            sep = "fits"
-        else:
-            self.show_error("Delimiter not selected.")
+        sep = self.get_delimiter()
+        if sep == -1:
             return
 
         self.specs_data = []
         if len(specs) > 0:
             self.specs_data = fit.open_spec_obs(specs, delimiter=sep)
 
-        if len(self.specs_data[0].columns) == 1:
+        if self.specs_data == -1 or len(self.specs_data[0].columns) == 1:
             self.show_error("MEAFS failed to load the data. Maybe wrong separator?")
             self.specs_data = []
 
@@ -1909,21 +1933,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             else:
                 return False
 
-        def get_delimiter():
-            """
-            Get the current set delimiter type in MEAFS GUI.
-
-            :return: the delimiter or None.
-            """
-            if self.delimitertype.currentText() == "Comma":
-                return ","
-            elif self.delimitertype.currentText() == "Tab":
-                return r"\s+"
-            else:
-                self.show_error("Delimiter not selected.\n"
-                                "Return to the main window and change it.")
-                return None
-
         def plot_spec_norm():
             """Plot the spectrum selected in the plot area."""
             ind = normwind.spectrumselect.currentIndex()
@@ -1984,8 +1993,10 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             ind = normwind.spectrumselect.currentIndex() - 1
             data_dir = self.dataloadtable.item(ind, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
 
-            sep = get_delimiter()
-            if sep is None:
+            error_msg = ("Delimiter not selected.\n"
+                         "Return to the main window and change it.")
+            sep = self.get_delimiter(error_msg=error_msg)
+            if sep == -1:
                 return
 
             try:
@@ -2023,9 +2034,11 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             data_dir = self.dataloadtable.item(ind, 1).data(QtCore.Qt.ItemDataRole.ToolTipRole)
             fl_name = normwind.spectrumselect.currentText()
 
-            sep = get_delimiter()
-            if sep is None:
+            sep = self.get_delimiter()
+            if sep == -1:
                 return
+            elif sep is None:
+                sep = ","
             elif sep == r"\s+":
                 sep = "\t"
 
