@@ -113,8 +113,7 @@ Loading spectra data
   with two columns: Wavelength and Flux.
 | Currently, these types of separators are supported: 
 
-   - Auto: automaticaly try to determine the delimiter type. This will work with multiple files with 
-   different delimiters;
+   - Auto: automaticaly try to determine the delimiter type. This will work with multiple files with different delimiters;
    - Tab/Multiple spaces: multiple files need to have the same delimiter type;
    - Comma: multiple files need to have the same delimiter type.
 
