@@ -1,4 +1,4 @@
-__version__ = "6.2.1"
+__version__ = "6.2.2"
 __author__ = "Matheus J. Castro"
 
 from meafs_code import gui

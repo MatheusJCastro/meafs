@@ -352,6 +352,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         self.delimitertype.model().item(0).setEnabled(False)
         self.delimitertype.setToolTip("Delimiter Type")
 
+        self.delimitertype.model().item(4).setEnabled(False)
+
         self.specs_data = []
         self.loadDatacheck = False
         self.loaddata.clicked.connect(self.loadData)
