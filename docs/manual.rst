@@ -118,7 +118,10 @@ Loading spectra data
 
 Obs: rows beginning with ``#`` in the *CSV* file are ignored.
 
-**Attention:** For overlapping spectra, the fit will be processed only for the first spectrum in the *Data* table order. Moreover, it is advised not to upload spectra with edge effects (e.g., zero flux; see image below). Otherwise, if allocated first in the *Data* table, MEAFS will attempt to fit the non-existing data in the first spectrum instead of the one with real data.
+**Attention:** For overlapping spectra, the fit will be processed only for the first spectrum in the 
+*Data* table order. Moreover, it is advised not to upload spectra with edge effects (e.g., zero flux; 
+see image below). Otherwise, if allocated first in the *Data* table, MEAFS will attempt to fit the 
+non-existing data in the first spectrum instead of the one with real data.
 
 .. image:: _static/overlapping_spectra_example.png
    :width: 80%
@@ -129,10 +132,36 @@ Obs: rows beginning with ``#`` in the *CSV* file are ignored.
 
 .. _spec_normalization:
 
-Spectrum Normalization
-----------------------
+Normalization and Truncation
+----------------------------
 
-Coming soon...
+.. image:: _static/meafs_gui_22.png
+   :width: 80%
+   :align: center
+   :alt: GUI run
+
+| 
+
+After a successful spectrum load, it is possible to truncate and normalize each spectrum within MEAFS. 
+To do this, go to *Edit* > *Normalize and Truncate*. This will open a new window where it is possible to 
+select each previously loaded spectrum.
+
+- To truncate a spectrum, simply set the minimum and maximum desired range and click Truncate;
+- To normalize, first adjust the multiplication factor, plot the continuum, and then click Normalize.
+
+The *Undo All* button reverts all changes that have **not** yet been loaded in MEAFS. While the *Reload from 
+File* button reloads the spectrum from its file.
+
+The changes made are **not** automaticaly applied to MEAFS. To apply them, click either *Load in MEAFS* or 
+*Save to File and load in MEAFS* buttons. The latter creates a new spectrum file in the same directory 
+as the original, with the same name plus the suffix :code:`_norm`. If the location is unavailable, the file 
+is created in the *Output Location* (see :ref:`full_run`).
+
+When the *Save to File and load in MEAFS* is triggered, the original file reference is replaced by the new 
+one. This means that the loaded file in MEAFS will now point to the new :code:`_norm` file. At this stage, 
+the *Reload from File* button will no longer work since the file name has changed. To use the original 
+file again, return to the main window and load it manually (either by replacing the new :code:`_norm` file or 
+by using an empty slot). 
 
 Selecting the method
 --------------------
@@ -215,6 +244,8 @@ In the first run of MEAFS, it will be created a folder called *modules* in
 the root directory of MEAFS (this directory can be found by typing in a
 terminal ``meafs -h``). It is advised (but not mandatory) to add the 
 TurboSpectrum module in this folder.
+
+.. _full_run:
 
 Full run
 --------
