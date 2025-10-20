@@ -1927,6 +1927,14 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             normwind.spectrumselect.setEnabled(True)
             normwind.okcancelbutton.setEnabled(True)
 
+        def norm_btt_status():
+            ind = normwind.spectrumselect.currentIndex() - 1
+
+            if ind == -1 or normwind.cont_function[ind] is None:
+                normwind.norm.setEnabled(False)
+            else:
+                normwind.norm.setEnabled(True)
+
         def check_modifications():
             """
             Check whether there are differences between spectra in MEAFS and in this winodw.
@@ -1934,8 +1942,8 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             :return: True if they are the same; False if they are different.
             """
             ind = normwind.spectrumselect.currentIndex() - 1
-            if (len(new_specs_data[ind]) == len(self.specs_data[ind]) and
-                    np.all(new_specs_data[ind] == self.specs_data[ind])):
+            if (len(normwind.new_specs_data[ind]) == len(self.specs_data[ind]) and
+                    np.all(normwind.new_specs_data[ind] == self.specs_data[ind])):
                 return True
             else:
                 return False
@@ -1951,19 +1959,31 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
                 normwind.truncleftvalue.setValue(0)
                 normwind.truncrightvalue.setValue(0)
+                normwind.multfactvalue.setValue(1)
                 buttons_status(False)
 
                 return
-            else:
-                ind -= 1
-                buttons_status(True)
 
-            normwind.plot_line_refer = fit.plot_spec_gui([new_specs_data[ind]], normwind.canvas,
+            ind -= 1
+            buttons_status(True)
+
+            indcont = normwind.plot_line_refer[(normwind.plot_line_refer["elem"].str.contains("continuum"))].index
+            for line in normwind.plot_line_refer.loc[indcont, "refer"]: line.remove()
+            normwind.plot_line_refer.drop(indcont, inplace=True)
+            normwind.plot_line_refer.reset_index(drop=True, inplace=True)
+
+            normwind.plot_line_refer = fit.plot_spec_gui([normwind.new_specs_data[ind]], normwind.canvas,
                                                          normwind.ax, normwind.plot_line_refer,
                                                          color="blue", overlim_x=True, overlim_y=True)
 
-            normwind.truncleftvalue.setValue(min(new_specs_data[ind].iloc[:, 0]))
-            normwind.truncrightvalue.setValue(max(new_specs_data[ind].iloc[:, 0]))
+            norm_btt_status()
+
+            normwind.truncleftvalue.setValue(min(normwind.new_specs_data[ind].iloc[:, 0]))
+            normwind.truncrightvalue.setValue(max(normwind.new_specs_data[ind].iloc[:, 0]))
+            normwind.multfactvalue.setValue(normwind.cont_values[ind])
+
+            if normwind.cont_function[ind] is not None:
+                plot_cont()
 
             if check_modifications():
                 normwind.undo.setDisabled(True)
@@ -1975,15 +1995,15 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             ind = normwind.spectrumselect.currentIndex() - 1
 
             contdisbool = False if self.contdisabled == QtCore.Qt.CheckState.Unchecked else True
-            continuum, cont_err, cont_func = ff.fit_continuum(new_specs_data[ind],
+            continuum, cont_err, cont_func = ff.fit_continuum(normwind.new_specs_data[ind],
                                                               contpars=self.continuumpars,
                                                               iterac=self.max_iter[0],
                                                               method=1,
                                                               contdisabled=contdisbool,
                                                               medianwindow=self.medianwindow,
-                                                              hardvalue=self.contfixedvalue)
+                                                              hardvalue=self.contfixedvalue,)
 
-            x = new_specs_data[ind].iloc[:, 0].values.tolist()
+            x = normwind.new_specs_data[ind].iloc[:, 0].values.tolist()
             y = cont_func * normwind.multfactvalue.value()
             cont = pd.DataFrame({0: x, 1: y})
 
@@ -1992,15 +2012,39 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             elem, order, lamb = "continuum", "{}".format(ind), "all"
 
             normwind.plot_line_refer = fit.plot_spec_ui([cont], folder, elem, lamb, order,
-                                                    normwind.ax, normwind.canvas, normwind.plot_line_refer,
-                                                    vline=False, enable_lim=False)
+                                                        normwind.ax, normwind.canvas, normwind.plot_line_refer,
+                                                        vline=False, enable_lim=False, color="orange")
 
-            normwind.cont_function = cont_func
+            normwind.cont_function[ind] = y
+            normwind.cont_values[ind] = normwind.multfactvalue.value()
+            norm_btt_status()
 
         def normalize():
             """Subroutine to normalize the spectrum using the previously defined continuum line."""
+            ind = normwind.spectrumselect.currentIndex() - 1
 
-            return
+            if normwind.cont_function[ind] is None:
+                norm_btt_status()
+                return
+
+            spec = normwind.new_specs_data[ind].copy()
+            spec = Spectrum(spectral_axis=spec.iloc[:, 0].values.tolist() * u.AA,
+                            flux=spec.iloc[:, 1].values.tolist() * u.dimensionless_unscaled)
+            spec = spec / normwind.cont_function[ind]
+            spec = pd.DataFrame({0: spec.spectral_axis.value,
+                                 1: spec.flux.value})
+            normwind.new_specs_data[ind] = spec
+
+            indcont = normwind.plot_line_refer[(normwind.plot_line_refer["elem"] == "continuum{}".format(ind))].index
+            for line in normwind.plot_line_refer.loc[indcont, "refer"]: line.remove()
+            normwind.plot_line_refer.drop(indcont, inplace=True)
+            normwind.plot_line_refer.reset_index(drop=True, inplace=True)
+
+            normwind.cont_function[ind] = None
+            normwind.cont_values[ind] = 1
+            norm_btt_status()
+
+            plot_spec_norm()
 
         def truncate():
             """Subroutine to truncate the current spectrum with the selected values."""
@@ -2008,20 +2052,20 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             left = normwind.truncleftvalue.value()
             right = normwind.truncrightvalue.value()
 
-            val0 = ff.bisec(new_specs_data[ind], left)
-            val1 = ff.bisec(new_specs_data[ind], right)
+            val0 = ff.bisec(normwind.new_specs_data[ind], left)
+            val1 = ff.bisec(normwind.new_specs_data[ind], right)
 
             if val0 == -1 or val1 == -1 or left >= right:
                 self.show_error("Invalid range.")
                 return
 
-            new_specs_data[ind] = new_specs_data[ind].iloc[val0:val1+1].reset_index(drop=True)
+            normwind.new_specs_data[ind] = normwind.new_specs_data[ind].iloc[val0:val1+1].reset_index(drop=True)
             plot_spec_norm()
 
         def undo():
             """Undo the modification not yet loaded in MEAFS."""
             ind = normwind.spectrumselect.currentIndex() - 1
-            new_specs_data[ind] = self.specs_data[ind]
+            normwind.new_specs_data[ind] = self.specs_data[ind]
             plot_spec_norm()
 
         def reload():
@@ -2039,7 +2083,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 return
 
             try:
-                new_specs_data[ind] = fit.open_spec_obs([data_dir], delimiter=sep)[0]
+                normwind.new_specs_data[ind] = fit.open_spec_obs([data_dir], delimiter=sep)[0]
             except FileNotFoundError:
                 self.show_error("File not Found.")
                 normwind.reload.setStyleSheet("background-color: none")
@@ -2057,7 +2101,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 normwind.load.setStyleSheet("background-color: green")
 
             if not check_modifications():
-                self.specs_data = new_specs_data.copy()
+                self.specs_data = normwind.new_specs_data.copy()
                 self.plot_line_refer = fit.plot_spec_gui(self.specs_data, self.canvas, self.ax, self.plot_line_refer,
                                                          overlim_y=True)
                 normwind.undo.setEnabled(False)
@@ -2078,8 +2122,9 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
             if os.path.isfile(data_dir):
                 orig_spec = fit.open_spec_obs([data_dir], delimiter=sep)[0]
 
-                if (type(orig_spec) == int and orig_spec == -1) or (len(new_specs_data[ind]) == len(orig_spec) and
-                        np.all(new_specs_data[ind] == orig_spec)):
+                if ((type(orig_spec) is int and orig_spec == -1) or
+                        (len(normwind.new_specs_data[ind]) == len(orig_spec) and
+                         np.all(normwind.new_specs_data[ind] == orig_spec))):
                     normwind.loadlabel.setText("Skiping...")
                     QtCore.QTimer.singleShot(btt_timer, lambda: normwind.save.setStyleSheet("background-color: none"))
                     QtCore.QTimer.singleShot(btt_timer, lambda: normwind.loadlabel.setText(""))
@@ -2126,7 +2171,7 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
 
             fit.create_basic_folder_structure(self.outputname.text())
 
-            fit.save_spec(new_specs_data[ind], data_dir, delimiter=sep)
+            fit.save_spec(normwind.new_specs_data[ind], data_dir, delimiter=sep)
 
             msg = fit.cur_time()
             msg += "New spectrum (Norm + Trunc) saved at {}".format(data_dir)
@@ -2166,9 +2211,6 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
         # Second add the plot
         normwind.plot.addWidget(normwind.canvas)
 
-        normwind.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
-        normwind.cont_function = None
-
         actual_fl_index = []
         for row in range(10):
             if "Data" not in self.dataloadtable.cellWidget(row, 1).text():
@@ -2189,8 +2231,12 @@ class MEAFS(QtWidgets.QMainWindow, Ui_MEAFS):
                 return
 
         buttons_status(False)
+        norm_btt_status()
 
-        new_specs_data = self.specs_data.copy()
+        normwind.new_specs_data = self.specs_data.copy()
+        normwind.cont_function = [None] * len(normwind.new_specs_data)
+        normwind.cont_values = np.ones(len(normwind.new_specs_data))
+        normwind.plot_line_refer = pd.DataFrame(columns=["elem", "wave", "refer"])
 
         normwind.spectrumselect.currentIndexChanged.connect(lambda: plot_spec_norm())
         normwind.plotcont.clicked.connect(plot_cont)

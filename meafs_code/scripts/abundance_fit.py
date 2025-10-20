@@ -288,7 +288,7 @@ def plot_spec(spec1, spec2, spec3, lamb, elem, folder, show=False, save=True):
 
 
 def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_refer, vline=True,
-                 save=True, overlim_x=False, overlim_y=True, enable_lim=True):
+                 save=True, overlim_x=False, overlim_y=True, enable_lim=True, color=None):
     """
     Plot the current line results in the GUI.
 
@@ -305,6 +305,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
     :param overlim_x: if extrapolate the x limits by 10% or not.
     :param overlim_y: if extrapolate the y limits by 10% or not.
     :param enable_lim: enable or disable to change the plot range.
+    :param color: set the color of the line plot.
     :return: the actualized ``plot_line_refer`` array.
     """
 
@@ -321,7 +322,7 @@ def plot_spec_ui(spec_fit_arr, folder, elem, lamb, order, ax, canvas, plot_line_
         plot_line_refer.drop(ind, inplace=True)
         plot_line_refer.reset_index(drop=True, inplace=True)
 
-        lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5)
+        lineplot = ax.plot(sp.iloc[:, 0], sp.iloc[:, 1], "--", linewidth=1.5, color=color)
 
         plot_line_refer.loc[len(plot_line_refer)] = {"elem": elem+order, "wave": lamb, "refer": lineplot[0]}
 
