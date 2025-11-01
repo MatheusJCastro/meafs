@@ -6,8 +6,8 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/meafs?logo=pypi)](https://pypi.org/project/meafs/)
 [![GitHub Release](https://img.shields.io/github/v/tag/MatheusJCastro/meafs?logo=github)](https://github.com/MatheusJCastro/meafs)
 
-*Written by: Matheus J. Castro* 
-*Supported by: Heitor Ernandes, Beatriz Barbuy*
+*Written by: Matheus J. Castro*  
+*Supported by: Heitor Ernandes, Beatriz Barbuy*  
 *Under MIT License*  
 
 More information at: [https://meafs.readthedocs.io/](https://meafs.readthedocs.io/)
