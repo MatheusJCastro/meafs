@@ -9,7 +9,7 @@
 
 from specutils.analysis import equivalent_width
 from PyQt6 import QtWidgets, QtCore
-from specutils import Spectrum1D, SpectralRegion
+from specutils import Spectrum, SpectralRegion
 import matplotlib.pyplot as plt
 import astropy.units as u
 from pathlib import Path
@@ -686,7 +686,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                           contdisabled=contdisbool,
                                           medianwindow=ui.medianwindow,
                                           hardvalue=ui.contfixedvalue)[2]
-            spec1d = Spectrum1D(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
+            spec1d = Spectrum(spectral_axis=np.asarray(spec_obs_cut[0]) * u.AA,
                                 flux=np.asarray(spec_obs_cut[1]) * u.dimensionless_unscaled)
             spec1d = spec1d / cont_level
 
@@ -720,7 +720,7 @@ def fit_abundance(linelist, spec_obs, refer_fl, folder, type_synth, cut_val=None
                                           contdisabled=contdisbool,
                                           medianwindow=ui.medianwindow,
                                           hardvalue=ui.contfixedvalue)[2]
-            spec1d = Spectrum1D(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
+            spec1d = Spectrum(spectral_axis=np.asarray(spec_fit[0]) * u.AA,
                                 flux=np.asarray(spec_fit[1]) * u.dimensionless_unscaled)
             spec1d = spec1d / cont_level
 

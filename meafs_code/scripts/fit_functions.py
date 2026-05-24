@@ -272,7 +272,7 @@ def fit_continuum(spec, contpars=None, iterac=1000, method=0, contdisabled=False
         return mean, std, np.zeros(len(spec)) + mean
 
     if contdisabled:
-        return hardvalue, 0
+        return hardvalue, 0, np.zeros(len(spec)) + hardvalue
 
     if method == 0:
         cont, cont_err, func = sigma_clipping()
