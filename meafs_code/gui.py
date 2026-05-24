@@ -27,8 +27,6 @@ import dill
 import sys
 import os
 
-from sphinx.search.no import norwegian_stopwords
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # noinspection PyUnresolvedReferences
 from meafs_code import __version__
