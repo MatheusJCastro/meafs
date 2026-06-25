@@ -1,0 +1,38 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "https://orcid.org/0000-0002-3792-8043",
+      "@type": "Person",
+      "email": "matheusj_castro@alumni.usp.br",
+      "name": "Matheus J. Castro",
+      "affiliation": "Landessternwarte, Zentrum für Astronomie der Universität Heidelberg, Königstuhl 12, D-69117 Heidelberg, Germany",
+      "affiliation": "Fakultät für Physik und Astronomie, Universität Heidelberg, Im Neuenheimer Feld 226, D-69120 Heidelberg, Germany"
+    },
+    {
+      "@id": "https://orcid.org/0000-0001-6541-1933",
+      "@type": "Person",
+      "email": "heitor.ernandes@alumni.usp.br",
+      "name": "Heitor Ernandes",
+      "affiliation": ""
+    },
+    {
+      "@id": "https://orcid.org/0000-0001-9264-4417",
+      "@type": "Person",
+      "email": "b.barbuy@iag.usp.br",
+      "name": "Beatriz Barbuy",
+      "affiliation": "Universidade de São Paulo, IAG, Rua do Matão 1226, Cidade Universitária, São Paulo 05508-900, Brazil"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/MatheusJCastro/meafs",
+  "datePublished": "2026-06-25",
+  "dateModified": "2026-06-25",
+  "dateCreated": "2026-06-25",
+  "description": "MEAFS is a fitting tool software for spectra abundance analysis. It aims to provide a medium to high precision analysis for each individual absorption line in a given spectrum in a short runtime. The software can also fit wavelength shift, continuum and convolution of a spectrum.",
+  "keywords": "spectral synthesis, chemical abundances, stellar atmospheres",
+  "license": "MIT",
+  "title": "Multiple Element Abundance Fitting Software, MEAFS",
+  "version": "v6.2.5"
+}
