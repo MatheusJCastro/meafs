@@ -15,6 +15,8 @@ Multiple Element Abundance Fitting Software - MEAFS
 .. image:: https://img.shields.io/github/v/tag/MatheusJCastro/meafs?logo=github
    :alt: GitHub Tag
    :target: https://github.com/MatheusJCastro/meafs
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.20922227.svg
+  :target: https://doi.org/10.5281/zenodo.20922227
 
 | Here you can find how to install, run and read the results from MEAFS v\ |release|.
 

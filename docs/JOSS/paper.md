@@ -8,20 +8,22 @@ authors:
   - name: Matheus J. Castro
     orcid: 0000-0002-3792-8043
     corresponding: true
-    equal-contrib: true
+    # equal-contrib: true
     affiliation: "1, 2"
   - name: Heitor Ernandes
     orcid: 0000-0001-6541-1933
+    # equal-contrib: false
     affiliation: 3
   - name: Beatriz Barbuy
     orcid: 0000-0001-9264-4417
+    # equal-contrib: false
     affiliation: 4
 affiliations:
  - name: Landessternwarte, Zentrum für Astronomie der Universität Heidelberg, Königstuhl 12, D-69117 Heidelberg, Germany
    index: 1
  - name: Fakultät für Physik und Astronomie, Universität Heidelberg, Im Neuenheimer Feld 226, D-69120 Heidelberg, Germany
    index: 2
- - name: 
+ - name: Nicolaus Copernicus Astronomical Center, Polish Academy of Sciences, ul. Bartycka 18, 00-716 Warsaw, Poland
    index: 3
  - name: Universidade de São Paulo, IAG, Rua do Matão 1226, Cidade Universitária, São Paulo 05508-900, Brazil
    index: 4
@@ -41,12 +43,6 @@ bibliography: paper.bib
 # Software design
 
 # Research impact statement
-
-# Mathematics
-
-# Citations
-
-# Figures
 
 # AI usage disclosure
 

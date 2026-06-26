@@ -15,7 +15,7 @@
       "@type": "Person",
       "email": "heitor.ernandes@alumni.usp.br",
       "name": "Heitor Ernandes",
-      "affiliation": ""
+      "affiliation": "Nicolaus Copernicus Astronomical Center, Polish Academy of Sciences, ul. Bartycka 18, 00-716 Warsaw, Poland"
     },
     {
       "@id": "https://orcid.org/0000-0001-9264-4417",
@@ -25,14 +25,14 @@
       "affiliation": "Universidade de São Paulo, IAG, Rua do Matão 1226, Cidade Universitária, São Paulo 05508-900, Brazil"
     }
   ],
-  "identifier": "",
+  "identifier": "https://doi.org/10.5281/zenodo.20922227",
   "codeRepository": "https://github.com/MatheusJCastro/meafs",
   "datePublished": "2026-06-25",
-  "dateModified": "2026-06-25",
-  "dateCreated": "2026-06-25",
+  "dateModified": "2026-05-24",
+  "dateCreated": "2022-04-23",
   "description": "MEAFS is a fitting tool software for spectra abundance analysis. It aims to provide a medium to high precision analysis for each individual absorption line in a given spectrum in a short runtime. The software can also fit wavelength shift, continuum and convolution of a spectrum.",
   "keywords": "spectral synthesis, chemical abundances, stellar atmospheres",
   "license": "MIT",
   "title": "Multiple Element Abundance Fitting Software, MEAFS",
-  "version": "v6.2.5"
+  "version": "v6.2.4"
 }

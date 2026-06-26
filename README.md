@@ -5,6 +5,8 @@
 [![Read the Docs](https://img.shields.io/readthedocs/meafs?logo=readthedocs)](https://meafs.readthedocs.io/)
 [![PyPI - Version](https://img.shields.io/pypi/v/meafs?logo=pypi)](https://pypi.org/project/meafs/)
 [![GitHub Release](https://img.shields.io/github/v/tag/MatheusJCastro/meafs?logo=github)](https://github.com/MatheusJCastro/meafs)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20922227.svg)](https://doi.org/10.5281/zenodo.20922227)
+
 
 *Written by: Matheus J. Castro*  
 *Supported by: Heitor Ernandes, Beatriz Barbuy*  
